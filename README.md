@@ -1,5 +1,2 @@
 pubsubsql
-=========
-
-In-memory Database integrated with Publish/Subscribe
-
+=========An open-source in-memory distributed database integrated with Publish/Subscribe
