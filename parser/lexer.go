@@ -55,6 +55,58 @@ const (
 	tokenTypeWhiteSpace                           // \n,\r,\t, space
 )
 
+func (typ tokenType) String() string {
+	switch typ {
+	case tokenTypeError:
+		return "tokenTypeError"
+	case tokenTypeEOF:
+		return "tokenTypeEOF"
+	case tokenTypeCmdHelp:
+		return "tokenTypeCmdHelp"
+	case tokenTypeCmdStatus:
+		return "tokenTypeCmdStatus"
+	case tokenTypeCmdStop:
+		return "tokenTypeCmdStop"
+	case tokenTypeCmdStart:
+		return "tokenTypeCmdStart"
+	case tokenTypeSqlCreate:
+		return "tokenTypeSqlCreate"
+	case tokenTypeSqlTable:
+		return "tokenTypeSqlTable"
+	case tokenTypeSqlInsert:
+		return "tokenTypeSqlInsert"
+	case tokenTypeSqlInto:
+		return "tokenTypeSqlInto"
+	case tokenTypeSqlUpdate:
+		return "tokenTypeSqlUpdate"
+	case tokenTypeSqlDelete:
+		return "tokenTypeSqlDelete"
+	case tokenTypeSqlFrom:
+		return "tokenTypeSqlFrom"
+	case tokenTypeSqlSelect:
+		return "tokenTypeSqlSelect"
+	case tokenTypeSqlSubscribe:
+		return "tokenTypeSqlSubscribe"
+	case tokenTypeSqlUnsubscribe:
+		return "tokenTypeSqlUnsubscribe"
+	case tokenTypeSqlWhere:
+		return "tokenTypeSqlWhere"
+	case tokenTypeSqlStar:
+		return "tokenTypeSqlStar"
+	case tokenTypeSqlEqual:
+		return "tokenTypeSqlEqual"
+	case tokenTypeSqlLeftParenthesis:
+		return "tokenTypeSqlLeftParenthesis"
+	case tokenTypeSqlRightParenthesis:
+		return "tokenTypeSqlRightParenthesis"
+	case tokenTypeSqlComma:
+		return "tokenTypeSqlComma"
+	case tokenTypeSqlId:
+		return "tokenTypeSqlId"
+	}
+	return "not implemented"
+}
+
 // token is a a symbol representing lexical unit 
 type token struct {
 	typ tokenType
@@ -166,13 +218,13 @@ func (l *lexer) match(str string, skip int) bool {
 	return done
 }
 
-// lexMatchCommand matches expected command
-func (l *lexer) lexMatchCommand(typ tokenType, command string, skip int, fn stateFn) stateFn {
+// lexMatch matches expected command
+func (l *lexer) lexMatch(typ tokenType, command string, skip int, fn stateFn) stateFn {
 	if l.match(command, skip) {
 		l.emit(typ)
 		return fn
 	}
-	l.errorToken("Invalid command:" + l.current())
+	l.errorToken("Unexpected token:" + l.current())
 	return nil
 }
 
@@ -181,11 +233,11 @@ func lexCommandST(l *lexer) stateFn {
 	switch l.next() {
 	case 'a':
 		if l.next() == 'r' {
-			return l.lexMatchCommand(tokenTypeCmdStart, "start", 4, nil)
+			return l.lexMatch(tokenTypeCmdStart, "start", 4, nil)
 		}
-		return l.lexMatchCommand(tokenTypeCmdStatus, "status", 4, nil)
+		return l.lexMatch(tokenTypeCmdStatus, "status", 4, nil)
 	default:
-		return l.lexMatchCommand(tokenTypeCmdStop, "stop", 3, nil)
+		return l.lexMatch(tokenTypeCmdStop, "stop", 3, nil)
 	}
 	l.errorToken("Invalid command:" + l.current())
 	return nil
@@ -195,9 +247,9 @@ func lexCommandST(l *lexer) stateFn {
 func lexCommandS(l *lexer) stateFn {
 	switch l.next() {
 	case 'e':
-		return l.lexMatchCommand(tokenTypeSqlSelect, "select", 2, nil)
+		return l.lexMatch(tokenTypeSqlSelect, "select", 2, nil)
 	case 'u':
-		return l.lexMatchCommand(tokenTypeSqlSubscribe, "subscribe", 2, nil)
+		return l.lexMatch(tokenTypeSqlSubscribe, "subscribe", 2, nil)
 	case 't':
 		return lexCommandST(l)
 	}
@@ -206,30 +258,74 @@ func lexCommandS(l *lexer) stateFn {
 }
 
 // skipWhiteSpaces skips white space characters
-func lexSkipWhiteSpaces(l *lexer) {
+func (l *lexer) lexSkipWhiteSpaces() {
 	for rune := l.next(); unicode.IsSpace(rune); rune = l.next() {
 	}
 	l.backup()
 	l.ignore()
 }
 
+// lexSqlIndentifier scans input for valid sql identifier
+func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
+	l.lexSkipWhiteSpaces()
+	// first rune has to be valid unicode letter	
+	if !unicode.IsLetter(l.next()) {
+		l.errorToken("identifier must begin with a letter " + l.current())
+		return nil
+	}
+	for rune := l.next(); unicode.IsLetter(rune) || unicode.IsDigit(rune); rune = l.next() {
+
+	}
+	l.backup()
+	l.emit(typ)
+	return fn
+}
+
+// lexSqlLeftParenthesis scans input for (
+func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
+	l.lexSkipWhiteSpaces()
+	if l.next() != '(' {
+		l.errorToken("expected ( ")
+		return nil
+	}
+	l.emit(tokenTypeSqlLeftParenthesis)
+	return fn
+}
+
+// INSERT
+// lexSqlInsertInto matches "into" token
+func lexSqlInsertInto(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	return l.lexMatch(tokenTypeSqlInto, "into", 0, lexSqlInsertIntoTable)
+}
+
+// lexSqlInsertIntoTable matches table name token inside insert statement
+func lexSqlInsertIntoTable(l *lexer) stateFn {
+	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlInsertIntoTableLeftParenthesis)
+}
+
+// lexSqlInsertIntoTableLeftParenthesis scans input for (
+func lexSqlInsertIntoTableLeftParenthesis(l *lexer) stateFn {
+	return l.lexSqlLeftParenthesis(nil)
+}
+
 // lexCommand is the initial state function
 func lexCommand(l *lexer) stateFn {
-	lexSkipWhiteSpaces(l)
+	l.lexSkipWhiteSpaces()
 	switch l.next() {
 	case 'u': // update unsubscribe
 		if l.next() == 'p' {
-			return l.lexMatchCommand(tokenTypeSqlUpdate, "update", 2, nil)
+			return l.lexMatch(tokenTypeSqlUpdate, "update", 2, nil)
 		}
-		return l.lexMatchCommand(tokenTypeSqlUnsubscribe, "unsubscribe", 2, nil)
+		return l.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 2, nil)
 	case 's': // select subscribe status stop start
 		return lexCommandS(l)
 	case 'i': // insert
-		return l.lexMatchCommand(tokenTypeSqlInsert, "insert", 1, nil)
+		return l.lexMatch(tokenTypeSqlInsert, "insert", 1, lexSqlInsertInto)
 	case 'd': // delete
-		return l.lexMatchCommand(tokenTypeSqlDelete, "delete", 1, nil)
+		return l.lexMatch(tokenTypeSqlDelete, "delete", 1, nil)
 	case 'h': // help
-		return l.lexMatchCommand(tokenTypeCmdHelp, "help", 1, nil)
+		return l.lexMatch(tokenTypeCmdHelp, "help", 1, nil)
 	}
 	l.errorToken("Invalid command:" + l.current())
 	return nil

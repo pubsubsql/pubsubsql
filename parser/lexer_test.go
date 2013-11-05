@@ -39,42 +39,28 @@ func (consumer *chanTokenConsumer) Consume(t token) {
 	}
 }
 
-// Tests insert command
+func validateTokens(t *testing.T, expected []tokenType, tokens chan token) {
+	for _, et := range expected {
+		tken := <-tokens
+		if et != tken.typ {
+			t.Errorf("expected " + et.String() + " but got " + tken.typ.String())
+			break
+		}
+	}
+}
+
+// Tests insert sql statement
 func TestInsertCommand(t *testing.T) {
-	// valid 
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("insert into table1 (ticker, bid, ask) values (IBM, 12.45, 34.67)", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeSqlInsert {
-			t.Errorf("expected insert token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid 
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("insert1234", &consumer)
-		c := consumer.channel
-		// insert
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex("insert into stocks (ticker, bid, ask) values (IBM, 12.45, 34.67)", &consumer)
+	expected := []tokenType{
+		tokenTypeSqlInsert,
+		tokenTypeSqlInto,
+		tokenTypeSqlTable,
+		tokenTypeSqlLeftParenthesis,
+		tokenTypeEOF}
+
+	validateTokens(t, expected[0:], consumer.channel)
 }
 
 // Tests delete command
