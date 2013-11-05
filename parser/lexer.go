@@ -38,6 +38,7 @@ const (
 	tokenTypeSqlInsert                            // insert into
 	tokenTypeSqlInto                              // into table name
 	tokenTypeSqlUpdate                            // update table	
+	tokenTypeSqlSet                               // set
 	tokenTypeSqlDelete                            // delete from table name
 	tokenTypeSqlFrom                              // from table name
 	tokenTypeSqlSelect                            // select
@@ -81,6 +82,8 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlInto"
 	case tokenTypeSqlUpdate:
 		return "tokenTypeSqlUpdate"
+	case tokenTypeSqlSet:
+		return "tokenTypeSqlSet"
 	case tokenTypeSqlDelete:
 		return "tokenTypeSqlDelete"
 	case tokenTypeSqlFrom:
@@ -295,21 +298,29 @@ func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 		l.ignore()
 		for rune = l.next(); ; rune = l.next() {
 			if rune == '\'' {
-				rune = l.next()
-				// check for '''
-				if rune == '\'' {
-					typ = tokenTypeSqlValueWithSingleQuote
+				if !l.end() {
+					rune = l.next()
+					// check for '''
+					if rune == '\'' {
+						typ = tokenTypeSqlValueWithSingleQuote
+					} else {
+						// since we read lookahead after single quote that ends the string 
+						// for lookahead
+						l.backup()
+						// for single quote which is not part of the value
+						l.backup()
+						l.emit(typ)
+						// now ignore that single quote 
+						l.next()
+						l.ignore()
+						//
+						return fn
+					}
 				} else {
-					// since we read lookahead after single quote that ends the string 
-					// for lookahead
-					l.backup()
-					// for single quote which is not part of the value
+					// at the very end
 					l.backup()
 					l.emit(typ)
-					// now ignore that single quote 
 					l.next()
-					l.ignore()
-					//
 					return fn
 				}
 			}
@@ -417,7 +428,7 @@ func lexSqlWhere(l *lexer) stateFn {
 }
 
 // WHERE
-// TODO add more complex expressions
+// TODO add more where complex expressions
 
 func lexSqlWhereColumn(l *lexer) stateFn {
 	l.lexSkipWhiteSpaces()
@@ -450,7 +461,6 @@ func lexEof(l *lexer) stateFn {
 
 // SELECT
 // TODO add ability to select individual columns
-// TODO add more complex expressions
 
 func lexSqlSelectStar(l *lexer) stateFn {
 	l.lexSkipWhiteSpaces()
@@ -462,7 +472,50 @@ func lexSqlSelectStar(l *lexer) stateFn {
 	return nil
 }
 
-//
+// UPDATE
+
+func lexSqlUpdateTable(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlUpdateTableSet)
+}
+
+func lexSqlUpdateTableSet(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	return l.lexMatch(tokenTypeSqlSet, "set", 0, lexSqlColumn)
+}
+
+func lexSqlColumn(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	if l.end() {
+		return nil
+	}
+	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlColumnEqual)
+}
+
+func lexSqlColumnEqual(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	if l.next() == '=' {
+		l.emit(tokenTypeSqlEqual)
+		return lexSqlColumnEqualValue
+	}
+	l.errorToken("expecgted = ")
+	return nil
+}
+
+func lexSqlColumnEqualValue(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	return l.lexSqlValue(lexSqlCommaOrWhere)
+}
+
+func lexSqlCommaOrWhere(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	if l.next() == ',' {
+		l.emit(tokenTypeSqlComma)
+		return lexSqlColumn
+	}
+	l.backup()
+	return lexSqlWhere
+}
 
 // lexCommandST helper function to process status stop start commands
 func lexCommandST(l *lexer) stateFn {
@@ -507,7 +560,7 @@ func lexCommand(l *lexer) stateFn {
 	switch l.next() {
 	case 'u': // update unsubscribe
 		if l.next() == 'p' {
-			return l.lexMatch(tokenTypeSqlUpdate, "update", 2, nil)
+			return l.lexMatch(tokenTypeSqlUpdate, "update", 2, lexSqlUpdateTable)
 		}
 		return l.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 2, nil)
 	case 's': // select subscribe status stop start

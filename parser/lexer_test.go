@@ -40,14 +40,18 @@ func (consumer *chanTokenConsumer) Consume(t token) {
 }
 
 func validateTokens(t *testing.T, expected []token, tokens chan token) {
+	breakLoop := false
 	for _, e := range expected {
 		g := <-tokens
 		if e.typ != g.typ {
 			t.Errorf("expected type " + e.typ.String() + " but got " + g.typ.String() + " value: " + g.val)
-			break
+			breakLoop = true
 		}
 		if e.val != g.val {
 			t.Errorf("expected value " + e.val + " but got " + g.val)
+			breakLoop = true
+		}
+		if breakLoop {
 			break
 		}
 	}
@@ -141,6 +145,49 @@ func TestSqlSelectStatement2(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
+// UPDATE
+func TestSqlUpdateStatement1(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex(" update stocks set bid = 140.45, ask = 142.01 ", &consumer)
+	expected := []token{
+		{tokenTypeSqlUpdate, "update"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlSet, "set"},
+		{tokenTypeSqlColumn, "bid"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "140.45"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "ask"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "142.01"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+func TestSqlUpdateStatement2(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex(" update stocks set bid = 140.45, ask = '142.01' where ticker = 'GOOG'", &consumer)
+	expected := []token{
+		{tokenTypeSqlUpdate, "update"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlSet, "set"},
+		{tokenTypeSqlColumn, "bid"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "140.45"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "ask"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "142.01"},
+		{tokenTypeSqlWhere, "where"},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "GOOG"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
 // Tests help command
 func TestHelpCommand(t *testing.T) {
 	// valid
@@ -164,44 +211,6 @@ func TestHelpCommand(t *testing.T) {
 	{
 		consumer := chanTokenConsumer{channel: make(chan token)}
 		go lex("help1234", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-}
-
-// Tests update command
-func TestUpdateCommand(t *testing.T) {
-	// valid 
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("update table1 set bid = 123.12 where ticker = 'IBM'", &consumer)
-		c := consumer.channel
-		// help
-		tk := <-c
-		if tk.typ != tokenTypeSqlUpdate {
-			t.Errorf("expected update token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("update123", &consumer)
 		c := consumer.channel
 		//test error
 		tk := <-c
