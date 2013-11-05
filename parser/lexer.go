@@ -159,7 +159,7 @@ func (l *lexer) match(str string, skip int) bool {
 			done = false
 		}
 	}
-	if false == unicode.IsSpace(l.peek()) {
+	if false == isWhiteSpace(l.peek()) {
 		done = false
 		l.scanTillWhiteSpace()
 	}
@@ -176,17 +176,54 @@ func (l *lexer) lexMatchCommand(typ tokenType, command string, skip int, fn stat
 	return nil
 }
 
+// lexCommandST helper function to process status stop start commands
+func lexCommandST(l *lexer) stateFn {
+	switch l.next() {
+	case 'a':
+		if l.next() == 'r' {
+			return l.lexMatchCommand(tokenTypeCmdStart, "start", 4, nil)
+		}
+		return l.lexMatchCommand(tokenTypeCmdStatus, "status", 4, nil)
+	default:
+		return l.lexMatchCommand(tokenTypeCmdStop, "stop", 3, nil)
+	}
+	l.errorToken("Invalid command:" + l.current())
+	return nil
+}
+
+// lexCommandS helper function to process select subscribe status stop start commands
+func lexCommandS(l *lexer) stateFn {
+	switch l.next() {
+	case 'e':
+		return l.lexMatchCommand(tokenTypeSqlSelect, "select", 2, nil)
+	case 'u':
+		return l.lexMatchCommand(tokenTypeSqlSubscribe, "subscribe", 2, nil)
+	case 't':
+		return lexCommandST(l)
+	}
+	l.errorToken("Invalid command:" + l.current())
+	return nil
+}
+
+// skipWhiteSpaces skips white space characters
+func lexSkipWhiteSpaces(l *lexer) {
+	for rune := l.next(); unicode.IsSpace(rune); rune = l.next() {
+	}
+	l.backup()
+	l.ignore()
+}
+
 // lexCommand is the initial state function
 func lexCommand(l *lexer) stateFn {
-	rune := l.next()
-	switch rune {
+	lexSkipWhiteSpaces(l)
+	switch l.next() {
 	case 'u': // update unsubscribe
 		if l.next() == 'p' {
 			return l.lexMatchCommand(tokenTypeSqlUpdate, "update", 2, nil)
 		}
 		return l.lexMatchCommand(tokenTypeSqlUnsubscribe, "unsubscribe", 2, nil)
 	case 's': // select subscribe status stop start
-		return nil
+		return lexCommandS(l)
 	case 'i': // insert
 		return l.lexMatchCommand(tokenTypeSqlInsert, "insert", 1, nil)
 	case 'd': // delete
@@ -194,7 +231,7 @@ func lexCommand(l *lexer) stateFn {
 	case 'h': // help
 		return l.lexMatchCommand(tokenTypeCmdHelp, "help", 1, nil)
 	}
-
+	l.errorToken("Invalid command:" + l.current())
 	return nil
 }
 
