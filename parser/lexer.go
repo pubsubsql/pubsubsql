@@ -32,27 +32,27 @@ const (
 	tokenTypeCmdStatus                            // status
 	tokenTypeCmdStop                              // stop
 	tokenTypeCmdStart                             // start	
-	tokenTypeSqlCreate                            // create -> table
-	tokenTypeSqlTable                             // table -> table name
-	tokenTypeSqlInsert                            // insert -> into
-	tokenTypeSqlInto                              // into -> table
-	tokenTypeSqlUpdate                            // update -> table	
-	tokenTypeSqlDelete                            // delete -> from
-	tokenTypeSqlFrom                              // from -> table
+	tokenTypeSqlCreate                            // create table
+	tokenTypeSqlTable                             // table name
+	tokenTypeSqlColumn                            // column name
+	tokenTypeSqlInsert                            // insert into
+	tokenTypeSqlInto                              // into table name
+	tokenTypeSqlUpdate                            // update table	
+	tokenTypeSqlDelete                            // delete from table name
+	tokenTypeSqlFrom                              // from table name
 	tokenTypeSqlSelect                            // select
 	tokenTypeSqlSubscribe                         // subscribe
 	tokenTypeSqlUnsubscribe                       // unsubscribe 
 	tokenTypeSqlWhere                             // where
+	tokenTypeSqlValues                            // values
 	tokenTypeSqlStar                              // *
 	tokenTypeSqlEqual                             // =
 	tokenTypeSqlLeftParenthesis                   // (
 	tokenTypeSqlRightParenthesis                  // )
 	tokenTypeSqlComma                             // ,
-	tokenTypeSqlId                                // starts with alpha contains alnum 
 	tokenTypeSqlValue                             // continous sequence of chars delimited by WHITE SPACE | ' | , | ( | ) 
-	tokenTypeSqlAnsiQuote                         // '
-	tokenTypeSqlString                            // ' + any character + '  '' becomes ' inside the string
-	tokenTypeWhiteSpace                           // \n,\r,\t, space
+	// or string ' + any character + '  
+	tokenTypeSqlValueWithSingleQuote // '' becomes ' inside the string parser will nee to replace the string
 )
 
 func (typ tokenType) String() string {
@@ -73,6 +73,8 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlCreate"
 	case tokenTypeSqlTable:
 		return "tokenTypeSqlTable"
+	case tokenTypeSqlColumn:
+		return "tokenTypeSqlColumn"
 	case tokenTypeSqlInsert:
 		return "tokenTypeSqlInsert"
 	case tokenTypeSqlInto:
@@ -91,6 +93,8 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlUnsubscribe"
 	case tokenTypeSqlWhere:
 		return "tokenTypeSqlWhere"
+	case tokenTypeSqlValues:
+		return "tokenTypeSqlValues"
 	case tokenTypeSqlStar:
 		return "tokenTypeSqlStar"
 	case tokenTypeSqlEqual:
@@ -101,8 +105,10 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlRightParenthesis"
 	case tokenTypeSqlComma:
 		return "tokenTypeSqlComma"
-	case tokenTypeSqlId:
-		return "tokenTypeSqlId"
+	case tokenTypeSqlValue:
+		return "tokenTypeSqlValue"
+	case tokenTypeSqlValueWithSingleQuote:
+		return "tokenTypeSqlValueWithSingleQuote"
 	}
 	return "not implemented"
 }
@@ -171,6 +177,13 @@ func (l *lexer) next() (rune int32) {
 	return rune
 }
 
+func (l *lexer) end() bool {
+	if l.pos >= len(l.input) {
+		return true
+	}
+	return false
+}
+
 // ignore skips over the pending input before this point
 func (l *lexer) ignore() {
 	l.start = l.pos
@@ -199,7 +212,7 @@ func (l *lexer) scanTillWhiteSpace() {
 	}
 }
 
-// match reads input and matches against the string
+// match scans input and matches against the string
 func (l *lexer) match(str string, skip int) bool {
 	done := true
 	for _, rune := range str {
@@ -292,21 +305,117 @@ func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 	return fn
 }
 
+func (l *lexer) eof() stateFn {
+	l.emit(tokenTypeEOF)
+	return nil
+}
+
+func (l *lexer) lexSqlValue(fn stateFn) stateFn {
+	l.lexSkipWhiteSpaces()
+	if l.end() {
+		return l.eof()
+	}
+	rune := l.next()
+	typ := tokenTypeSqlValue
+	// real string
+	if rune == '\'' {
+		l.ignore()
+		for rune = l.next(); ; rune = l.next() {
+			if rune == '\'' {
+				rune = l.next()
+				// check for '''
+				if rune == '\'' {
+					typ = tokenTypeSqlValueWithSingleQuote
+				} else {
+					// since we read lookahead after single quote that ends the string 
+					// for lookahead
+					l.backup()
+					// for single quote which is not part of the value
+					l.backup()
+					l.emit(typ)
+					// now ignore that single quote 
+					l.next()
+					l.ignore()
+					//
+					return fn
+				}
+			}
+			if rune == 0 {
+				l.errorToken("string was not delimited")
+				return nil
+			}
+		}
+		// value 
+	} else {
+		for rune = l.next(); !isWhiteSpace(rune) && rune != ',' && rune != ')'; rune = l.next() {
+		}
+		l.backup()
+		l.emit(typ)
+		return fn
+	}
+	return nil
+}
+
 // INSERT
-// lexSqlInsertInto matches "into" token
+
 func lexSqlInsertInto(l *lexer) stateFn {
 	l.lexSkipWhiteSpaces()
 	return l.lexMatch(tokenTypeSqlInto, "into", 0, lexSqlInsertIntoTable)
 }
 
-// lexSqlInsertIntoTable matches table name token inside insert statement
 func lexSqlInsertIntoTable(l *lexer) stateFn {
 	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlInsertIntoTableLeftParenthesis)
 }
 
-// lexSqlInsertIntoTableLeftParenthesis scans input for (
 func lexSqlInsertIntoTableLeftParenthesis(l *lexer) stateFn {
-	return l.lexSqlLeftParenthesis(nil)
+	return l.lexSqlLeftParenthesis(lexSqlInsertColumn)
+}
+
+func lexSqlInsertColumn(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlInsertColumnCommaOrRightParenthesis)
+}
+
+func lexSqlInsertColumnCommaOrRightParenthesis(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	switch l.next() {
+	case ',':
+		l.emit(tokenTypeSqlComma)
+		return lexSqlInsertColumn
+	case ')':
+		l.emit(tokenTypeSqlRightParenthesis)
+		return lexSqlInsertValues
+	}
+	l.errorToken("expected , or ) ")
+	return nil
+}
+
+func lexSqlInsertValues(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	return l.lexMatch(tokenTypeSqlValues, "values", 0, lexSqlInsertValuesLeftParenthesis)
+}
+
+func lexSqlInsertValuesLeftParenthesis(l *lexer) stateFn {
+	return l.lexSqlLeftParenthesis(lexSqlInsertVal)
+}
+
+func lexSqlInsertVal(l *lexer) stateFn {
+	return l.lexSqlValue(lexSqlValueCommaOrRigthParenthesis)
+}
+
+func lexSqlValueCommaOrRigthParenthesis(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	switch l.next() {
+	case ',':
+		l.emit(tokenTypeSqlComma)
+		return lexSqlInsertVal
+	case ')':
+		l.emit(tokenTypeSqlRightParenthesis)
+		// we are done with insert
+		return nil
+	}
+	l.errorToken("expected , or ) ")
+	return nil
 }
 
 // lexCommand is the initial state function

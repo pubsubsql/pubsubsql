@@ -39,11 +39,15 @@ func (consumer *chanTokenConsumer) Consume(t token) {
 	}
 }
 
-func validateTokens(t *testing.T, expected []tokenType, tokens chan token) {
-	for _, et := range expected {
-		tken := <-tokens
-		if et != tken.typ {
-			t.Errorf("expected " + et.String() + " but got " + tken.typ.String())
+func validateTokens(t *testing.T, expected []token, tokens chan token) {
+	for _, e := range expected {
+		g := <-tokens
+		if e.typ != g.typ {
+			t.Errorf("expected type " + e.typ.String() + " but got " + g.typ.String() + " value: " + g.val)
+			break
+		}
+		if e.val != g.val {
+			t.Errorf("expected value " + e.val + " but got " + g.val)
 			break
 		}
 	}
@@ -52,15 +56,29 @@ func validateTokens(t *testing.T, expected []tokenType, tokens chan token) {
 // Tests insert sql statement
 func TestInsertCommand(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan token)}
-	go lex("insert into stocks (ticker, bid, ask) values (IBM, 12.45, 34.67)", &consumer)
-	expected := []tokenType{
-		tokenTypeSqlInsert,
-		tokenTypeSqlInto,
-		tokenTypeSqlTable,
-		tokenTypeSqlLeftParenthesis,
-		tokenTypeEOF}
+	go lex("insert into stocks (	ticker,bid, ask		 ) values (IBM, '34.43', 465.123)", &consumer)
+	expected := []token{
+		{tokenTypeSqlInsert, "insert"},
+		{tokenTypeSqlInto, "into"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlLeftParenthesis, "("},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "bid"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "ask"},
+		{tokenTypeSqlRightParenthesis, ")"},
+		{tokenTypeSqlValues, "values"},
+		{tokenTypeSqlLeftParenthesis, "("},
+		{tokenTypeSqlValue, "IBM"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlValue, "34.43"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlValue, "465.123"},
+		{tokenTypeSqlRightParenthesis, ")"},
+		{tokenTypeEOF, ""}}
 
-	validateTokens(t, expected[0:], consumer.channel)
+	validateTokens(t, expected, consumer.channel)
 }
 
 // Tests delete command
