@@ -54,7 +54,7 @@ func validateTokens(t *testing.T, expected []token, tokens chan token) {
 }
 
 // Tests insert sql statement
-func TestInsertCommand(t *testing.T) {
+func TestSqlInsertStatement(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan token)}
 	go lex("insert into stocks (	ticker,bid, ask		 ) values (IBM, '34.43', 465.123)", &consumer)
 	expected := []token{
@@ -81,42 +81,34 @@ func TestInsertCommand(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
-// Tests delete command
-func TestDeleteCommand(t *testing.T) {
-	// valid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("delete from table1 where ticker = 'IBM'", &consumer)
-		c := consumer.channel
-		// delete
-		tk := <-c
-		if tk.typ != tokenTypeSqlDelete {
-			t.Errorf("expected delete token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("delete1234", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
+// Tests delete sql statement
+func TestSqlDeleteStatement1(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex(" delete	 	 from stocks", &consumer)
+	expected := []token{
+		{tokenTypeSqlDelete, "delete"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+// Tests insert sql statement
+func TestSqlDeleteStatement2(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex(" delete	 	 from stocks where ticker = 'IBM'  ", &consumer)
+	expected := []token{
+		{tokenTypeSqlDelete, "delete"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlWhere, "where"},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "IBM"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
 }
 
 // Tests help command

@@ -231,6 +231,20 @@ func (l *lexer) match(str string, skip int) bool {
 	return done
 }
 
+func (l *lexer) tryMatch(str string) bool {
+	i := 0
+	for _, rune := range str {
+		i++
+		if rune != l.next() {
+			for ; i > 0; i-- {
+				l.backup()
+			}
+			return false
+		}
+	}
+	return true
+}
+
 // lexMatch matches expected command
 func (l *lexer) lexMatch(typ tokenType, command string, skip int, fn stateFn) stateFn {
 	if l.match(command, skip) {
@@ -305,15 +319,11 @@ func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 	return fn
 }
 
-func (l *lexer) eof() stateFn {
-	l.emit(tokenTypeEOF)
-	return nil
-}
-
 func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 	l.lexSkipWhiteSpaces()
 	if l.end() {
-		return l.eof()
+		l.errorToken("expected value but go eof")
+		return nil
 	}
 	rune := l.next()
 	typ := tokenTypeSqlValue
@@ -354,6 +364,16 @@ func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 		return fn
 	}
 	return nil
+}
+
+// lexTryMatch tries to match expected keyword
+func (l *lexer) lexTryMatch(typ tokenType, keyword string, fnMatch stateFn, fnNoMatch stateFn) stateFn {
+	l.lexSkipWhiteSpaces()
+	if l.tryMatch(keyword) {
+		l.emit(typ)
+		return fnMatch
+	}
+	return fnNoMatch
 }
 
 // INSERT
@@ -400,10 +420,10 @@ func lexSqlInsertValuesLeftParenthesis(l *lexer) stateFn {
 }
 
 func lexSqlInsertVal(l *lexer) stateFn {
-	return l.lexSqlValue(lexSqlValueCommaOrRigthParenthesis)
+	return l.lexSqlValue(lexSqlInsertValueCommaOrRigthParenthesis)
 }
 
-func lexSqlValueCommaOrRigthParenthesis(l *lexer) stateFn {
+func lexSqlInsertValueCommaOrRigthParenthesis(l *lexer) stateFn {
 	l.lexSkipWhiteSpaces()
 	switch l.next() {
 	case ',':
@@ -415,6 +435,54 @@ func lexSqlValueCommaOrRigthParenthesis(l *lexer) stateFn {
 		return nil
 	}
 	l.errorToken("expected , or ) ")
+	return nil
+}
+
+// DELETE
+
+func lexSqlDeleteFrom(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	l.lexSkipWhiteSpaces()
+	return l.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlDeleteFromTable)
+}
+
+func lexSqlDeleteFromTable(l *lexer) stateFn {
+	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlWhere)
+}
+
+func lexSqlWhere(l *lexer) stateFn {
+	return l.lexTryMatch(tokenTypeSqlWhere, "where", lexSqlWhereColumn, nil)
+}
+
+// WHERE
+// TODO later add more complex expressions
+
+func lexSqlWhereColumn(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlWhereColumnEqual)
+}
+
+func lexSqlWhereColumnEqual(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	if l.next() == '=' {
+		l.emit(tokenTypeSqlEqual)
+		return lexSqlWhereColumnEqualValue
+	}
+	l.errorToken("expected = ")
+	return nil
+}
+
+func lexSqlWhereColumnEqualValue(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	return l.lexSqlValue(lexEof)
+}
+
+func lexEof(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	if l.end() {
+		return nil
+	}
+	l.errorToken("unexpected token at the end of statement")
 	return nil
 }
 
@@ -432,7 +500,7 @@ func lexCommand(l *lexer) stateFn {
 	case 'i': // insert
 		return l.lexMatch(tokenTypeSqlInsert, "insert", 1, lexSqlInsertInto)
 	case 'd': // delete
-		return l.lexMatch(tokenTypeSqlDelete, "delete", 1, nil)
+		return l.lexMatch(tokenTypeSqlDelete, "delete", 1, lexSqlDeleteFrom)
 	case 'h': // help
 		return l.lexMatch(tokenTypeCmdHelp, "help", 1, nil)
 	}
