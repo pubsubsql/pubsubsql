@@ -255,43 +255,6 @@ func (l *lexer) lexMatch(typ tokenType, command string, skip int, fn stateFn) st
 	return nil
 }
 
-// lexCommandST helper function to process status stop start commands
-func lexCommandST(l *lexer) stateFn {
-	switch l.next() {
-	case 'a':
-		if l.next() == 'r' {
-			return l.lexMatch(tokenTypeCmdStart, "start", 4, nil)
-		}
-		return l.lexMatch(tokenTypeCmdStatus, "status", 4, nil)
-	default:
-		return l.lexMatch(tokenTypeCmdStop, "stop", 3, nil)
-	}
-	l.errorToken("Invalid command:" + l.current())
-	return nil
-}
-
-// lexCommandS helper function to process select subscribe status stop start commands
-func lexCommandS(l *lexer) stateFn {
-	switch l.next() {
-	case 'e':
-		return l.lexMatch(tokenTypeSqlSelect, "select", 2, nil)
-	case 'u':
-		return l.lexMatch(tokenTypeSqlSubscribe, "subscribe", 2, nil)
-	case 't':
-		return lexCommandST(l)
-	}
-	l.errorToken("Invalid command:" + l.current())
-	return nil
-}
-
-// skipWhiteSpaces skips white space characters
-func (l *lexer) lexSkipWhiteSpaces() {
-	for rune := l.next(); unicode.IsSpace(rune); rune = l.next() {
-	}
-	l.backup()
-	l.ignore()
-}
-
 // lexSqlIndentifier scans input for valid sql identifier
 func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
 	l.lexSkipWhiteSpaces()
@@ -440,13 +403,12 @@ func lexSqlInsertValueCommaOrRigthParenthesis(l *lexer) stateFn {
 
 // DELETE
 
-func lexSqlDeleteFrom(l *lexer) stateFn {
+func lexSqlFrom(l *lexer) stateFn {
 	l.lexSkipWhiteSpaces()
-	l.lexSkipWhiteSpaces()
-	return l.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlDeleteFromTable)
+	return l.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlFromTable)
 }
 
-func lexSqlDeleteFromTable(l *lexer) stateFn {
+func lexSqlFromTable(l *lexer) stateFn {
 	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlWhere)
 }
 
@@ -455,7 +417,7 @@ func lexSqlWhere(l *lexer) stateFn {
 }
 
 // WHERE
-// TODO later add more complex expressions
+// TODO add more complex expressions
 
 func lexSqlWhereColumn(l *lexer) stateFn {
 	l.lexSkipWhiteSpaces()
@@ -486,6 +448,59 @@ func lexEof(l *lexer) stateFn {
 	return nil
 }
 
+// SELECT
+// TODO add ability to select individual columns
+// TODO add more complex expressions
+
+func lexSqlSelectStar(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	if l.next() == '*' {
+		l.emit(tokenTypeSqlStar)
+		return lexSqlFrom
+	}
+	l.errorToken("expected columns or *")
+	return nil
+}
+
+//
+
+// lexCommandST helper function to process status stop start commands
+func lexCommandST(l *lexer) stateFn {
+	switch l.next() {
+	case 'a':
+		if l.next() == 'r' {
+			return l.lexMatch(tokenTypeCmdStart, "start", 4, nil)
+		}
+		return l.lexMatch(tokenTypeCmdStatus, "status", 4, nil)
+	default:
+		return l.lexMatch(tokenTypeCmdStop, "stop", 3, nil)
+	}
+	l.errorToken("Invalid command:" + l.current())
+	return nil
+}
+
+// lexCommandS helper function to process select subscribe status stop start commands
+func lexCommandS(l *lexer) stateFn {
+	switch l.next() {
+	case 'e':
+		return l.lexMatch(tokenTypeSqlSelect, "select", 2, lexSqlSelectStar)
+	case 'u':
+		return l.lexMatch(tokenTypeSqlSubscribe, "subscribe", 2, nil)
+	case 't':
+		return lexCommandST(l)
+	}
+	l.errorToken("Invalid command:" + l.current())
+	return nil
+}
+
+// skipWhiteSpaces skips white space characters
+func (l *lexer) lexSkipWhiteSpaces() {
+	for rune := l.next(); unicode.IsSpace(rune); rune = l.next() {
+	}
+	l.backup()
+	l.ignore()
+}
+
 // lexCommand is the initial state function
 func lexCommand(l *lexer) stateFn {
 	l.lexSkipWhiteSpaces()
@@ -500,7 +515,7 @@ func lexCommand(l *lexer) stateFn {
 	case 'i': // insert
 		return l.lexMatch(tokenTypeSqlInsert, "insert", 1, lexSqlInsertInto)
 	case 'd': // delete
-		return l.lexMatch(tokenTypeSqlDelete, "delete", 1, lexSqlDeleteFrom)
+		return l.lexMatch(tokenTypeSqlDelete, "delete", 1, lexSqlFrom)
 	case 'h': // help
 		return l.lexMatch(tokenTypeCmdHelp, "help", 1, nil)
 	}

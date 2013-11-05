@@ -53,7 +53,7 @@ func validateTokens(t *testing.T, expected []token, tokens chan token) {
 	}
 }
 
-// Tests insert sql statement
+// INSERT 
 func TestSqlInsertStatement(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan token)}
 	go lex("insert into stocks (	ticker,bid, ask		 ) values (IBM, '34.43', 465.123)", &consumer)
@@ -81,7 +81,7 @@ func TestSqlInsertStatement(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
-// Tests delete sql statement
+// DELETE 
 func TestSqlDeleteStatement1(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan token)}
 	go lex(" delete	 	 from stocks", &consumer)
@@ -94,12 +94,42 @@ func TestSqlDeleteStatement1(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
-// Tests insert sql statement
 func TestSqlDeleteStatement2(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan token)}
 	go lex(" delete	 	 from stocks where ticker = 'IBM'  ", &consumer)
 	expected := []token{
 		{tokenTypeSqlDelete, "delete"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlWhere, "where"},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "IBM"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+// SELECT
+func TestSqlSelectStatement1(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex(" select * 	from stocks", &consumer)
+	expected := []token{
+		{tokenTypeSqlSelect, "select"},
+		{tokenTypeSqlStar, "*"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+func TestSqlSelectStatement2(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex(" select	* 	 from stocks where ticker = IBM", &consumer)
+	expected := []token{
+		{tokenTypeSqlSelect, "select"},
+		{tokenTypeSqlStar, "*"},
 		{tokenTypeSqlFrom, "from"},
 		{tokenTypeSqlTable, "stocks"},
 		{tokenTypeSqlWhere, "where"},
@@ -248,44 +278,6 @@ func TestSubscribeCommand(t *testing.T) {
 	{
 		consumer := chanTokenConsumer{channel: make(chan token)}
 		go lex("subscribe123", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-}
-
-// Tests select command
-func TestSelectCommand(t *testing.T) {
-	// valid 
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("select * from table1", &consumer)
-		c := consumer.channel
-		// help
-		tk := <-c
-		if tk.typ != tokenTypeSqlSelect {
-			t.Errorf("expected select token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("select123", &consumer)
 		c := consumer.channel
 		//test error
 		tk := <-c
