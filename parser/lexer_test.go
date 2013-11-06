@@ -19,6 +19,13 @@ package pubsubsql
 import "testing"
 import "fmt"
 
+// ignores consumed tokens usifull in benchmark code
+type ignoreTokenConsumer struct {
+}
+
+func (c *ignoreTokenConsumer) Consume(t token) {
+}
+
 // prints consumed tokens on a separate line
 type printlnTokenConsumer struct {
 }
@@ -56,6 +63,35 @@ func validateTokens(t *testing.T, expected []token, tokens chan token) {
 		}
 	}
 }
+
+// BENCHMARKS
+
+// UPDATE
+// update 1 column
+func BenchmarkUpdate1(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var consumer ignoreTokenConsumer 
+		lex("update table1 set col1 = 'value1' where key = '1234567890'", &consumer)
+	}
+}
+
+// update 2 columns
+func BenchmarkUpdate2(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var consumer ignoreTokenConsumer 
+		lex("update table1 set col1 = 'value1', col2 = 'value2 where key = '1234567890'", &consumer)
+	}
+}
+
+// update 4 columns
+func BenchmarkUpdate4(b *testing.B) {
+	for i := 0; i < b.N; i++ {
+		var consumer ignoreTokenConsumer 
+		lex("update table1 set col1 = 'value1', col2 = 'value2, col3 = 'value3' col4 = value4 where key = '1234567890'", &consumer)
+	}
+}
+
+// END BENCHMARKS
 
 // INSERT 
 func TestSqlInsertStatement(t *testing.T) {
