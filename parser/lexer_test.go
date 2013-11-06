@@ -66,7 +66,7 @@ func validateTokens(t *testing.T, expected []token, tokens chan token) {
 
 // BENCHMARKS
 
-// UPDATE
+// UPDATE "go test -test.bench Update"
 // update 1 column
 func BenchmarkUpdate1(b *testing.B) {
 	for i := 0; i < b.N; i++ {
