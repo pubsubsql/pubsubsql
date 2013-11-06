@@ -145,6 +145,50 @@ func TestSqlSelectStatement2(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
+// SUBSCRIBE
+func TestSqlSubscribeStatement1(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex(" subscribe * 	from stocks", &consumer)
+	expected := []token{
+		{tokenTypeSqlSubscribe, "subscribe"},
+		{tokenTypeSqlStar, "*"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+func TestSqlSubscribeStatement2(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex(" subscribe	* 	 from stocks where ticker = 'MSFT'", &consumer)
+	expected := []token{
+		{tokenTypeSqlSubscribe, "subscribe"},
+		{tokenTypeSqlStar, "*"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlWhere, "where"},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "MSFT"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+// UNSUBSCRIBE
+func TestSqlUnrsubscribeStatement1(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex("unsubscribe from stocks", &consumer)
+	expected := []token{
+		{tokenTypeSqlUnsubscribe, "unsubscribe"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
 // UPDATE
 func TestSqlUpdateStatement1(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan token)}
@@ -188,230 +232,46 @@ func TestSqlUpdateStatement2(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
-// Tests help command
+// HELP
 func TestHelpCommand(t *testing.T) {
-	// valid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("help", &consumer)
-		c := consumer.channel
-		// help
-		tk := <-c
-		if tk.typ != tokenTypeCmdHelp {
-			t.Errorf("expected help token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("help1234", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex(" help       ", &consumer)
+	expected := []token{
+		{tokenTypeCmdHelp, "help"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
 }
 
-// Tests unsubscribe command
-func TestUnsubscribeCommand(t *testing.T) {
-	// valid 
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("unsubscribe from table1", &consumer)
-		c := consumer.channel
-		// help
-		tk := <-c
-		if tk.typ != tokenTypeSqlUnsubscribe {
-			t.Errorf("expected unsubscribe token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("unsubscribe123", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-}
-
-// Tests subscribe command
-func TestSubscribeCommand(t *testing.T) {
-	// valid 
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("subscribe * from table1", &consumer)
-		c := consumer.channel
-		// help
-		tk := <-c
-		if tk.typ != tokenTypeSqlSubscribe {
-			t.Errorf("expected subscribe token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("subscribe123", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-}
-
-// Tests start command
+// START
 func TestStartCommand(t *testing.T) {
-	// valid 
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("start", &consumer)
-		c := consumer.channel
-		// help
-		tk := <-c
-		if tk.typ != tokenTypeCmdStart {
-			t.Errorf("expected start token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex(" start12344", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex("start", &consumer)
+	expected := []token{
+		{tokenTypeCmdStart, "start"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
 }
 
-// Tests stop command
+// STOP
 func TestStopCommand(t *testing.T) {
-	// valid 
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex(" 	stop", &consumer)
-		c := consumer.channel
-		// help
-		tk := <-c
-		if tk.typ != tokenTypeCmdStop {
-			t.Errorf("expected stop token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("stop1234", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex("stop", &consumer)
+	expected := []token{
+		{tokenTypeCmdStop, "stop"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
 }
 
-// Tests status command
+// STATUS
 func TestStatusCommand(t *testing.T) {
-	// valid 
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex(" 	status   ", &consumer)
-		c := consumer.channel
-		// help
-		tk := <-c
-		if tk.typ != tokenTypeCmdStatus {
-			t.Errorf("expected stop token")
-		}
-		// eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
-	// invalid
-	{
-		consumer := chanTokenConsumer{channel: make(chan token)}
-		go lex("stop1234", &consumer)
-		c := consumer.channel
-		//test error
-		tk := <-c
-		if tk.typ != tokenTypeError {
-			t.Errorf("expected error token")
-		}
-		//test eof	
-		tk = <-c
-		if tk.typ != tokenTypeEOF {
-			t.Errorf("expected eof token")
-		}
-		//
-	}
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex("status", &consumer)
+	expected := []token{
+		{tokenTypeCmdStatus, "status"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
 }

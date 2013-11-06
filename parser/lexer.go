@@ -180,6 +180,7 @@ func (l *lexer) next() (rune int32) {
 	return rune
 }
 
+// end returns whether end was reached in the input
 func (l *lexer) end() bool {
 	if l.pos >= len(l.input) {
 		return true
@@ -204,11 +205,12 @@ func (l *lexer) peek() int32 {
 	return rune
 }
 
+// isWhiteSpace determines if rune is valid unicode space character or 0
 func isWhiteSpace(rune int32) bool {
 	return (unicode.IsSpace(rune) || rune == 0)
 }
 
-// read till first unicode White space character
+// scanTillWhiteSpace reads till first unicode White space character
 func (l *lexer) scanTillWhiteSpace() {
 	for rune := l.next(); !isWhiteSpace(rune); rune = l.next() {
 
@@ -234,9 +236,10 @@ func (l *lexer) match(str string, skip int) bool {
 	return done
 }
 
-func (l *lexer) tryMatch(str string) bool {
+// tryMatch scans input and tries to match the string value
+func (l *lexer) tryMatch(val string) bool {
 	i := 0
-	for _, rune := range str {
+	for _, rune := range val {
 		i++
 		if rune != l.next() {
 			for ; i > 0; i-- {
@@ -248,9 +251,9 @@ func (l *lexer) tryMatch(str string) bool {
 	return true
 }
 
-// lexMatch matches expected command
-func (l *lexer) lexMatch(typ tokenType, command string, skip int, fn stateFn) stateFn {
-	if l.match(command, skip) {
+// lexMatch matches expected string value
+func (l *lexer) lexMatch(typ tokenType, value string, skip int, fn stateFn) stateFn {
+	if l.match(value, skip) {
 		l.emit(typ)
 		return fn
 	}
@@ -274,7 +277,7 @@ func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
 	return fn
 }
 
-// lexSqlLeftParenthesis scans input for (
+// lexSqlLeftParenthesis scans input for '('
 func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 	l.lexSkipWhiteSpaces()
 	if l.next() != '(' {
@@ -285,6 +288,9 @@ func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 	return fn
 }
 
+// lexSqlValue scans input for valid sql value
+// single quoted string 'some string '' '
+// unicode character sequence delimited by white space or ')' or ','
 func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 	l.lexSkipWhiteSpaces()
 	if l.end() {
@@ -340,10 +346,10 @@ func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 	return nil
 }
 
-// lexTryMatch tries to match expected keyword
-func (l *lexer) lexTryMatch(typ tokenType, keyword string, fnMatch stateFn, fnNoMatch stateFn) stateFn {
+// lexTryMatch tries to match expected value returns next state function depending on the match
+func (l *lexer) lexTryMatch(typ tokenType, val string, fnMatch stateFn, fnNoMatch stateFn) stateFn {
 	l.lexSkipWhiteSpaces()
-	if l.tryMatch(keyword) {
+	if l.tryMatch(val) {
 		l.emit(typ)
 		return fnMatch
 	}
@@ -431,7 +437,6 @@ func lexSqlWhere(l *lexer) stateFn {
 // TODO add more where complex expressions
 
 func lexSqlWhereColumn(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
 	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlWhereColumnEqual)
 }
 
@@ -517,6 +522,19 @@ func lexSqlCommaOrWhere(l *lexer) stateFn {
 	return lexSqlWhere
 }
 
+// UNSUBSCRIBE
+
+func lexSqlUnsubscribeFrom(l *lexer) stateFn {
+	l.lexSkipWhiteSpaces()
+	return l.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlUnsubscribeFromTable)
+}
+
+func lexSqlUnsubscribeFromTable(l *lexer) stateFn {
+	return l.lexSqlIdentifier(tokenTypeSqlTable, nil)
+}
+
+// END SQL
+
 // lexCommandST helper function to process status stop start commands
 func lexCommandST(l *lexer) stateFn {
 	switch l.next() {
@@ -538,7 +556,7 @@ func lexCommandS(l *lexer) stateFn {
 	case 'e':
 		return l.lexMatch(tokenTypeSqlSelect, "select", 2, lexSqlSelectStar)
 	case 'u':
-		return l.lexMatch(tokenTypeSqlSubscribe, "subscribe", 2, nil)
+		return l.lexMatch(tokenTypeSqlSubscribe, "subscribe", 2, lexSqlSelectStar)
 	case 't':
 		return lexCommandST(l)
 	}
@@ -562,7 +580,7 @@ func lexCommand(l *lexer) stateFn {
 		if l.next() == 'p' {
 			return l.lexMatch(tokenTypeSqlUpdate, "update", 2, lexSqlUpdateTable)
 		}
-		return l.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 2, nil)
+		return l.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 2, lexSqlUnsubscribeFrom)
 	case 's': // select subscribe status stop start
 		return lexCommandS(l)
 	case 'i': // insert
