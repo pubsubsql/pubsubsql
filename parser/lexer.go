@@ -32,15 +32,14 @@ const (
 	tokenTypeCmdStatus                            // status
 	tokenTypeCmdStop                              // stop
 	tokenTypeCmdStart                             // start	
-	tokenTypeSqlCreate                            // create table
 	tokenTypeSqlTable                             // table name
 	tokenTypeSqlColumn                            // column name
-	tokenTypeSqlInsert                            // insert into
-	tokenTypeSqlInto                              // into table name
-	tokenTypeSqlUpdate                            // update table	
+	tokenTypeSqlInsert                            // insert
+	tokenTypeSqlInto                              // into
+	tokenTypeSqlUpdate                            // update	
 	tokenTypeSqlSet                               // set
-	tokenTypeSqlDelete                            // delete from table name
-	tokenTypeSqlFrom                              // from table name
+	tokenTypeSqlDelete                            // delete
+	tokenTypeSqlFrom                              // from
 	tokenTypeSqlSelect                            // select
 	tokenTypeSqlSubscribe                         // subscribe
 	tokenTypeSqlUnsubscribe                       // unsubscribe 
@@ -51,9 +50,10 @@ const (
 	tokenTypeSqlLeftParenthesis                   // (
 	tokenTypeSqlRightParenthesis                  // )
 	tokenTypeSqlComma                             // ,
-	tokenTypeSqlValue                             // continous sequence of chars delimited by WHITE SPACE | ' | , | ( | ) 
-	// or string ' + any character + '  
-	tokenTypeSqlValueWithSingleQuote // '' becomes ' inside the string parser will nee to replace the string
+	tokenTypeSqlValue                             // 'some string' string or continous sequence of chars delimited by WHITE SPACE | ' | , | ( | ) 
+	tokenTypeSqlValueWithSingleQuote 			  // '' becomes ' inside the string, parser will need to replace the string
+	tokenTypeSqlKey								  // key
+	tokenTypeSqlTag								  // tag
 )
 
 func (typ tokenType) String() string {
@@ -70,8 +70,6 @@ func (typ tokenType) String() string {
 		return "tokenTypeCmdStop"
 	case tokenTypeCmdStart:
 		return "tokenTypeCmdStart"
-	case tokenTypeSqlCreate:
-		return "tokenTypeSqlCreate"
 	case tokenTypeSqlTable:
 		return "tokenTypeSqlTable"
 	case tokenTypeSqlColumn:
@@ -112,6 +110,10 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlValue"
 	case tokenTypeSqlValueWithSingleQuote:
 		return "tokenTypeSqlValueWithSingleQuote"
+	case tokenTypeSqlKey:
+		return "tokenTypeSqlKey"
+	case tokenTypeSqlTag:
+		return "tokenTypeSqlTag"
 	}
 	return "not implemented"
 }
@@ -533,6 +535,17 @@ func lexSqlUnsubscribeFromTable(l *lexer) stateFn {
 	return l.lexSqlIdentifier(tokenTypeSqlTable, nil)
 }
 
+// KEY 
+// TAG
+
+func lexSqlKeyTable(l *lexer) stateFn {
+	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlKeyColumn)
+}
+
+func lexSqlKeyColumn(l *lexer) stateFn {
+	return l.lexSqlIdentifier(tokenTypeSqlColumn, nil)
+}
+
 // END SQL
 
 // lexCommandST helper function to process status stop start commands
@@ -589,6 +602,10 @@ func lexCommand(l *lexer) stateFn {
 		return l.lexMatch(tokenTypeSqlDelete, "delete", 1, lexSqlFrom)
 	case 'h': // help
 		return l.lexMatch(tokenTypeCmdHelp, "help", 1, nil)
+	case 'k': // key
+		return l.lexMatch(tokenTypeSqlKey, "key", 1, lexSqlKeyTable)
+	case 't': // tag
+		return l.lexMatch(tokenTypeSqlTag, "tag", 1, lexSqlKeyTable)
 	}
 	l.errorToken("Invalid command:" + l.current())
 	return nil

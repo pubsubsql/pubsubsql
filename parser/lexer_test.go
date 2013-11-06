@@ -268,6 +268,32 @@ func TestSqlUpdateStatement2(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
+// KEY
+func TestSqlKeyStatement(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex("key stocks ticker", &consumer)
+	expected := []token{
+		{tokenTypeSqlKey, "key"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+// TAG
+func TestSqlTagStatement(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan token)}
+	go lex("tag stocks sector", &consumer)
+	expected := []token{
+		{tokenTypeSqlTag, "tag"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlColumn, "sector"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
 // HELP
 func TestHelpCommand(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan token)}
