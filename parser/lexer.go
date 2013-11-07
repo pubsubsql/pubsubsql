@@ -26,34 +26,34 @@ import (
 type tokenType uint8
 
 const (
-	tokenTypeError               tokenType = iota // error occured 
-	tokenTypeEOF                                  // last token
-	tokenTypeCmdHelp                              // help
-	tokenTypeCmdStatus                            // status
-	tokenTypeCmdStop                              // stop
-	tokenTypeCmdStart                             // start	
-	tokenTypeSqlTable                             // table name
-	tokenTypeSqlColumn                            // column name
-	tokenTypeSqlInsert                            // insert
-	tokenTypeSqlInto                              // into
-	tokenTypeSqlUpdate                            // update	
-	tokenTypeSqlSet                               // set
-	tokenTypeSqlDelete                            // delete
-	tokenTypeSqlFrom                              // from
-	tokenTypeSqlSelect                            // select
-	tokenTypeSqlSubscribe                         // subscribe
-	tokenTypeSqlUnsubscribe                       // unsubscribe 
-	tokenTypeSqlWhere                             // where
-	tokenTypeSqlValues                            // values
-	tokenTypeSqlStar                              // *
-	tokenTypeSqlEqual                             // =
-	tokenTypeSqlLeftParenthesis                   // (
-	tokenTypeSqlRightParenthesis                  // )
-	tokenTypeSqlComma                             // ,
-	tokenTypeSqlValue                             // 'some string' string or continous sequence of chars delimited by WHITE SPACE | ' | , | ( | ) 
-	tokenTypeSqlValueWithSingleQuote 			  // '' becomes ' inside the string, parser will need to replace the string
-	tokenTypeSqlKey								  // key
-	tokenTypeSqlTag								  // tag
+	tokenTypeError                   tokenType = iota // error occured 
+	tokenTypeEOF                                      // last token
+	tokenTypeCmdHelp                                  // help
+	tokenTypeCmdStatus                                // status
+	tokenTypeCmdStop                                  // stop
+	tokenTypeCmdStart                                 // start	
+	tokenTypeSqlTable                                 // table name
+	tokenTypeSqlColumn                                // column name
+	tokenTypeSqlInsert                                // insert
+	tokenTypeSqlInto                                  // into
+	tokenTypeSqlUpdate                                // update	
+	tokenTypeSqlSet                                   // set
+	tokenTypeSqlDelete                                // delete
+	tokenTypeSqlFrom                                  // from
+	tokenTypeSqlSelect                                // select
+	tokenTypeSqlSubscribe                             // subscribe
+	tokenTypeSqlUnsubscribe                           // unsubscribe 
+	tokenTypeSqlWhere                                 // where
+	tokenTypeSqlValues                                // values
+	tokenTypeSqlStar                                  // *
+	tokenTypeSqlEqual                                 // =
+	tokenTypeSqlLeftParenthesis                       // (
+	tokenTypeSqlRightParenthesis                      // )
+	tokenTypeSqlComma                                 // ,
+	tokenTypeSqlValue                                 // 'some string' string or continous sequence of chars delimited by WHITE SPACE | ' | , | ( | ) 
+	tokenTypeSqlValueWithSingleQuote                  // '' becomes ' inside the string, parser will need to replace the string
+	tokenTypeSqlKey                                   // key
+	tokenTypeSqlTag                                   // tag
 )
 
 func (typ tokenType) String() string {
@@ -145,6 +145,7 @@ type lexer struct {
 	pos    int           // currenty position in the input
 	width  int           // width of last rune read from input
 	tokens tokenConsumer // consumed tokens
+	err    bool          // error flag
 }
 
 // stateFn represents the state of the lexer
@@ -155,8 +156,14 @@ type stateFn func(*lexer) stateFn
 // by passing back a nil ponter that will be the next statei,
 // terminating l.run
 func (l *lexer) errorToken(format string, args ...interface{}) stateFn {
+	l.err = true
 	l.tokens.Consume(token{tokenTypeError, fmt.Sprintf(format, args...)})
 	return nil
+}
+
+// ok returns true if scan was a success  
+func (l *lexer) ok() bool {
+	return !l.err
 }
 
 // emit passes a token to the token consumer 
@@ -621,10 +628,12 @@ func (l *lexer) run() {
 }
 
 // lex scans the input by running lexer 
-func lex(input string, tokens tokenConsumer) {
+func lex(input string, tokens tokenConsumer) bool {
 	l := &lexer{
 		input:  input,
 		tokens: tokens,
+		err:    false,
 	}
 	l.run()
+	return l.ok()
 }
