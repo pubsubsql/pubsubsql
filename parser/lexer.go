@@ -135,7 +135,7 @@ func (t token) String() string {
 
 // tokenConsumer consumes tokens emited by lexer
 type tokenConsumer interface {
-	Consume(t token)
+	Consume(t *token)
 }
 
 // lexer holds the state of the scanner
@@ -156,8 +156,8 @@ type stateFn func(*lexer) stateFn
 // by passing back a nil ponter that will be the next statei,
 // terminating l.run
 func (l *lexer) errorToken(format string, args ...interface{}) stateFn {
-	l.err = fmt.Sprintf(format, args...);
-	l.tokens.Consume(token{tokenTypeError, l.err})
+	l.err = fmt.Sprintf(format, args...)
+	l.tokens.Consume(&token{tokenTypeError, l.err})
 	return nil
 }
 
@@ -168,7 +168,7 @@ func (l *lexer) ok() bool {
 
 // emit passes a token to the token consumer 
 func (l *lexer) emit(t tokenType) {
-	l.tokens.Consume(token{t, l.current()})
+	l.tokens.Consume(&token{t, l.current()})
 }
 
 // returns current lexeme string

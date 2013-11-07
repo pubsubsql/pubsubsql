@@ -23,30 +23,30 @@ import "fmt"
 type ignoreTokenConsumer struct {
 }
 
-func (c *ignoreTokenConsumer) Consume(t token) {
+func (c *ignoreTokenConsumer) Consume(t *token) {
 }
 
 // prints consumed tokens on a separate line
 type printlnTokenConsumer struct {
 }
 
-func (c *printlnTokenConsumer) Consume(t token) {
+func (c *printlnTokenConsumer) Consume(t *token) {
 	fmt.Println(t)
 }
 
 // sends consumed tokens to the channel
 type chanTokenConsumer struct {
-	channel chan token
+	channel chan *token
 }
 
-func (consumer *chanTokenConsumer) Consume(t token) {
+func (consumer *chanTokenConsumer) Consume(t *token) {
 	consumer.channel <- t
 	if t.typ == tokenTypeEOF {
 		close(consumer.channel)
 	}
 }
 
-func validateTokens(t *testing.T, expected []token, tokens chan token) {
+func validateTokens(t *testing.T, expected []token, tokens chan *token) {
 	breakLoop := false
 	for _, e := range expected {
 		g := <-tokens
@@ -95,7 +95,7 @@ func BenchmarkUpdate4(b *testing.B) {
 
 // INSERT 
 func TestSqlInsertStatement(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("insert into stocks (	ticker,bid, ask		 ) values (IBM, '34.43', 465.123)", &consumer)
 	expected := []token{
 		{tokenTypeSqlInsert, "insert"},
@@ -123,7 +123,7 @@ func TestSqlInsertStatement(t *testing.T) {
 
 // DELETE 
 func TestSqlDeleteStatement1(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" delete	 	 from stocks", &consumer)
 	expected := []token{
 		{tokenTypeSqlDelete, "delete"},
@@ -135,7 +135,7 @@ func TestSqlDeleteStatement1(t *testing.T) {
 }
 
 func TestSqlDeleteStatement2(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" delete	 	 from stocks where ticker = 'IBM'  ", &consumer)
 	expected := []token{
 		{tokenTypeSqlDelete, "delete"},
@@ -152,7 +152,7 @@ func TestSqlDeleteStatement2(t *testing.T) {
 
 // SELECT
 func TestSqlSelectStatement1(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" select * 	from stocks", &consumer)
 	expected := []token{
 		{tokenTypeSqlSelect, "select"},
@@ -165,7 +165,7 @@ func TestSqlSelectStatement1(t *testing.T) {
 }
 
 func TestSqlSelectStatement2(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" select	* 	 from stocks where ticker = IBM", &consumer)
 	expected := []token{
 		{tokenTypeSqlSelect, "select"},
@@ -183,7 +183,7 @@ func TestSqlSelectStatement2(t *testing.T) {
 
 // SUBSCRIBE
 func TestSqlSubscribeStatement1(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" subscribe * 	from stocks", &consumer)
 	expected := []token{
 		{tokenTypeSqlSubscribe, "subscribe"},
@@ -196,7 +196,7 @@ func TestSqlSubscribeStatement1(t *testing.T) {
 }
 
 func TestSqlSubscribeStatement2(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" subscribe	* 	 from stocks where ticker = 'MSFT'", &consumer)
 	expected := []token{
 		{tokenTypeSqlSubscribe, "subscribe"},
@@ -214,7 +214,7 @@ func TestSqlSubscribeStatement2(t *testing.T) {
 
 // UNSUBSCRIBE
 func TestSqlUnrsubscribeStatement1(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("unsubscribe from stocks", &consumer)
 	expected := []token{
 		{tokenTypeSqlUnsubscribe, "unsubscribe"},
@@ -227,7 +227,7 @@ func TestSqlUnrsubscribeStatement1(t *testing.T) {
 
 // UPDATE
 func TestSqlUpdateStatement1(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" update stocks set bid = 140.45, ask = 142.01 ", &consumer)
 	expected := []token{
 		{tokenTypeSqlUpdate, "update"},
@@ -246,7 +246,7 @@ func TestSqlUpdateStatement1(t *testing.T) {
 }
 
 func TestSqlUpdateStatement2(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" update stocks set bid = 140.45, ask = '142.01' where ticker = 'GOOG'", &consumer)
 	expected := []token{
 		{tokenTypeSqlUpdate, "update"},
@@ -270,7 +270,7 @@ func TestSqlUpdateStatement2(t *testing.T) {
 
 // KEY
 func TestSqlKeyStatement(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("key stocks ticker", &consumer)
 	expected := []token{
 		{tokenTypeSqlKey, "key"},
@@ -283,7 +283,7 @@ func TestSqlKeyStatement(t *testing.T) {
 
 // TAG
 func TestSqlTagStatement(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("tag stocks sector", &consumer)
 	expected := []token{
 		{tokenTypeSqlTag, "tag"},
@@ -296,7 +296,7 @@ func TestSqlTagStatement(t *testing.T) {
 
 // HELP
 func TestHelpCommand(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" help       ", &consumer)
 	expected := []token{
 		{tokenTypeCmdHelp, "help"},
@@ -307,7 +307,7 @@ func TestHelpCommand(t *testing.T) {
 
 // START
 func TestStartCommand(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("start", &consumer)
 	expected := []token{
 		{tokenTypeCmdStart, "start"},
@@ -318,7 +318,7 @@ func TestStartCommand(t *testing.T) {
 
 // STOP
 func TestStopCommand(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("stop", &consumer)
 	expected := []token{
 		{tokenTypeCmdStop, "stop"},
@@ -329,7 +329,7 @@ func TestStopCommand(t *testing.T) {
 
 // STATUS
 func TestStatusCommand(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan token)}
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("status", &consumer)
 	expected := []token{
 		{tokenTypeCmdStatus, "status"},
