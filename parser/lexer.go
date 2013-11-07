@@ -145,7 +145,7 @@ type lexer struct {
 	pos    int           // currenty position in the input
 	width  int           // width of last rune read from input
 	tokens tokenConsumer // consumed tokens
-	err    bool          // error flag
+	err    string        // error message
 }
 
 // stateFn represents the state of the lexer
@@ -156,14 +156,14 @@ type stateFn func(*lexer) stateFn
 // by passing back a nil ponter that will be the next statei,
 // terminating l.run
 func (l *lexer) errorToken(format string, args ...interface{}) stateFn {
-	l.err = true
-	l.tokens.Consume(token{tokenTypeError, fmt.Sprintf(format, args...)})
+	l.err = fmt.Sprintf(format, args...);
+	l.tokens.Consume(token{tokenTypeError, l.err})
 	return nil
 }
 
 // ok returns true if scan was a success  
 func (l *lexer) ok() bool {
-	return !l.err
+	return len(l.err) > 0
 }
 
 // emit passes a token to the token consumer 
@@ -266,8 +266,7 @@ func (l *lexer) lexMatch(typ tokenType, value string, skip int, fn stateFn) stat
 		l.emit(typ)
 		return fn
 	}
-	l.errorToken("Unexpected token:" + l.current())
-	return nil
+	return l.errorToken("Unexpected token:" + l.current())
 }
 
 // lexSqlIndentifier scans input for valid sql identifier
@@ -275,8 +274,7 @@ func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
 	l.lexSkipWhiteSpaces()
 	// first rune has to be valid unicode letter	
 	if !unicode.IsLetter(l.next()) {
-		l.errorToken("identifier must begin with a letter " + l.current())
-		return nil
+		return l.errorToken("identifier must begin with a letter " + l.current())
 	}
 	for rune := l.next(); unicode.IsLetter(rune) || unicode.IsDigit(rune); rune = l.next() {
 
@@ -290,8 +288,7 @@ func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
 func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 	l.lexSkipWhiteSpaces()
 	if l.next() != '(' {
-		l.errorToken("expected ( ")
-		return nil
+		return l.errorToken("expected ( ")
 	}
 	l.emit(tokenTypeSqlLeftParenthesis)
 	return fn
@@ -303,8 +300,7 @@ func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 	l.lexSkipWhiteSpaces()
 	if l.end() {
-		l.errorToken("expected value but go eof")
-		return nil
+		return l.errorToken("expected value but go eof")
 	}
 	rune := l.next()
 	typ := tokenTypeSqlValue
@@ -340,8 +336,7 @@ func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 				}
 			}
 			if rune == 0 {
-				l.errorToken("string was not delimited")
-				return nil
+				return l.errorToken("string was not delimited")
 			}
 		}
 		// value 
@@ -395,8 +390,7 @@ func lexSqlInsertColumnCommaOrRightParenthesis(l *lexer) stateFn {
 		l.emit(tokenTypeSqlRightParenthesis)
 		return lexSqlInsertValues
 	}
-	l.errorToken("expected , or ) ")
-	return nil
+	return l.errorToken("expected , or ) ")
 }
 
 func lexSqlInsertValues(l *lexer) stateFn {
@@ -423,8 +417,7 @@ func lexSqlInsertValueCommaOrRigthParenthesis(l *lexer) stateFn {
 		// we are done with insert
 		return nil
 	}
-	l.errorToken("expected , or ) ")
-	return nil
+	return l.errorToken("expected , or ) ")
 }
 
 // DELETE
@@ -455,8 +448,7 @@ func lexSqlWhereColumnEqual(l *lexer) stateFn {
 		l.emit(tokenTypeSqlEqual)
 		return lexSqlWhereColumnEqualValue
 	}
-	l.errorToken("expected = ")
-	return nil
+	return l.errorToken("expected = ")
 }
 
 func lexSqlWhereColumnEqualValue(l *lexer) stateFn {
@@ -469,8 +461,7 @@ func lexEof(l *lexer) stateFn {
 	if l.end() {
 		return nil
 	}
-	l.errorToken("unexpected token at the end of statement")
-	return nil
+	return l.errorToken("unexpected token at the end of statement")
 }
 
 // SELECT
@@ -482,8 +473,7 @@ func lexSqlSelectStar(l *lexer) stateFn {
 		l.emit(tokenTypeSqlStar)
 		return lexSqlFrom
 	}
-	l.errorToken("expected columns or *")
-	return nil
+	return l.errorToken("expected columns or *")
 }
 
 // UPDATE
@@ -512,8 +502,7 @@ func lexSqlColumnEqual(l *lexer) stateFn {
 		l.emit(tokenTypeSqlEqual)
 		return lexSqlColumnEqualValue
 	}
-	l.errorToken("expecgted = ")
-	return nil
+	return l.errorToken("expecgted = ")
 }
 
 func lexSqlColumnEqualValue(l *lexer) stateFn {
@@ -566,8 +555,7 @@ func lexCommandST(l *lexer) stateFn {
 	default:
 		return l.lexMatch(tokenTypeCmdStop, "stop", 3, nil)
 	}
-	l.errorToken("Invalid command:" + l.current())
-	return nil
+	return l.errorToken("Invalid command:" + l.current())
 }
 
 // lexCommandS helper function to process select subscribe status stop start commands
@@ -580,8 +568,7 @@ func lexCommandS(l *lexer) stateFn {
 	case 't':
 		return lexCommandST(l)
 	}
-	l.errorToken("Invalid command:" + l.current())
-	return nil
+	return l.errorToken("Invalid command:" + l.current())
 }
 
 // skipWhiteSpaces skips white space characters
@@ -614,8 +601,7 @@ func lexCommand(l *lexer) stateFn {
 	case 't': // tag
 		return l.lexMatch(tokenTypeSqlTag, "tag", 1, lexSqlKeyTable)
 	}
-	l.errorToken("Invalid command:" + l.current())
-	return nil
+	return l.errorToken("Invalid command:" + l.current())
 }
 
 // run scans the input by executing state functon until 
@@ -632,7 +618,6 @@ func lex(input string, tokens tokenConsumer) bool {
 	l := &lexer{
 		input:  input,
 		tokens: tokens,
-		err:    false,
 	}
 	l.run()
 	return l.ok()
