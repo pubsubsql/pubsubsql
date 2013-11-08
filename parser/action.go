@@ -75,8 +75,17 @@ func (f *sqlFilter) addFilter(col string, val string) {
 
 // sqlInsertAction is an action for sql insert statement
 type sqlInsertAction struct {
-	table  string
-	values []columnValue
+	sqlAction
+	table   string
+	colVals []*columnValue
+}
+
+func (a *sqlInsertAction) addColumn(col string) {
+	a.colVals = append(a.colVals, &columnValue{col: col})
+}
+
+func (a *sqlInsertAction) setValueAt(idx int, val string) {
+	a.colVals[idx].val = val
 }
 
 // sqlSelectAction is an action for sql select statement

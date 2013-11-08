@@ -80,13 +80,82 @@ func (p *parser) parseSqlInsert() action {
 	if t.typ != tokenTypeSqlInto {
 		return p.parseError("expected into")
 	}
-	act := new(sqlSelectAction)
+	act := &sqlInsertAction{
+		colVals: make([]*columnValue, 0, 10),
+	}
 	// table name
 	if erract := p.parseTableName(&act.table); erract != nil {
 		return erract
 	}
+	// (
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlLeftParenthesis {
+		return p.parseError("expected ( ")
+	}
+	// columns
+	count := 0
+	expectedType := tokenTypeSqlColumn
+	var erract action
+	var str string
+	for expectedType == tokenTypeSqlColumn {
+		erract, expectedType, str = p.parseSqlInsertColumn()
+		if erract != nil {
+			return erract
+		}
+		act.addColumn(str)
+		count++
+	}
+	// values
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlValues {
+		return p.parseError("expected values keyword")
+	}
+	expectedType = tokenTypeSqlValue
+	idx := 0
+	for expectedType == tokenTypeSqlValue {
+		if idx > count {
+			return p.parseError("expected ) symbol (more values specified than columns?) ")
+		}
+		erract, expectedType, str = p.parseSqlInsertValue()
+		if erract != nil {
+			return erract
+		}
+		act.setValueAt(idx, str)
+		count--
+		idx++
+	}
+	// done
+	return act
+}
 
-	return nil
+func (p *parser) parseSqlInsertColumn() (action, tokenType, string) {
+	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlColumn {
+		return p.parseError("expected column name"), tokenTypeError, ""
+	}
+	t = p.tokens.Produce()
+	if t.typ == tokenTypeSqlComma {
+		return nil, tokenTypeSqlColumn, t.val
+	}
+	if t.typ == tokenTypeSqlRightParenthesis {
+		return nil, tokenTypeSqlValue, ""
+	}
+	return p.parseError("expected , or ) "), tokenTypeError, ""
+}
+
+func (p *parser) parseSqlInsertValue() (action, tokenType, string) {
+	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlValue {
+		return p.parseError("expected column name"), tokenTypeError, ""
+	}
+	t = p.tokens.Produce()
+	if t.typ == tokenTypeSqlComma {
+		return nil, tokenTypeSqlColumn, t.val
+	}
+	if t.typ == tokenTypeSqlRightParenthesis {
+		return nil, tokenTypeEOF, ""
+	}
+	return p.parseError("expected , or ) "), tokenTypeError, ""
 }
 
 // SELECT
