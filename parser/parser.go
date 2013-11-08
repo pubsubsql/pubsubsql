@@ -33,18 +33,103 @@ func (p *parser) parseError(s string) *errorAction {
 	return &e
 }
 
-// UPDATE
-func (p *parser) parseSqlUpdate() action {
+func (p *parser) parseSqlEqualVal(colval *columnValue, t *token) action {
+	//col
+	if t == nil {
+		t = p.tokens.Produce()
+	}
+	if t.typ != tokenTypeSqlColumn {
+		return p.parseError("expected.col name")
+	}
+	colval.col = t.val
+	// =
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlEqual {
+		return p.parseError("expected = sign")
+	}
+	// value
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlValue {
+		return p.parseError("expected valid value")
+	}
+	colval.val = t.val
+	return nil
+}
+
+func (p *parser) parseTableName(table *string) action {
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlTable {
 		return p.parseError("expected table name")
-
 	}
+	*table = t.val
+	return nil
+}
+
+func (p *parser) parseSqlWhere(filter *sqlFilter, t *token) action {
+	//must be where
+	if t != nil && t.typ != tokenTypeSqlWhere {
+		return p.parseError("expected where clause")
+	}
+	return p.parseSqlEqualVal(&(filter.columnValue), nil)
+}
+
+// INSERT
+func (p *parser) parseSqlInsert() action {
+	// into
+	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlInto {
+		return p.parseError("expected into")
+	}
+	act := new(sqlSelectAction)
+	// table name
+	if erract := p.parseTableName(&act.table); erract != nil {
+		return erract
+	}
+
+	return nil
+}
+
+// SELECT
+func (p *parser) parseSqlSelect() action {
+	// *
+	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlStar {
+		return p.parseError("expected * symbol")
+	}
+	// from
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlFrom {
+		return p.parseError("expected from")
+	}
+	act := new(sqlSelectAction)
+	// table name
+	if erract := p.parseTableName(&act.table); erract != nil {
+		return erract
+	}
+	// possible eof
+	t = p.tokens.Produce()
+	if t.typ == tokenTypeEOF {
+		return act
+	}
+	// where
+	if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
+		return erract
+	}
+	// we are good
+	return act
+}
+
+// UPDATE
+func (p *parser) parseSqlUpdate() action {
 	act := &sqlUpdateAction{
-		table:   t.val,
 		colVals: make([]*columnValue, 0, 10),
 	}
-	t = p.tokens.Produce()
+	// table name
+	if erract := p.parseTableName(&act.table); erract != nil {
+		return erract
+	}
+	// set
+	t := p.tokens.Produce()
 	if t.typ == tokenTypeSqlSet {
 		return p.parseSqlUpdateColVals(act)
 	}
@@ -87,76 +172,6 @@ loop:
 	return act
 }
 
-func (p *parser) parseSqlEqualVal(colval *columnValue, t *token) action {
-	//col
-	if t == nil {
-		t = p.tokens.Produce()
-	}
-	if t.typ != tokenTypeSqlColumn {
-		return p.parseError("expected.col name")
-	}
-	colval.col = t.val
-	// =
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlEqual {
-		return p.parseError("expected = sign")
-	}
-	// value
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlValue {
-		return p.parseError("expected valid value")
-	}
-	colval.val = t.val
-	return nil
-}
-
-// WHERE CLAUSE
-func (p *parser) parseSqlWhere(filter *sqlFilter, t *token) action {
-	//must be where
-	if t != nil && t.typ != tokenTypeSqlWhere {
-		return p.parseError("expected where clause")
-	}
-	return p.parseSqlEqualVal(&(filter.columnValue), nil)
-}
-
-// INSERT
-func (p *parser) parseSqlInsert() action {
-	return nil
-}
-
-// SELECT
-func (p *parser) parseSqlSelect() action {
-	// *
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlStar {
-		return p.parseError("expected * symbol")
-	}
-	// from
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlFrom {
-		return p.parseError("expected from")
-	}
-	// table name
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlTable {
-		return p.parseError("expected table name")
-	}
-	act := &sqlSelectAction{
-		table: t.val,
-	}
-	// possible eof
-	t = p.tokens.Produce()
-	if t.typ == tokenTypeEOF {
-		return act
-	}
-	// where
-	if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
-		return erract
-	}
-	// we are good
-	return act
-}
-
 // DELETE
 func (p *parser) parseSqlDelete() action {
 	// from
@@ -164,13 +179,10 @@ func (p *parser) parseSqlDelete() action {
 	if t.typ != tokenTypeSqlFrom {
 		return p.parseError("expected from")
 	}
+	act := new(sqlDeleteAction)
 	// table name
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlTable {
-		return p.parseError("expected table name")
-	}
-	act := &sqlDeleteAction{
-		table: t.val,
+	if erract := p.parseTableName(&act.table); erract != nil {
+		return erract
 	}
 	// possible eof
 	t = p.tokens.Produce()

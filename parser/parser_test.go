@@ -69,7 +69,7 @@ func validateSelect(t *testing.T, a action, y *sqlSelectAction) {
 		x := a.(*sqlSelectAction)
 		// table name
 		if x.table != y.table {
-			t.Errorf("parse error: unexpected table name: " + x.table)
+			t.Errorf("parse error: table names do not match " + x.table)
 		}
 		// filter
 		if x.filter != y.filter {
@@ -92,7 +92,7 @@ func validateDelete(t *testing.T, a action, y *sqlDeleteAction) {
 		x := a.(*sqlDeleteAction)
 		// table name
 		if x.table != y.table {
-			t.Errorf("parse error: unexpected table name: " + x.table)
+			t.Errorf("parse error: table names do not match  " + x.table)
 		}
 		// filter
 		if x.filter != y.filter {

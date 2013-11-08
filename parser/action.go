@@ -79,13 +79,6 @@ type sqlInsertAction struct {
 	values []columnValue
 }
 
-// sqlDeleteAction is an action for sql delete statement
-type sqlDeleteAction struct {
-	sqlAction
-	table  string
-	filter sqlFilter
-}
-
 // sqlSelectAction is an action for sql select statement
 type sqlSelectAction struct {
 	sqlAction
@@ -103,4 +96,11 @@ type sqlUpdateAction struct {
 
 func (a *sqlUpdateAction) addColVal(col string, val string) {
 	a.colVals = append(a.colVals, &columnValue{col: col, val: val})
+}
+
+// sqlDeleteAction is an action for sql delete statement
+type sqlDeleteAction struct {
+	sqlAction
+	table  string
+	filter sqlFilter
 }
