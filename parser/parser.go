@@ -16,6 +16,8 @@
 
 package pubsubsql
 
+import "fmt"
+
 // tokenProducer produces tokens for the parser 
 type tokenProducer interface {
 	Produce() *token
@@ -93,7 +95,7 @@ func (p *parser) parseSqlInsert() action {
 		return p.parseError("expected ( ")
 	}
 	// columns
-	count := 0
+	columns := 0
 	expectedType := tokenTypeSqlColumn
 	var erract action
 	var str string
@@ -103,26 +105,37 @@ func (p *parser) parseSqlInsert() action {
 			return erract
 		}
 		act.addColumn(str)
-		count++
+		columns++
 	}
 	// values
 	t = p.tokens.Produce()
 	if t.typ != tokenTypeSqlValues {
 		return p.parseError("expected values keyword")
 	}
+	// (
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlLeftParenthesis {
+		return p.parseError("expected values ( ")
+	}
+	//
 	expectedType = tokenTypeSqlValue
 	idx := 0
+	values := 0
 	for expectedType == tokenTypeSqlValue {
-		if idx > count {
-			return p.parseError("expected ) symbol (more values specified than columns?) ")
+		if idx >= columns {
+			break
 		}
 		erract, expectedType, str = p.parseSqlInsertValue()
 		if erract != nil {
 			return erract
 		}
-		act.setValueAt(idx, str)
-		count--
+		act.setValueAt(values, str)
+		values++
 		idx++
+	}
+	if columns != values {
+		s := fmt.Sprintf("number of columns:%d and values:%d do not match", columns, values)
+		return p.parseError(s)
 	}
 	// done
 	return act
@@ -133,12 +146,13 @@ func (p *parser) parseSqlInsertColumn() (action, tokenType, string) {
 	if t.typ != tokenTypeSqlColumn {
 		return p.parseError("expected column name"), tokenTypeError, ""
 	}
+	str := t.val
 	t = p.tokens.Produce()
 	if t.typ == tokenTypeSqlComma {
-		return nil, tokenTypeSqlColumn, t.val
+		return nil, tokenTypeSqlColumn, str
 	}
 	if t.typ == tokenTypeSqlRightParenthesis {
-		return nil, tokenTypeSqlValue, ""
+		return nil, tokenTypeSqlValues, str
 	}
 	return p.parseError("expected , or ) "), tokenTypeError, ""
 }
@@ -146,14 +160,15 @@ func (p *parser) parseSqlInsertColumn() (action, tokenType, string) {
 func (p *parser) parseSqlInsertValue() (action, tokenType, string) {
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlValue {
-		return p.parseError("expected column name"), tokenTypeError, ""
+		return p.parseError("expected value"), tokenTypeError, ""
 	}
+	str := t.val
 	t = p.tokens.Produce()
 	if t.typ == tokenTypeSqlComma {
-		return nil, tokenTypeSqlColumn, t.val
+		return nil, tokenTypeSqlValue, str
 	}
 	if t.typ == tokenTypeSqlRightParenthesis {
-		return nil, tokenTypeEOF, ""
+		return nil, tokenTypeEOF, str
 	}
 	return p.parseError("expected , or ) "), tokenTypeError, ""
 }

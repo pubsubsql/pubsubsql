@@ -84,6 +84,10 @@ func (a *sqlInsertAction) addColumn(col string) {
 	a.colVals = append(a.colVals, &columnValue{col: col})
 }
 
+func (a *sqlInsertAction) addColVal(col string, val string) {
+	a.colVals = append(a.colVals, &columnValue{col: col, val: val})
+}
+
 func (a *sqlInsertAction) setValueAt(idx int, val string) {
 	a.colVals[idx].val = val
 }
