@@ -36,18 +36,19 @@ func (p *parser) parseError(s string) *errorAction {
 // UPDATE
 func (p *parser) parseSqlUpdate() action {
 	t := p.tokens.Produce()
-	if t.typ == tokenTypeSqlTable {
-		act := &sqlUpdateAction{
-			table:   t.val,
-			colVals: make([]*columnValue, 0, 10),
-		}
-		t = p.tokens.Produce()
-		if t.typ == tokenTypeSqlSet {
-			return p.parseSqlUpdateColVals(act)
-		}
-		return p.parseError("expected set keyword")
+	if t.typ != tokenTypeSqlTable {
+		return p.parseError("expected table name")
+
 	}
-	return p.parseError("expected table name")
+	act := &sqlUpdateAction{
+		table:   t.val,
+		colVals: make([]*columnValue, 0, 10),
+	}
+	t = p.tokens.Produce()
+	if t.typ == tokenTypeSqlSet {
+		return p.parseSqlUpdateColVals(act)
+	}
+	return p.parseError("expected set keyword")
 }
 
 func (p *parser) parseSqlUpdateColVals(act *sqlUpdateAction) action {
@@ -116,7 +117,35 @@ func (p *parser) parseSqlInsert() action {
 
 // SELECT
 func (p *parser) parseSqlSelect() action {
-	return nil
+	// table name
+	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlTable {
+		return p.parseError("expected table name")
+	}
+	act := &sqlSelectAction{
+		table:   t.val,
+	}
+	// *
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlStar {
+		return p.parseError("expected * symbol")
+	}
+	// possible eof
+	t = p.tokens.Produce()
+	if t.typ == tokenTypeEOF {
+		return act	
+	}	
+	// than it must be where
+	t = p.tokens.Produce() 
+	if t.typ != tokenTypeSqlWhere {
+		return p.parseError("expected table name")
+
+	}
+	if erract := p.parseSqlEqualVal(&(act.filter), nil); erract != nil {
+		return erract
+	}
+	// we are good
+	return act
 }
 
 // DELETE

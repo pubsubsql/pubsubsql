@@ -49,17 +49,50 @@ func (p *tokensProducerConsumer) Produce() *token {
 	return t	
 }
 
-func validate(t *testing.T, a action, y *sqlUpdateAction) {
+func expectedError(t *testing.T, a action) { 
+	switch a.(type) {
+	case *errorAction:
+
+	default:
+		t.Errorf("parse error: expected error") 
+	}
+	
+}
+
+func validateSelect(t *testing.T, a action, y *sqlSelectAction) {
 	switch a.(type) {
 	case *errorAction:
 		e := a.(*errorAction)
-		t.Errorf("parse error: ", e.err) 
+		t.Errorf("parse error: " + e.err) 
+
+	case *sqlSelectAction:
+		x := a.(*sqlSelectAction)
+		// table name
+		if x.table != y.table {
+			t.Errorf("parse error: unexpected table name: " + x.table) 
+		}				
+		// filter
+		if x.filter != y.filter {
+			t.Errorf("parse error: filters do not match") 
+		}
+
+	default:
+		t.Errorf("parse error: invalid action type expected sqlSelectAction") 
+	}
+	
+}
+
+func validateUpdate(t *testing.T, a action, y *sqlUpdateAction) {
+	switch a.(type) {
+	case *errorAction:
+		e := a.(*errorAction)
+		t.Errorf("parse error: " +  e.err) 
 
 	case *sqlUpdateAction:
 		x := a.(*sqlUpdateAction)
 		// table name
 		if x.table != y.table {
-			t.Errorf("parse error: unexpected table name: " + x.table) 
+			t.Errorf("parse error: table names do not match " + x.table) 
 		}				
 		// number of columns and values
 		if len(x.colVals) != len(y.colVals) {
@@ -75,37 +108,27 @@ func validate(t *testing.T, a action, y *sqlUpdateAction) {
 		// filter
 		if x.filter != y.filter {
 			t.Errorf("parse error: filters do not match") 
+			
 		}
 
 	default:
-		t.Errorf("parse error: invalid action type expected sqlUpdateAction") 
 	}
-	
+
 }
 
-func expectedError(t* testing.T, a action) {
-	switch a.(type) {
-	case *errorAction:
-
-	default:
-		t.Errorf("parse error: expected error") 
-	}
-}
-
-// UPDATE
-func TestParseSqlUpdateStatement1(t *testing.T) {
+func TestParseSqlUpdateStatement2(t *testing.T) {
 	pc := newTokens()
-	lex(" update stocks set bid = 140.45, ask = 142.01 ", pc)
+	lex(" update stocks set bid = 140.45, ask = 142.01", pc)
 	x := parse(pc)	
 	var y sqlUpdateAction
 	y.table = "stocks"	
 	y.addColVal("bid", "140.45")
 	y.addColVal("ask", "142.01")
-	validate(t, x, &y)	
+	validateUpdate(t, x, &y)	
 	
 }
 
-func TestParseSqlUpdateStatement2(t *testing.T) {
+func TestParseSqlUpdateStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" update stocks set bid = 140.45, ask = 142.01, sector = 'TECH' where ticker = IBM", pc)
 	x := parse(pc)	
@@ -115,7 +138,7 @@ func TestParseSqlUpdateStatement2(t *testing.T) {
 	y.addColVal("ask", "142.01")
 	y.addColVal("sector", "TECH")
 	y.addFilter("ticker", "IBM")
-	validate(t, x, &y)	
+	validateUpdate(t, x, &y)	
 }
 
 func TestParseSqlUpdateStatement3(t *testing.T) {
@@ -133,5 +156,16 @@ func TestParseSqlUpdateStatement3(t *testing.T) {
 	lex(" update stocks set ", pc)
 	x = parse(pc)	
 	expectedError(t, x)
+}
+
+// SELECT
+
+func TestParseSqlSelectStatement1(t *testing.T) {
+	pc := newTokens()
+	lex(" select *  stocks ", pc)
+	x := parse(pc)	
+	var y sqlSelectAction
+	y.table = "stocks"	
+	validateSelect(t, x, &y)	
 }
 

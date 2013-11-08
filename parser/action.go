@@ -71,6 +71,7 @@ type sqlInsertAction struct {
 
 // sqlSelectAction is an action for sql select statement
 type sqlSelectAction struct {
+	sqlAction
 	table  string
 	filter columnValue
 }
