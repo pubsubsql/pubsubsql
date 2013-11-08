@@ -117,18 +117,23 @@ func (p *parser) parseSqlInsert() action {
 
 // SELECT
 func (p *parser) parseSqlSelect() action {
-	// table name
+	// *
 	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlStar {
+		return p.parseError("expected * symbol")
+	}
+	// from
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlFrom {
+		return p.parseError("expected from")
+	}
+	// table name
+	t = p.tokens.Produce()
 	if t.typ != tokenTypeSqlTable {
 		return p.parseError("expected table name")
 	}
 	act := &sqlSelectAction{
 		table:   t.val,
-	}
-	// *
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlStar {
-		return p.parseError("expected * symbol")
 	}
 	// possible eof
 	t = p.tokens.Produce()
@@ -136,9 +141,8 @@ func (p *parser) parseSqlSelect() action {
 		return act	
 	}	
 	// than it must be where
-	t = p.tokens.Produce() 
 	if t.typ != tokenTypeSqlWhere {
-		return p.parseError("expected table name")
+		return p.parseError("expected where clause")
 
 	}
 	if erract := p.parseSqlEqualVal(&(act.filter), nil); erract != nil {

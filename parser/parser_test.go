@@ -162,10 +162,22 @@ func TestParseSqlUpdateStatement3(t *testing.T) {
 
 func TestParseSqlSelectStatement1(t *testing.T) {
 	pc := newTokens()
-	lex(" select *  stocks ", pc)
+	lex(" select *  from stocks ", pc)
 	x := parse(pc)	
 	var y sqlSelectAction
 	y.table = "stocks"	
 	validateSelect(t, x, &y)	
 }
+
+func TestParseSqlSelectStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" select *  from stocks where  ticker = 'IBM'", pc)
+	x := parse(pc)	
+	var y sqlSelectAction
+	y.table = "stocks"	
+	y.filter.column = "ticker"
+	y.filter.val = "IBM"
+	validateSelect(t, x, &y)	
+}
+
 
