@@ -82,6 +82,28 @@ func validateSelect(t *testing.T, a action, y *sqlSelectAction) {
 
 }
 
+func validateDelete(t *testing.T, a action, y *sqlDeleteAction) {
+	switch a.(type) {
+	case *errorAction:
+		e := a.(*errorAction)
+		t.Errorf("parse error: " + e.err)
+
+	case *sqlDeleteAction:
+		x := a.(*sqlDeleteAction)
+		// table name
+		if x.table != y.table {
+			t.Errorf("parse error: unexpected table name: " + x.table)
+		}
+		// filter
+		if x.filter != y.filter {
+			t.Errorf("parse error: filters do not match")
+		}
+
+	default:
+		t.Errorf("parse error: invalid action type expected sqlSelectAction")
+	}
+}
+
 func validateUpdate(t *testing.T, a action, y *sqlUpdateAction) {
 	switch a.(type) {
 	case *errorAction:
@@ -185,7 +207,7 @@ func TestParseSqlSelectStatement3(t *testing.T) {
 	expectedError(t, x)
 	//
 	pc = newTokens()
-	lex(" selecct *", pc)
+	lex(" select *", pc)
 	x = parse(pc)
 	expectedError(t, x)
 	//
@@ -206,6 +228,53 @@ func TestParseSqlSelectStatement3(t *testing.T) {
 	//
 	pc = newTokens()
 	lex(" select * from stocks where ticker =", pc)
+	x = parse(pc)
+	expectedError(t, x)
+}
+
+// DELETE 
+func TestParseSqlDeleteStatement1(t *testing.T) {
+	pc := newTokens()
+	lex(" delete  from stocks ", pc)
+	x := parse(pc)
+	var y sqlDeleteAction
+	y.table = "stocks"
+	validateDelete(t, x, &y)
+}
+
+func TestParseSqlDeleteStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" delete  from stocks where  ticker = 'IBM'", pc)
+	x := parse(pc)
+	var y sqlDeleteAction
+	y.table = "stocks"
+	y.filter.addFilter("ticker", "IBM")
+	validateDelete(t, x, &y)
+}
+
+func TestParseSqlDeleteStatement3(t *testing.T) {
+	pc := newTokens()
+	lex(" delete ", pc)
+	x := parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" delete from", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" delete from stocks where", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" delete from stocks where ticker ", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" delete from stocks where ticker =", pc)
 	x = parse(pc)
 	expectedError(t, x)
 }
