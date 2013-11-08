@@ -59,8 +59,18 @@ func (act cmdAction) getActionType() actionType {
 
 // columnValue pair 
 type columnValue struct {
-	column string
-	val    string
+	col string
+	val string
+}
+
+// temporarely stub for sqlFilter type that will be more capble in future versions
+type sqlFilter struct {
+	columnValue
+}
+
+func (f *sqlFilter) addFilter(col string, val string) {
+	f.col = col
+	f.val = val
 }
 
 // sqlInsertAction is an action for sql insert statement
@@ -69,11 +79,18 @@ type sqlInsertAction struct {
 	values []columnValue
 }
 
+// sqlDeleteAction is an action for sql delete statement
+type sqlDeleteAction struct {
+	sqlAction
+	table  string
+	filter sqlFilter
+}
+
 // sqlSelectAction is an action for sql select statement
 type sqlSelectAction struct {
 	sqlAction
 	table  string
-	filter columnValue
+	filter sqlFilter
 }
 
 // sqlUpdateAction is an action for sql update statement
@@ -81,20 +98,9 @@ type sqlUpdateAction struct {
 	sqlAction
 	table   string
 	colVals []*columnValue
-	filter  columnValue
+	filter  sqlFilter
 }
 
 func (a *sqlUpdateAction) addColVal(col string, val string) {
-	a.colVals = append(a.colVals, &columnValue{column: col, val: val})
-}
-
-func (a *sqlUpdateAction) addFilter(col string, val string) {
-	a.filter.column = col
-	a.filter.val = val
-}
-
-// sqlDeleteAction is an action for sql delete statement
-type sqlDeleteAction struct {
-	table  string
-	filter columnValue
+	a.colVals = append(a.colVals, &columnValue{col: col, val: val})
 }

@@ -19,15 +19,15 @@ package pubsubsql
 import "testing"
 
 type tokensProducerConsumer struct {
-	idx int
-	tokens []*token		
+	idx    int
+	tokens []*token
 }
 
-func newTokens() *tokensProducerConsumer{
-	return &tokensProducerConsumer {
-		idx: 0 ,	
+func newTokens() *tokensProducerConsumer {
+	return &tokensProducerConsumer{
+		idx:    0,
 		tokens: make([]*token, 0, 30),
-	}	
+	}
 }
 
 func reuseTokens(pc *tokensProducerConsumer) {
@@ -35,80 +35,80 @@ func reuseTokens(pc *tokensProducerConsumer) {
 }
 
 func (c *tokensProducerConsumer) Consume(t *token) {
-	c.tokens = append(c.tokens, t)	
+	c.tokens = append(c.tokens, t)
 }
 
 func (p *tokensProducerConsumer) Produce() *token {
 	if p.idx >= len(p.tokens) {
-		return &token {
+		return &token{
 			typ: tokenTypeEOF,
-		}	
+		}
 	}
 	t := p.tokens[p.idx]
 	p.idx++
-	return t	
+	return t
 }
 
-func expectedError(t *testing.T, a action) { 
+func expectedError(t *testing.T, a action) {
 	switch a.(type) {
 	case *errorAction:
 
 	default:
-		t.Errorf("parse error: expected error") 
+		t.Errorf("parse error: expected error")
 	}
-	
+
 }
 
 func validateSelect(t *testing.T, a action, y *sqlSelectAction) {
 	switch a.(type) {
 	case *errorAction:
 		e := a.(*errorAction)
-		t.Errorf("parse error: " + e.err) 
+		t.Errorf("parse error: " + e.err)
 
 	case *sqlSelectAction:
 		x := a.(*sqlSelectAction)
 		// table name
 		if x.table != y.table {
-			t.Errorf("parse error: unexpected table name: " + x.table) 
-		}				
+			t.Errorf("parse error: unexpected table name: " + x.table)
+		}
 		// filter
 		if x.filter != y.filter {
-			t.Errorf("parse error: filters do not match") 
+			t.Errorf("parse error: filters do not match")
 		}
 
 	default:
-		t.Errorf("parse error: invalid action type expected sqlSelectAction") 
+		t.Errorf("parse error: invalid action type expected sqlSelectAction")
 	}
-	
+
 }
 
 func validateUpdate(t *testing.T, a action, y *sqlUpdateAction) {
 	switch a.(type) {
 	case *errorAction:
 		e := a.(*errorAction)
-		t.Errorf("parse error: " +  e.err) 
+		t.Errorf("parse error: " + e.err)
 
 	case *sqlUpdateAction:
 		x := a.(*sqlUpdateAction)
 		// table name
 		if x.table != y.table {
-			t.Errorf("parse error: table names do not match " + x.table) 
-		}				
+			t.Errorf("parse error: table names do not match " + x.table)
+		}
 		// number of columns and values
 		if len(x.colVals) != len(y.colVals) {
-			t.Errorf("parse error: colVals lens do not match") 
+			t.Errorf("parse error: colVals lens do not match")
 			break
 		}
 		// columns and values
 		for i := 0; i < len(x.colVals); i++ {
 			if *(y.colVals[i]) != *(x.colVals[i]) {
-				t.Errorf("parse error: colVals do not match") 
+				t.Errorf("parse error: colVals do not match")
 			}
-		} 
+		}
 		// filter
 		if x.filter != y.filter {
-			t.Errorf("parse error: filters do not match") 
-			
+			t.Errorf("parse error: filters do not match")
+
 		}
 
 	default:
@@ -119,65 +119,93 @@ func validateUpdate(t *testing.T, a action, y *sqlUpdateAction) {
 func TestParseSqlUpdateStatement2(t *testing.T) {
 	pc := newTokens()
 	lex(" update stocks set bid = 140.45, ask = 142.01", pc)
-	x := parse(pc)	
+	x := parse(pc)
 	var y sqlUpdateAction
-	y.table = "stocks"	
+	y.table = "stocks"
 	y.addColVal("bid", "140.45")
 	y.addColVal("ask", "142.01")
-	validateUpdate(t, x, &y)	
-	
+	validateUpdate(t, x, &y)
+
 }
 
 func TestParseSqlUpdateStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" update stocks set bid = 140.45, ask = 142.01, sector = 'TECH' where ticker = IBM", pc)
-	x := parse(pc)	
+	x := parse(pc)
 	var y sqlUpdateAction
-	y.table = "stocks"	
+	y.table = "stocks"
 	y.addColVal("bid", "140.45")
 	y.addColVal("ask", "142.01")
 	y.addColVal("sector", "TECH")
-	y.addFilter("ticker", "IBM")
-	validateUpdate(t, x, &y)	
+	y.filter.addFilter("ticker", "IBM")
+	validateUpdate(t, x, &y)
 }
 
 func TestParseSqlUpdateStatement3(t *testing.T) {
 	pc := newTokens()
 	lex(" update stocks set bid = ", pc)
-	x := parse(pc)	
+	x := parse(pc)
 	expectedError(t, x)
 	//
 	pc = newTokens()
 	lex(" update stocks ", pc)
-	x = parse(pc)	
+	x = parse(pc)
 	expectedError(t, x)
 	//
 	pc = newTokens()
 	lex(" update stocks set ", pc)
-	x = parse(pc)	
+	x = parse(pc)
 	expectedError(t, x)
 }
 
 // SELECT
-
 func TestParseSqlSelectStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" select *  from stocks ", pc)
-	x := parse(pc)	
+	x := parse(pc)
 	var y sqlSelectAction
-	y.table = "stocks"	
-	validateSelect(t, x, &y)	
+	y.table = "stocks"
+	validateSelect(t, x, &y)
 }
 
 func TestParseSqlSelectStatement2(t *testing.T) {
 	pc := newTokens()
 	lex(" select *  from stocks where  ticker = 'IBM'", pc)
-	x := parse(pc)	
+	x := parse(pc)
 	var y sqlSelectAction
-	y.table = "stocks"	
-	y.filter.column = "ticker"
-	y.filter.val = "IBM"
-	validateSelect(t, x, &y)	
+	y.table = "stocks"
+	y.filter.addFilter("ticker", "IBM")
+	validateSelect(t, x, &y)
 }
 
-
+func TestParseSqlSelectStatement3(t *testing.T) {
+	pc := newTokens()
+	lex(" select ", pc)
+	x := parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" selecct *", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" select * from ", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" select * from stocks where", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" select * from stocks where ticker ", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" select * from stocks where ticker =", pc)
+	x = parse(pc)
+	expectedError(t, x)
+}

@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 CompleteDB LLC.
+/* Copyright (C) 2013 CompleteD LLC.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -65,11 +65,11 @@ loop:
 			count++
 
 		case tokenTypeSqlWhere:
-			if erract := p.parseSqlEqualVal(&(act.filter), nil); erract != nil {
+			if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
 				return erract
 			}
 			// we must be at the end
-			break loop 
+			break loop
 
 		case tokenTypeEOF:
 			break loop
@@ -78,24 +78,24 @@ loop:
 			continue
 
 		default:
-			return p.parseError("expected column or where keyword")
+			return p.parseError("expected.col or where keyword")
 		}
 	}
 	if count == 0 {
-		return p.parseError("expected at least on column value pair")
+		return p.parseError("expected at least on.col value pair")
 	}
 	return act
 }
 
 func (p *parser) parseSqlEqualVal(colval *columnValue, t *token) action {
-	// column
+	//col
 	if t == nil {
 		t = p.tokens.Produce()
 	}
 	if t.typ != tokenTypeSqlColumn {
-		return p.parseError("expected column name")
+		return p.parseError("expected.col name")
 	}
-	colval.column = t.val
+	colval.col = t.val
 	// =
 	t = p.tokens.Produce()
 	if t.typ != tokenTypeSqlEqual {
@@ -108,6 +108,15 @@ func (p *parser) parseSqlEqualVal(colval *columnValue, t *token) action {
 	}
 	colval.val = t.val
 	return nil
+}
+
+// WHERE CLAUSE
+func (p *parser) parseSqlWhere(filter *sqlFilter, t *token) action {
+	//must be where
+	if t != nil && t.typ != tokenTypeSqlWhere {
+		return p.parseError("expected where clause")
+	}
+	return p.parseSqlEqualVal(&(filter.columnValue), nil)
 }
 
 // INSERT
@@ -133,19 +142,15 @@ func (p *parser) parseSqlSelect() action {
 		return p.parseError("expected table name")
 	}
 	act := &sqlSelectAction{
-		table:   t.val,
+		table: t.val,
 	}
 	// possible eof
 	t = p.tokens.Produce()
 	if t.typ == tokenTypeEOF {
-		return act	
-	}	
-	// than it must be where
-	if t.typ != tokenTypeSqlWhere {
-		return p.parseError("expected where clause")
-
+		return act
 	}
-	if erract := p.parseSqlEqualVal(&(act.filter), nil); erract != nil {
+	// where
+	if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
 		return erract
 	}
 	// we are good
@@ -154,7 +159,30 @@ func (p *parser) parseSqlSelect() action {
 
 // DELETE
 func (p *parser) parseSqlDelete() action {
-	return nil
+	// from
+	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlFrom {
+		return p.parseError("expected from")
+	}
+	// table name
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlTable {
+		return p.parseError("expected table name")
+	}
+	act := &sqlDeleteAction{
+		table: t.val,
+	}
+	// possible eof
+	t = p.tokens.Produce()
+	if t.typ == tokenTypeEOF {
+		return act
+	}
+	// than it must be where
+	if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
+		return erract
+	}
+	// we are good
+	return act
 }
 
 // run runs the parser
