@@ -119,19 +119,16 @@ func (p *parser) parseSqlInsert() action {
 	}
 	//
 	expectedType = tokenTypeSqlValue
-	idx := 0
 	values := 0
 	for expectedType == tokenTypeSqlValue {
-		if idx >= columns {
-			break
-		}
 		erract, expectedType, str = p.parseSqlInsertValue()
 		if erract != nil {
 			return erract
 		}
-		act.setValueAt(values, str)
+		if values < columns {
+			act.setValueAt(values, str)
+		}
 		values++
-		idx++
 	}
 	if columns != values {
 		s := fmt.Sprintf("number of columns:%d and values:%d do not match", columns, values)

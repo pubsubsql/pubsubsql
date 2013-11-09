@@ -243,13 +243,11 @@ func TestParseSqlInsertStatement2(t *testing.T) {
 	lex(" insert into stocks (col1, col2) values (val1, val2, ", pc)
 	x = parse(pc)
 	expectedError(t, x)
-	/*
-		//
-		pc = newTokens()
-		lex(" insert into stocks (col1, col2) values (val1, val2, val3) ", pc)
-		x = parse(pc)
-		expectedError(t, x)
-	*/
+	//
+	pc = newTokens()
+	lex(" insert into stocks (col1, col2) values (val1, val2, val3) ", pc)
+	x = parse(pc)
+	expectedError(t, x)
 }
 
 // SELECT
