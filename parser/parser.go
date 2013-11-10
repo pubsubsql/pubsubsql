@@ -67,6 +67,23 @@ func (p *parser) parseTableName(table *string) action {
 	return nil
 }
 
+func (p *parser) parseColumnName(column *string) action {
+	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlColumn {
+		return p.parseError("expected column name")
+	}
+	*column = t.val
+	return nil
+}
+
+func (p *parser) parseEOF(act action) action {
+	t := p.tokens.Produce()
+	if t.typ == tokenTypeEOF {
+		return act
+	}
+	return p.parseError("expected EOF")
+}
+
 func (p *parser) parseSqlWhere(filter *sqlFilter, t *token) action {
 	//must be where
 	if t != nil && t.typ != tokenTypeSqlWhere {
@@ -278,21 +295,106 @@ func (p *parser) parseSqlDelete() action {
 	return act
 }
 
+// SUBSCRIBE 
+func (p *parser) parseSqlSubscribe() action {
+	// *
+	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlStar {
+		return p.parseError("expected * symbol")
+	}
+	// from
+	t = p.tokens.Produce()
+	if t.typ != tokenTypeSqlFrom {
+		return p.parseError("expected from")
+	}
+	act := new(sqlSubscribeAction)
+	// table name
+	if erract := p.parseTableName(&act.table); erract != nil {
+		return erract
+	}
+	// possible eof
+	t = p.tokens.Produce()
+	if t.typ == tokenTypeEOF {
+		return act
+	}
+	// where
+	if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
+		return erract
+	}
+	// we are good
+	return act
+}
+
+// UNSUBSCRIBE
+func (p *parser) parseSqlUnsubscribe() action {
+	// from
+	t := p.tokens.Produce()
+	if t.typ != tokenTypeSqlFrom {
+		return p.parseError("expected from")
+	}
+	act := new(sqlUnsubscribeAction)
+	// table name
+	if erract := p.parseTableName(&act.table); erract != nil {
+		return erract
+	}
+	return p.parseEOF(act)
+}
+
+// KEY
+func (p *parser) parseSqlKey() action {
+	act := new(sqlKeyAction)
+	// table name
+	if erract := p.parseTableName(&act.table); erract != nil {
+		return erract
+	}
+	// column name
+	if erract := p.parseColumnName(&act.column); erract != nil {
+		return erract
+	}
+	return p.parseEOF(act)
+}
+
+// TAG
+func (p *parser) parseSqlTag() action {
+	act := new(sqlTagAction)
+	// table name
+	if erract := p.parseTableName(&act.table); erract != nil {
+		return erract
+	}
+	// column name
+	if erract := p.parseColumnName(&act.column); erract != nil {
+		return erract
+	}
+	return p.parseEOF(act)
+}
+
 // run runs the parser
 func (p *parser) run() action {
 	t := p.tokens.Produce()
 	switch t.typ {
-	case tokenTypeSqlUpdate:
-		return p.parseSqlUpdate()
-
 	case tokenTypeSqlInsert:
 		return p.parseSqlInsert()
 
 	case tokenTypeSqlSelect:
 		return p.parseSqlSelect()
 
+	case tokenTypeSqlUpdate:
+		return p.parseSqlUpdate()
+
 	case tokenTypeSqlDelete:
 		return p.parseSqlDelete()
+
+	case tokenTypeSqlSubscribe:
+		return p.parseSqlSubscribe()
+
+	case tokenTypeSqlUnsubscribe:
+		return p.parseSqlUnsubscribe()
+
+	case tokenTypeSqlKey:
+		return p.parseSqlKey()
+
+	case tokenTypeSqlTag:
+		return p.parseSqlTag()
 
 	}
 

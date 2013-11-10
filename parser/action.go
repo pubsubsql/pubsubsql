@@ -117,3 +117,32 @@ type sqlDeleteAction struct {
 	table  string
 	filter sqlFilter
 }
+
+// sqlSubscribeAction is an action for sql subscribe statement
+type sqlSubscribeAction struct {
+	sqlAction
+	table  string
+	filter sqlFilter
+}
+
+// sqlUnsubscribeAction is an action for sql unsubscribe statement
+type sqlUnsubscribeAction struct {
+	sqlAction
+	table string
+}
+
+// sqlKeyAction is an action for key statement 
+// key defines unique index
+type sqlKeyAction struct {
+	sqlAction
+	table  string
+	column string
+}
+
+// sqlTagAction is an action for tag statement 
+// tag defines non-unique index
+type sqlTagAction struct {
+	sqlAction
+	table  string
+	column string
+}
