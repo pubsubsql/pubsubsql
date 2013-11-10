@@ -414,6 +414,57 @@ func validateSubscribe(t *testing.T, a action, y *sqlSubscribeAction) {
 
 }
 
+func TestParseSqlSubscribeStatement1(t *testing.T) {
+	pc := newTokens()
+	lex(" subscribe *  from stocks ", pc)
+	x := parse(pc)
+	var y sqlSubscribeAction
+	y.table = "stocks"
+	validateSubscribe(t, x, &y)
+}
+
+func TestParseSqlSubscribeStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" subscribe *  from stocks where  ticker = 'IBM'", pc)
+	x := parse(pc)
+	var y sqlSubscribeAction
+	y.table = "stocks"
+	y.filter.addFilter("ticker", "IBM")
+	validateSubscribe(t, x, &y)
+}
+
+func TestParseSqlSubscribeStatement3(t *testing.T) {
+	pc := newTokens()
+	lex(" subscribe ", pc)
+	x := parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" subscribe *", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" subscribe * from ", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" subscribe * from stocks where", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" subscribe * from stocks where ticker ", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" subscribe * from stocks where ticker =", pc)
+	x = parse(pc)
+	expectedError(t, x)
+}
+
 // UNSUBSCRIBE
 func validateUnsubscribe(t *testing.T, a action, y *sqlUnsubscribeAction) {
 	switch a.(type) {
@@ -431,6 +482,27 @@ func validateUnsubscribe(t *testing.T, a action, y *sqlUnsubscribeAction) {
 	default:
 		t.Errorf("parse error: invalid action type expected sqlUnsubscribeAction")
 	}
+}
+
+func TestParseSqlUnsubscribeStatement1(t *testing.T) {
+	pc := newTokens()
+	lex(" unsubscribe  from stocks ", pc)
+	x := parse(pc)
+	var y sqlUnsubscribeAction
+	y.table = "stocks"
+	validateUnsubscribe(t, x, &y)
+}
+
+func TestParseSqlUnsubscribeStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" unsubscribe ", pc)
+	x := parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" unsubscribe from", pc)
+	x = parse(pc)
+	expectedError(t, x)
 }
 
 // KEY 
@@ -456,6 +528,27 @@ func validateKey(t *testing.T, a action, y *sqlKeyAction) {
 	}
 }
 
+func TestParseSqlKeyStatement1(t *testing.T) {
+	pc := newTokens()
+	lex(" key stocks ticker", pc)
+	x := parse(pc)
+	var y sqlKeyAction
+	y.table = "stocks"
+	y.column = "ticker"
+	validateKey(t, x, &y)
+}
+
+func TestParseSqlKeyStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" key ", pc)
+	x := parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" key stocks", pc)
+	x = parse(pc)
+	expectedError(t, x)
+}
 
 // TAG
 func validateTag(t *testing.T, a action, y *sqlTagAction) {
@@ -480,4 +573,24 @@ func validateTag(t *testing.T, a action, y *sqlTagAction) {
 	}
 }
 
+func TestParseSqlTagStatement1(t *testing.T) {
+	pc := newTokens()
+	lex(" tag stocks sector", pc)
+	x := parse(pc)
+	var y sqlTagAction
+	y.table = "stocks"
+	y.column = "sector"
+	validateTag(t, x, &y)
+}
 
+func TestParseSqlTagStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" tag ", pc)
+	x := parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" tag stocks", pc)
+	x = parse(pc)
+	expectedError(t, x)
+}
