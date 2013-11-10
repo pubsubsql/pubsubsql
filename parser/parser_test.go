@@ -59,7 +59,7 @@ func expectedError(t *testing.T, a action) {
 
 }
 
-// VALIDATE  helper functions
+// INSERT
 func validateInsert(t *testing.T, a action, y *sqlInsertAction) {
 	switch a.(type) {
 	case *errorAction:
@@ -89,88 +89,6 @@ func validateInsert(t *testing.T, a action, y *sqlInsertAction) {
 	}
 }
 
-func validateSelect(t *testing.T, a action, y *sqlSelectAction) {
-	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
-		t.Errorf("parse error: " + e.err)
-
-	case *sqlSelectAction:
-		x := a.(*sqlSelectAction)
-		// table name
-		if x.table != y.table {
-			t.Errorf("parse error: table names do not match " + x.table)
-		}
-		// filter
-		if x.filter != y.filter {
-			t.Errorf("parse error: filters do not match")
-		}
-
-	default:
-		t.Errorf("parse error: invalid action type expected sqlSelectAction")
-	}
-
-}
-
-func validateUpdate(t *testing.T, a action, y *sqlUpdateAction) {
-	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
-		t.Errorf("parse error: " + e.err)
-
-	case *sqlUpdateAction:
-		x := a.(*sqlUpdateAction)
-		// table name
-		if x.table != y.table {
-			t.Errorf("parse error: table names do not match " + x.table)
-		}
-		// number of columns and values
-		if len(x.colVals) != len(y.colVals) {
-			t.Errorf("parse error: colVals lens do not match")
-			break
-		}
-		// columns and values
-		for i := 0; i < len(x.colVals); i++ {
-			if *(y.colVals[i]) != *(x.colVals[i]) {
-				t.Errorf("parse error: colVals do not match")
-				t.Errorf("x.col:%s vs y.col:%s", x.colVals[i].col, y.colVals[i].col)
-			}
-		}
-		// filter
-		if x.filter != y.filter {
-			t.Errorf("parse error: filters do not match")
-
-		}
-
-	default:
-		t.Errorf("parse error: invalid action type expected sqlUpdateAction")
-	}
-
-}
-
-func validateDelete(t *testing.T, a action, y *sqlDeleteAction) {
-	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
-		t.Errorf("parse error: " + e.err)
-
-	case *sqlDeleteAction:
-		x := a.(*sqlDeleteAction)
-		// table name
-		if x.table != y.table {
-			t.Errorf("parse error: table names do not match  " + x.table)
-		}
-		// filter
-		if x.filter != y.filter {
-			t.Errorf("parse error: filters do not match")
-		}
-
-	default:
-		t.Errorf("parse error: invalid action type expected sqlDeleteAction")
-	}
-}
-
-// INSERT
 func TestParseSqlInsertStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
@@ -251,6 +169,29 @@ func TestParseSqlInsertStatement2(t *testing.T) {
 }
 
 // SELECT
+func validateSelect(t *testing.T, a action, y *sqlSelectAction) {
+	switch a.(type) {
+	case *errorAction:
+		e := a.(*errorAction)
+		t.Errorf("parse error: " + e.err)
+
+	case *sqlSelectAction:
+		x := a.(*sqlSelectAction)
+		// table name
+		if x.table != y.table {
+			t.Errorf("parse error: table names do not match " + x.table)
+		}
+		// filter
+		if x.filter != y.filter {
+			t.Errorf("parse error: filters do not match")
+		}
+
+	default:
+		t.Errorf("parse error: invalid action type expected sqlSelectAction")
+	}
+
+}
+
 func TestParseSqlSelectStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" select *  from stocks ", pc)
@@ -303,6 +244,41 @@ func TestParseSqlSelectStatement3(t *testing.T) {
 }
 
 // UPDATE
+func validateUpdate(t *testing.T, a action, y *sqlUpdateAction) {
+	switch a.(type) {
+	case *errorAction:
+		e := a.(*errorAction)
+		t.Errorf("parse error: " + e.err)
+
+	case *sqlUpdateAction:
+		x := a.(*sqlUpdateAction)
+		// table name
+		if x.table != y.table {
+			t.Errorf("parse error: table names do not match " + x.table)
+		}
+		// number of columns and values
+		if len(x.colVals) != len(y.colVals) {
+			t.Errorf("parse error: colVals lens do not match")
+			break
+		}
+		// columns and values
+		for i := 0; i < len(x.colVals); i++ {
+			if *(y.colVals[i]) != *(x.colVals[i]) {
+				t.Errorf("parse error: colVals do not match")
+				t.Errorf("x.col:%s vs y.col:%s", x.colVals[i].col, y.colVals[i].col)
+			}
+		}
+		// filter
+		if x.filter != y.filter {
+			t.Errorf("parse error: filters do not match")
+
+		}
+
+	default:
+		t.Errorf("parse error: invalid action type expected sqlUpdateAction")
+	}
+}
+
 func TestParseSqlUpdateStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" update stocks set bid = 140.45, ask = 142.01, sector = 'TECH' where ticker = IBM", pc)
@@ -346,6 +322,28 @@ func TestParseSqlUpdateStatement3(t *testing.T) {
 }
 
 // DELETE 
+func validateDelete(t *testing.T, a action, y *sqlDeleteAction) {
+	switch a.(type) {
+	case *errorAction:
+		e := a.(*errorAction)
+		t.Errorf("parse error: " + e.err)
+
+	case *sqlDeleteAction:
+		x := a.(*sqlDeleteAction)
+		// table name
+		if x.table != y.table {
+			t.Errorf("parse error: table names do not match  " + x.table)
+		}
+		// filter
+		if x.filter != y.filter {
+			t.Errorf("parse error: filters do not match")
+		}
+
+	default:
+		t.Errorf("parse error: invalid action type expected sqlDeleteAction")
+	}
+}
+
 func TestParseSqlDeleteStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" delete  from stocks ", pc)
@@ -391,3 +389,95 @@ func TestParseSqlDeleteStatement3(t *testing.T) {
 	x = parse(pc)
 	expectedError(t, x)
 }
+
+// SUBSCRIBE
+func validateSubscribe(t *testing.T, a action, y *sqlSubscribeAction) {
+	switch a.(type) {
+	case *errorAction:
+		e := a.(*errorAction)
+		t.Errorf("parse error: " + e.err)
+
+	case *sqlSubscribeAction:
+		x := a.(*sqlSubscribeAction)
+		// table name
+		if x.table != y.table {
+			t.Errorf("parse error: table names do not match " + x.table)
+		}
+		// filter
+		if x.filter != y.filter {
+			t.Errorf("parse error: filters do not match")
+		}
+
+	default:
+		t.Errorf("parse error: invalid action type expected sqlSubscribeAction")
+	}
+
+}
+
+// UNSUBSCRIBE
+func validateUnsubscribe(t *testing.T, a action, y *sqlUnsubscribeAction) {
+	switch a.(type) {
+	case *errorAction:
+		e := a.(*errorAction)
+		t.Errorf("parse error: " + e.err)
+
+	case *sqlUnsubscribeAction:
+		x := a.(*sqlUnsubscribeAction)
+		// table name
+		if x.table != y.table {
+			t.Errorf("parse error: table names do not match  " + x.table)
+		}
+
+	default:
+		t.Errorf("parse error: invalid action type expected sqlUnsubscribeAction")
+	}
+}
+
+// KEY 
+func validateKey(t *testing.T, a action, y *sqlKeyAction) {
+	switch a.(type) {
+	case *errorAction:
+		e := a.(*errorAction)
+		t.Errorf("parse error: " + e.err)
+
+	case *sqlKeyAction:
+		x := a.(*sqlKeyAction)
+		// table name
+		if x.table != y.table {
+			t.Errorf("parse error: table names do not match  " + x.table)
+		}
+		// column name
+		if x.column != y.column {
+			t.Errorf("parse error: column names do not match  " + x.column)
+		}
+
+	default:
+		t.Errorf("parse error: invalid action type expected sqlKeyAction")
+	}
+}
+
+
+// TAG
+func validateTag(t *testing.T, a action, y *sqlTagAction) {
+	switch a.(type) {
+	case *errorAction:
+		e := a.(*errorAction)
+		t.Errorf("parse error: " + e.err)
+
+	case *sqlTagAction:
+		x := a.(*sqlTagAction)
+		// table name
+		if x.table != y.table {
+			t.Errorf("parse error: table names do not match  " + x.table)
+		}
+		// column name
+		if x.column != y.column {
+			t.Errorf("parse error: column names do not match  " + x.column)
+		}
+
+	default:
+		t.Errorf("parse error: invalid action type expected sqlTagAction")
+	}
+}
+
+
