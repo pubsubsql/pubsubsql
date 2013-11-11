@@ -46,8 +46,8 @@ func testStoper(stoper *Stoper, level int, perLevel int) {
 
 func TestMultiGoroutines(t *testing.T) {
 	stoper := NewStoper()
-	levels := 5
-	perLevel := 10
+	levels := 4
+	perLevel := 4
 	go testStoper(stoper, levels, perLevel)
 	time.Sleep(time.Millisecond * 500)
 	fmt.Println("goroutines in progress:", stoper.Counter())
@@ -60,8 +60,8 @@ func TestMultiGoroutines(t *testing.T) {
 func TestMultiGoroutinesMultiCores(t *testing.T) {
 	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	stoper := NewStoper()
-	levels := 5
-	perLevel := 10
+	levels := 4
+	perLevel := 4
 	go testStoper(stoper, levels, perLevel)
 	time.Sleep(time.Millisecond * 500)
 	fmt.Println("goroutines in progress:", stoper.Counter())
