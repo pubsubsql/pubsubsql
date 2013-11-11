@@ -49,9 +49,9 @@ func (p *tokensProducerConsumer) Produce() *token {
 	return t
 }
 
-func expectedError(t *testing.T, a action) {
+func expectedError(t *testing.T, a request) {
 	switch a.(type) {
-	case *errorAction:
+	case *errorRequest:
 
 	default:
 		t.Errorf("parse error: expected error")
@@ -60,14 +60,14 @@ func expectedError(t *testing.T, a action) {
 }
 
 // INSERT
-func validateInsert(t *testing.T, a action, y *sqlInsertAction) {
+func validateInsert(t *testing.T, a request, y *sqlInsertRequest) {
 	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
+	case *errorRequest:
+		e := a.(*errorRequest)
 		t.Errorf("parse error: " + e.err)
 
-	case *sqlInsertAction:
-		x := a.(*sqlInsertAction)
+	case *sqlInsertRequest:
+		x := a.(*sqlInsertRequest)
 		// table name
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match " + x.table)
@@ -85,7 +85,7 @@ func validateInsert(t *testing.T, a action, y *sqlInsertAction) {
 			}
 		}
 	default:
-		t.Errorf("parse error: invalid action type expected sqlInsertAction")
+		t.Errorf("parse error: invalid request type expected sqlInsertRequest")
 	}
 }
 
@@ -93,7 +93,7 @@ func TestParseSqlInsertStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
 	x := parse(pc)
-	var y sqlInsertAction
+	var y sqlInsertRequest
 	y.table = "stocks"
 	y.addColVal("ticker", "IBM")
 	y.addColVal("bid", "12")
@@ -169,14 +169,14 @@ func TestParseSqlInsertStatement2(t *testing.T) {
 }
 
 // SELECT
-func validateSelect(t *testing.T, a action, y *sqlSelectAction) {
+func validateSelect(t *testing.T, a request, y *sqlSelectRequest) {
 	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
+	case *errorRequest:
+		e := a.(*errorRequest)
 		t.Errorf("parse error: " + e.err)
 
-	case *sqlSelectAction:
-		x := a.(*sqlSelectAction)
+	case *sqlSelectRequest:
+		x := a.(*sqlSelectRequest)
 		// table name
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match " + x.table)
@@ -187,7 +187,7 @@ func validateSelect(t *testing.T, a action, y *sqlSelectAction) {
 		}
 
 	default:
-		t.Errorf("parse error: invalid action type expected sqlSelectAction")
+		t.Errorf("parse error: invalid request type expected sqlSelectRequest")
 	}
 
 }
@@ -196,7 +196,7 @@ func TestParseSqlSelectStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" select *  from stocks ", pc)
 	x := parse(pc)
-	var y sqlSelectAction
+	var y sqlSelectRequest
 	y.table = "stocks"
 	validateSelect(t, x, &y)
 }
@@ -205,7 +205,7 @@ func TestParseSqlSelectStatement2(t *testing.T) {
 	pc := newTokens()
 	lex(" select *  from stocks where  ticker = 'IBM'", pc)
 	x := parse(pc)
-	var y sqlSelectAction
+	var y sqlSelectRequest
 	y.table = "stocks"
 	y.filter.addFilter("ticker", "IBM")
 	validateSelect(t, x, &y)
@@ -244,14 +244,14 @@ func TestParseSqlSelectStatement3(t *testing.T) {
 }
 
 // UPDATE
-func validateUpdate(t *testing.T, a action, y *sqlUpdateAction) {
+func validateUpdate(t *testing.T, a request, y *sqlUpdateRequest) {
 	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
+	case *errorRequest:
+		e := a.(*errorRequest)
 		t.Errorf("parse error: " + e.err)
 
-	case *sqlUpdateAction:
-		x := a.(*sqlUpdateAction)
+	case *sqlUpdateRequest:
+		x := a.(*sqlUpdateRequest)
 		// table name
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match " + x.table)
@@ -275,7 +275,7 @@ func validateUpdate(t *testing.T, a action, y *sqlUpdateAction) {
 		}
 
 	default:
-		t.Errorf("parse error: invalid action type expected sqlUpdateAction")
+		t.Errorf("parse error: invalid request type expected sqlUpdateRequest")
 	}
 }
 
@@ -283,7 +283,7 @@ func TestParseSqlUpdateStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" update stocks set bid = 140.45, ask = 142.01, sector = 'TECH' where ticker = IBM", pc)
 	x := parse(pc)
-	var y sqlUpdateAction
+	var y sqlUpdateRequest
 	y.table = "stocks"
 	y.addColVal("bid", "140.45")
 	y.addColVal("ask", "142.01")
@@ -296,7 +296,7 @@ func TestParseSqlUpdateStatement2(t *testing.T) {
 	pc := newTokens()
 	lex(" update stocks set bid = 140.45, ask = 142.01", pc)
 	x := parse(pc)
-	var y sqlUpdateAction
+	var y sqlUpdateRequest
 	y.table = "stocks"
 	y.addColVal("bid", "140.45")
 	y.addColVal("ask", "142.01")
@@ -322,14 +322,14 @@ func TestParseSqlUpdateStatement3(t *testing.T) {
 }
 
 // DELETE 
-func validateDelete(t *testing.T, a action, y *sqlDeleteAction) {
+func validateDelete(t *testing.T, a request, y *sqlDeleteRequest) {
 	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
+	case *errorRequest:
+		e := a.(*errorRequest)
 		t.Errorf("parse error: " + e.err)
 
-	case *sqlDeleteAction:
-		x := a.(*sqlDeleteAction)
+	case *sqlDeleteRequest:
+		x := a.(*sqlDeleteRequest)
 		// table name
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match  " + x.table)
@@ -340,7 +340,7 @@ func validateDelete(t *testing.T, a action, y *sqlDeleteAction) {
 		}
 
 	default:
-		t.Errorf("parse error: invalid action type expected sqlDeleteAction")
+		t.Errorf("parse error: invalid request type expected sqlDeleteRequest")
 	}
 }
 
@@ -348,7 +348,7 @@ func TestParseSqlDeleteStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" delete  from stocks ", pc)
 	x := parse(pc)
-	var y sqlDeleteAction
+	var y sqlDeleteRequest
 	y.table = "stocks"
 	validateDelete(t, x, &y)
 }
@@ -357,7 +357,7 @@ func TestParseSqlDeleteStatement2(t *testing.T) {
 	pc := newTokens()
 	lex(" delete  from stocks where  ticker = 'IBM'", pc)
 	x := parse(pc)
-	var y sqlDeleteAction
+	var y sqlDeleteRequest
 	y.table = "stocks"
 	y.filter.addFilter("ticker", "IBM")
 	validateDelete(t, x, &y)
@@ -391,14 +391,14 @@ func TestParseSqlDeleteStatement3(t *testing.T) {
 }
 
 // SUBSCRIBE
-func validateSubscribe(t *testing.T, a action, y *sqlSubscribeAction) {
+func validateSubscribe(t *testing.T, a request, y *sqlSubscribeRequest) {
 	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
+	case *errorRequest:
+		e := a.(*errorRequest)
 		t.Errorf("parse error: " + e.err)
 
-	case *sqlSubscribeAction:
-		x := a.(*sqlSubscribeAction)
+	case *sqlSubscribeRequest:
+		x := a.(*sqlSubscribeRequest)
 		// table name
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match " + x.table)
@@ -409,7 +409,7 @@ func validateSubscribe(t *testing.T, a action, y *sqlSubscribeAction) {
 		}
 
 	default:
-		t.Errorf("parse error: invalid action type expected sqlSubscribeAction")
+		t.Errorf("parse error: invalid request type expected sqlSubscribeRequest")
 	}
 
 }
@@ -418,7 +418,7 @@ func TestParseSqlSubscribeStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" subscribe *  from stocks ", pc)
 	x := parse(pc)
-	var y sqlSubscribeAction
+	var y sqlSubscribeRequest
 	y.table = "stocks"
 	validateSubscribe(t, x, &y)
 }
@@ -427,7 +427,7 @@ func TestParseSqlSubscribeStatement2(t *testing.T) {
 	pc := newTokens()
 	lex(" subscribe *  from stocks where  ticker = 'IBM'", pc)
 	x := parse(pc)
-	var y sqlSubscribeAction
+	var y sqlSubscribeRequest
 	y.table = "stocks"
 	y.filter.addFilter("ticker", "IBM")
 	validateSubscribe(t, x, &y)
@@ -466,21 +466,21 @@ func TestParseSqlSubscribeStatement3(t *testing.T) {
 }
 
 // UNSUBSCRIBE
-func validateUnsubscribe(t *testing.T, a action, y *sqlUnsubscribeAction) {
+func validateUnsubscribe(t *testing.T, a request, y *sqlUnsubscribeRequest) {
 	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
+	case *errorRequest:
+		e := a.(*errorRequest)
 		t.Errorf("parse error: " + e.err)
 
-	case *sqlUnsubscribeAction:
-		x := a.(*sqlUnsubscribeAction)
+	case *sqlUnsubscribeRequest:
+		x := a.(*sqlUnsubscribeRequest)
 		// table name
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match  " + x.table)
 		}
 
 	default:
-		t.Errorf("parse error: invalid action type expected sqlUnsubscribeAction")
+		t.Errorf("parse error: invalid request type expected sqlUnsubscribeRequest")
 	}
 }
 
@@ -488,7 +488,7 @@ func TestParseSqlUnsubscribeStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" unsubscribe  from stocks ", pc)
 	x := parse(pc)
-	var y sqlUnsubscribeAction
+	var y sqlUnsubscribeRequest
 	y.table = "stocks"
 	validateUnsubscribe(t, x, &y)
 }
@@ -506,14 +506,14 @@ func TestParseSqlUnsubscribeStatement2(t *testing.T) {
 }
 
 // KEY 
-func validateKey(t *testing.T, a action, y *sqlKeyAction) {
+func validateKey(t *testing.T, a request, y *sqlKeyRequest) {
 	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
+	case *errorRequest:
+		e := a.(*errorRequest)
 		t.Errorf("parse error: " + e.err)
 
-	case *sqlKeyAction:
-		x := a.(*sqlKeyAction)
+	case *sqlKeyRequest:
+		x := a.(*sqlKeyRequest)
 		// table name
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match  " + x.table)
@@ -524,7 +524,7 @@ func validateKey(t *testing.T, a action, y *sqlKeyAction) {
 		}
 
 	default:
-		t.Errorf("parse error: invalid action type expected sqlKeyAction")
+		t.Errorf("parse error: invalid request type expected sqlKeyRequest")
 	}
 }
 
@@ -532,7 +532,7 @@ func TestParseSqlKeyStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" key stocks ticker", pc)
 	x := parse(pc)
-	var y sqlKeyAction
+	var y sqlKeyRequest
 	y.table = "stocks"
 	y.column = "ticker"
 	validateKey(t, x, &y)
@@ -551,14 +551,14 @@ func TestParseSqlKeyStatement2(t *testing.T) {
 }
 
 // TAG
-func validateTag(t *testing.T, a action, y *sqlTagAction) {
+func validateTag(t *testing.T, a request, y *sqlTagRequest) {
 	switch a.(type) {
-	case *errorAction:
-		e := a.(*errorAction)
+	case *errorRequest:
+		e := a.(*errorRequest)
 		t.Errorf("parse error: " + e.err)
 
-	case *sqlTagAction:
-		x := a.(*sqlTagAction)
+	case *sqlTagRequest:
+		x := a.(*sqlTagRequest)
 		// table name
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match  " + x.table)
@@ -569,7 +569,7 @@ func validateTag(t *testing.T, a action, y *sqlTagAction) {
 		}
 
 	default:
-		t.Errorf("parse error: invalid action type expected sqlTagAction")
+		t.Errorf("parse error: invalid request type expected sqlTagRequest")
 	}
 }
 
@@ -577,7 +577,7 @@ func TestParseSqlTagStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" tag stocks sector", pc)
 	x := parse(pc)
-	var y sqlTagAction
+	var y sqlTagRequest
 	y.table = "stocks"
 	y.column = "sector"
 	validateTag(t, x, &y)

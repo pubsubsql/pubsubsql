@@ -28,14 +28,14 @@ type parser struct {
 	tokens tokenProducer
 }
 
-func (p *parser) parseError(s string) *errorAction {
-	e := errorAction{
+func (p *parser) parseError(s string) *errorRequest {
+	e := errorRequest{
 		err: s,
 	}
 	return &e
 }
 
-func (p *parser) parseSqlEqualVal(colval *columnValue, t *token) action {
+func (p *parser) parseSqlEqualVal(colval *columnValue, t *token) request {
 	//col
 	if t == nil {
 		t = p.tokens.Produce()
@@ -58,7 +58,7 @@ func (p *parser) parseSqlEqualVal(colval *columnValue, t *token) action {
 	return nil
 }
 
-func (p *parser) parseTableName(table *string) action {
+func (p *parser) parseTableName(table *string) request {
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlTable {
 		return p.parseError("expected table name")
@@ -67,7 +67,7 @@ func (p *parser) parseTableName(table *string) action {
 	return nil
 }
 
-func (p *parser) parseColumnName(column *string) action {
+func (p *parser) parseColumnName(column *string) request {
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlColumn {
 		return p.parseError("expected column name")
@@ -76,7 +76,7 @@ func (p *parser) parseColumnName(column *string) action {
 	return nil
 }
 
-func (p *parser) parseEOF(act action) action {
+func (p *parser) parseEOF(act request) request {
 	t := p.tokens.Produce()
 	if t.typ == tokenTypeEOF {
 		return act
@@ -84,7 +84,7 @@ func (p *parser) parseEOF(act action) action {
 	return p.parseError("expected EOF")
 }
 
-func (p *parser) parseSqlWhere(filter *sqlFilter, t *token) action {
+func (p *parser) parseSqlWhere(filter *sqlFilter, t *token) request {
 	//must be where
 	if t != nil && t.typ != tokenTypeSqlWhere {
 		return p.parseError("expected where clause")
@@ -93,13 +93,13 @@ func (p *parser) parseSqlWhere(filter *sqlFilter, t *token) action {
 }
 
 // INSERT
-func (p *parser) parseSqlInsert() action {
+func (p *parser) parseSqlInsert() request {
 	// into
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlInto {
 		return p.parseError("expected into")
 	}
-	act := &sqlInsertAction{
+	act := &sqlInsertRequest{
 		colVals: make([]*columnValue, 0, 10),
 	}
 	// table name
@@ -114,7 +114,7 @@ func (p *parser) parseSqlInsert() action {
 	// columns
 	columns := 0
 	expectedType := tokenTypeSqlColumn
-	var erract action
+	var erract request
 	var str string
 	for expectedType == tokenTypeSqlColumn {
 		erract, expectedType, str = p.parseSqlInsertColumn()
@@ -155,7 +155,7 @@ func (p *parser) parseSqlInsert() action {
 	return act
 }
 
-func (p *parser) parseSqlInsertColumn() (action, tokenType, string) {
+func (p *parser) parseSqlInsertColumn() (request, tokenType, string) {
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlColumn {
 		return p.parseError("expected column name"), tokenTypeError, ""
@@ -171,7 +171,7 @@ func (p *parser) parseSqlInsertColumn() (action, tokenType, string) {
 	return p.parseError("expected , or ) "), tokenTypeError, ""
 }
 
-func (p *parser) parseSqlInsertValue() (action, tokenType, string) {
+func (p *parser) parseSqlInsertValue() (request, tokenType, string) {
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlValue {
 		return p.parseError("expected value"), tokenTypeError, ""
@@ -188,7 +188,7 @@ func (p *parser) parseSqlInsertValue() (action, tokenType, string) {
 }
 
 // SELECT
-func (p *parser) parseSqlSelect() action {
+func (p *parser) parseSqlSelect() request {
 	// *
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlStar {
@@ -199,7 +199,7 @@ func (p *parser) parseSqlSelect() action {
 	if t.typ != tokenTypeSqlFrom {
 		return p.parseError("expected from")
 	}
-	act := new(sqlSelectAction)
+	act := new(sqlSelectRequest)
 	// table name
 	if erract := p.parseTableName(&act.table); erract != nil {
 		return erract
@@ -218,8 +218,8 @@ func (p *parser) parseSqlSelect() action {
 }
 
 // UPDATE
-func (p *parser) parseSqlUpdate() action {
-	act := &sqlUpdateAction{
+func (p *parser) parseSqlUpdate() request {
+	act := &sqlUpdateRequest{
 		colVals: make([]*columnValue, 0, 10),
 	}
 	// table name
@@ -234,7 +234,7 @@ func (p *parser) parseSqlUpdate() action {
 	return p.parseError("expected set keyword")
 }
 
-func (p *parser) parseSqlUpdateColVals(act *sqlUpdateAction) action {
+func (p *parser) parseSqlUpdateColVals(act *sqlUpdateRequest) request {
 	count := 0
 loop:
 	for t := p.tokens.Produce(); ; t = p.tokens.Produce() {
@@ -271,13 +271,13 @@ loop:
 }
 
 // DELETE
-func (p *parser) parseSqlDelete() action {
+func (p *parser) parseSqlDelete() request {
 	// from
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlFrom {
 		return p.parseError("expected from")
 	}
-	act := new(sqlDeleteAction)
+	act := new(sqlDeleteRequest)
 	// table name
 	if erract := p.parseTableName(&act.table); erract != nil {
 		return erract
@@ -296,7 +296,7 @@ func (p *parser) parseSqlDelete() action {
 }
 
 // SUBSCRIBE 
-func (p *parser) parseSqlSubscribe() action {
+func (p *parser) parseSqlSubscribe() request {
 	// *
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlStar {
@@ -307,7 +307,7 @@ func (p *parser) parseSqlSubscribe() action {
 	if t.typ != tokenTypeSqlFrom {
 		return p.parseError("expected from")
 	}
-	act := new(sqlSubscribeAction)
+	act := new(sqlSubscribeRequest)
 	// table name
 	if erract := p.parseTableName(&act.table); erract != nil {
 		return erract
@@ -326,13 +326,13 @@ func (p *parser) parseSqlSubscribe() action {
 }
 
 // UNSUBSCRIBE
-func (p *parser) parseSqlUnsubscribe() action {
+func (p *parser) parseSqlUnsubscribe() request {
 	// from
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlFrom {
 		return p.parseError("expected from")
 	}
-	act := new(sqlUnsubscribeAction)
+	act := new(sqlUnsubscribeRequest)
 	// table name
 	if erract := p.parseTableName(&act.table); erract != nil {
 		return erract
@@ -341,8 +341,8 @@ func (p *parser) parseSqlUnsubscribe() action {
 }
 
 // KEY
-func (p *parser) parseSqlKey() action {
-	act := new(sqlKeyAction)
+func (p *parser) parseSqlKey() request {
+	act := new(sqlKeyRequest)
 	// table name
 	if erract := p.parseTableName(&act.table); erract != nil {
 		return erract
@@ -355,8 +355,8 @@ func (p *parser) parseSqlKey() action {
 }
 
 // TAG
-func (p *parser) parseSqlTag() action {
-	act := new(sqlTagAction)
+func (p *parser) parseSqlTag() request {
+	act := new(sqlTagRequest)
 	// table name
 	if erract := p.parseTableName(&act.table); erract != nil {
 		return erract
@@ -369,7 +369,7 @@ func (p *parser) parseSqlTag() action {
 }
 
 // run runs the parser
-func (p *parser) run() action {
+func (p *parser) run() request {
 	t := p.tokens.Produce()
 	switch t.typ {
 	case tokenTypeSqlInsert:
@@ -398,11 +398,11 @@ func (p *parser) run() action {
 
 	}
 
-	return p.parseError("invalid action")
+	return p.parseError("invalid request")
 }
 
-// parse parses tokens and returns an action 
-func parse(tokens tokenProducer) action {
+// parse parses tokens and returns an request 
+func parse(tokens tokenProducer) request {
 	p := &parser{
 		tokens: tokens,
 	}
