@@ -16,14 +16,14 @@
 
 package pubsubsql
 
-type dataServiceItem struct {
+type requestItem struct {
 	req       request
 	responser *responseSender
 }
 
 // dataService prer-processes sqlRequests and channels them to approptiate tables for further proccessging 
 type dataService struct {
-	requests chan dataServiceItem
+	requests chan *requestItem
 	stoper   *Stoper
 }
 
@@ -33,8 +33,16 @@ func newDataService(bufferSize int, stoper *Stoper) *dataService {
 		panic("dataService.stoper can not be nil")
 	}
 	return &dataService{
-		requests: make(chan dataServiceItem, bufferSize),
+		requests: make(chan *requestItem, bufferSize),
 		stoper:   stoper,
+	}
+}
+
+// accepts the request
+func (d *dataService) accept(r *requestItem) {
+	select {
+	case d.requests <- r:
+	case <-d.stoper.GetChan():
 	}
 }
 
