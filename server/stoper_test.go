@@ -19,20 +19,20 @@ package pubsubsql
 import "testing"
 import "time"
 import "runtime"
+import "fmt"
 
 func Test(t *testing.T) {
 	stoper := NewStoper()
 	if !stoper.Stop(0) {
-		t.Errorf("stoper.Stop() expected true but got false");
+		t.Errorf("stoper.Stop() expected true but got false")
 	}
 }
 
-
-func testStoper (stoper *Stoper, level int, perLevel int) {
+func testStoper(stoper *Stoper, level int, perLevel int) {
 	stoper.Enter()
 	defer stoper.Leave()
 	level--
-	if (level < 0) {
+	if level < 0 {
 		return
 	}
 	//start other go routines
@@ -41,7 +41,7 @@ func testStoper (stoper *Stoper, level int, perLevel int) {
 	}
 	//wait for stop event
 	c := stoper.GetChan()
-	<-c;
+	<-c
 }
 
 func TestMultiGoroutines(t *testing.T) {
@@ -50,20 +50,23 @@ func TestMultiGoroutines(t *testing.T) {
 	perLevel := 10
 	go testStoper(stoper, levels, perLevel)
 	time.Sleep(time.Millisecond * 500)
+	fmt.Println("goroutines in progress:", stoper.Counter())
 	if !stoper.Stop(time.Millisecond * 1000) {
-		t.Errorf("stoper.Stop() expected true but got false");
+		t.Errorf("stoper.Stop() expected true but got false")
 	}
+	fmt.Println("goroutines in progress:", stoper.Counter())
 }
 
 func TestMultiGoroutinesMultiCores(t *testing.T) {
-	runtime.GOMAXPROCS(runtime.NumCPU() - 1)	
+	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	stoper := NewStoper()
 	levels := 5
 	perLevel := 10
 	go testStoper(stoper, levels, perLevel)
 	time.Sleep(time.Millisecond * 500)
+	fmt.Println("goroutines in progress:", stoper.Counter())
 	if !stoper.Stop(time.Millisecond * 1000) {
-		t.Errorf("stoper.Stop() expected true but got false");
+		t.Errorf("stoper.Stop() expected true but got false")
 	}
+	fmt.Println("goroutines in progress:", stoper.Counter())
 }
-

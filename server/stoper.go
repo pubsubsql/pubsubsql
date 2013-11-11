@@ -23,11 +23,11 @@ import "time"
 type Stoper struct {
 	counter int64
 	channel chan int
-}	
+}
 
 //Stoper factory.
 func NewStoper() *Stoper {
-	stoper := new(Stoper);
+	stoper := new(Stoper)
 	stoper.counter = 0
 	stoper.channel = make(chan int)
 	return stoper
@@ -35,24 +35,24 @@ func NewStoper() *Stoper {
 
 //Enter starts participation in shutdown protocol. 
 func (this *Stoper) Enter() {
-	atomic.AddInt64(&this.counter, 1)	
+	atomic.AddInt64(&this.counter, 1)
 }
-	
+
 //Leave notifies that participating goroutine gracesfully exited.
 //should be called with defer symantics
 func (this *Stoper) Leave() {
-	atomic.AddInt64(&this.counter, -1)	
+	atomic.AddInt64(&this.counter, -1)
 }
 
 //GetChan returns channel to be used in select {} in order to react to Stop event.
-func (this *Stoper) GetChan() (chan int) {
+func (this *Stoper) GetChan() chan int {
 	return this.channel
 }
 
 //Stop notifies all participating goroutines that shutdown protocol is in progress
 //and waits for all go routines to exit until timeout
 //Returns false when timed out
-func (this *Stoper) Stop(timeout time.Duration) (bool) {
+func (this *Stoper) Stop(timeout time.Duration) bool {
 	close(this.channel)
 	t := time.Now()
 	for atomic.LoadInt64(&this.counter) > 0 {
@@ -64,3 +64,7 @@ func (this *Stoper) Stop(timeout time.Duration) (bool) {
 	return true
 }
 
+//Counter returns number of of participating goroutines
+func (this *Stoper) Counter() int64 {
+	return atomic.LoadInt64(&this.counter)
+}

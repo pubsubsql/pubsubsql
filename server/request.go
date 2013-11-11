@@ -20,8 +20,8 @@ type requestType uint8
 
 const (
 	requestTypeError requestType = iota // error request indicates scan or parse error.
-	requestTypeCmd                     // cmd requests help, status etc.
-	requestTypeSql                     // sql actins insert, update etc.
+	requestTypeCmd                      // cmd requests help, status etc.
+	requestTypeSql                      // sql actins insert, update etc.
 )
 
 // request
