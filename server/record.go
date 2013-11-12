@@ -22,10 +22,11 @@ type record struct {
 }
 
 // record factory
-func newRecord(columns int) *record {
+func newRecord(columns int, id string) *record {
 	r := record{
 		values: make([]string, columns, columns),
 	}
+	r.setValue(0, id)
 	return &r
 }
 
@@ -48,3 +49,7 @@ func (r *record) setValue(ordinal int, val string) {
 	r.values[ordinal] = val
 }
 
+// getId returns id
+func (r *record) getId() string {
+	return r.values[0]
+}

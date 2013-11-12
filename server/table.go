@@ -16,6 +16,13 @@
 
 package pubsubsql
 
+import "strconv"
+
+const (
+	tableCOLUMNS int = 10
+	tableRECORDS     = 5000
+)
+
 // column  
 type column struct {
 	name    string
@@ -27,6 +34,9 @@ type table struct {
 	name     string
 	colMap   map[string]*column
 	colSlice []*column
+	records  []*record
+	// 
+
 }
 
 // table factory 
@@ -34,7 +44,8 @@ func newTable(name string) *table {
 	t := &table{
 		name:     name,
 		colMap:   make(map[string]*column),
-		colSlice: make([]*column, 0, 10),
+		colSlice: make([]*column, 0, tableCOLUMNS),
+		records:  make([]*record, 0, tableRECORDS),
 	}
 	t.addColumn("id")
 	return t
@@ -59,4 +70,45 @@ func (t *table) getAddColumn(name string) int {
 		return col.ordinal
 	}
 	return t.addColumn(name)
+}
+
+// getColumn retrieves existing column
+func (t *table) getColumn(name string) *column {
+	col, ok := t.colMap[name]
+	if ok {
+		return col
+	}
+	return nil
+}
+
+// getColumnCount returns total number of defined columns in the table
+func (t *table) getColumnCount() int {
+	return len(t.colSlice)
+}
+
+// addRecord adds new record to the table and returns newly added record
+func (t *table) addRecord() *record {
+	l := len(t.records)
+	r := newRecord(len(t.colSlice), strconv.Itoa(l))
+	//check if records slice needs to grow by 10%
+	if cap(t.records) == l {
+		temp := t.records
+		t.records = make([]*record, l, l+(l/10))
+		copy(t.records, temp)
+	}
+	t.records = append(t.records, r)
+	return r
+}
+
+// getRecords returns record by id
+func (t *table) getRecord(id int) *record {
+	if len(t.records) > id {
+		return t.records[id]
+	}
+	return nil
+}
+
+// getRecordCount returns total number of records in the table
+func (t *table) getRecordCount() int {
+	return len(t.records)
 }
