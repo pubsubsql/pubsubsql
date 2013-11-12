@@ -61,6 +61,7 @@ func (act cmdRequest) getRequestType() requestType {
 type columnValue struct {
 	col string
 	val string
+	ordinal int // stub for optimization when processing the request 
 }
 
 // temporarely stub for sqlFilter type that will be more capble in future versions
