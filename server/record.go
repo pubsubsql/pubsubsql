@@ -23,7 +23,7 @@ type record struct {
 
 // record factory
 func newRecord(columns int) *record {
-	r := record {
+	r := record{
 		values: make([]string, columns, columns),
 	}
 	return &r
@@ -33,7 +33,7 @@ func newRecord(columns int) *record {
 func (r *record) getValue(ordinal int) string {
 	if len(r.values) > ordinal {
 		return r.values[ordinal]
-	} 
+	}
 	return ""
 }
 
@@ -41,10 +41,9 @@ func (r *record) getValue(ordinal int) string {
 func (r *record) setValue(ordinal int, val string) {
 	l := len(r.values)
 	if l <= ordinal {
-		delta := ordinal - l + 1	
+		delta := ordinal - l + 1
 		temp := make([]string, delta)
-		r.values = append(r.values, temp...) 	
-	} 
-	r.values[ordinal] = val	
+		r.values = append(r.values, temp...)
+	}
+	r.values[ordinal] = val
 }
-

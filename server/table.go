@@ -18,38 +18,38 @@ package pubsubsql
 
 // column  
 type column struct {
-	name string	
+	name    string
 	ordinal int
 }
 
 // table  
 type table struct {
-	name string	
-	colMap map[string]*column 
-	colSlice []*column 
+	name     string
+	colMap   map[string]*column
+	colSlice []*column
 }
 
 // table factory 
 func newTable(name string) *table {
-	t := &table {
-		name: name, 
-		colMap: make(map[string]*column),
+	t := &table{
+		name:     name,
+		colMap:   make(map[string]*column),
 		colSlice: make([]*column, 0, 10),
 	}
 	t.addColumn("id")
 	return t
-} 
+}
 
 // addColumn adds column and returns column ordinal
 func (t *table) addColumn(name string) int {
 	ordinal := len(t.colSlice)
-	col := &column {
-		name: name, 
+	col := &column{
+		name:    name,
 		ordinal: ordinal,
 	}
 	t.colMap[name] = col
 	t.colSlice = append(t.colSlice, col)
-	return ordinal	
+	return ordinal
 }
 
 // getAddColumn tries to retrieve existing column  or adds it if does not exist
@@ -57,8 +57,6 @@ func (t *table) getAddColumn(name string) int {
 	col, ok := t.colMap[name]
 	if ok {
 		return col.ordinal
-	} 
+	}
 	return t.addColumn(name)
-} 
-
-
+}

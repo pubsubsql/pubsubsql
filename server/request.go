@@ -59,8 +59,8 @@ func (act cmdRequest) getRequestType() requestType {
 
 // columnValue pair 
 type columnValue struct {
-	col string
-	val string
+	col     string
+	val     string
 	ordinal int // stub for optimization when processing the request 
 }
 
