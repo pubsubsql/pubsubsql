@@ -47,3 +47,4 @@ func (r *record) setValue(ordinal int, val string) {
 	}
 	r.values[ordinal] = val
 }
+
