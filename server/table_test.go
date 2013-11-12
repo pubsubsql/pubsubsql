@@ -25,6 +25,18 @@ func validateTableRecordsCount(t *testing.T, tbl *table, expected int) {
 	}
 }
 
+func validateSqlInsertResponseId(t *testing.T, res response, expected string) {
+	switch res.(type) {
+	case *sqlInsertResponse:
+		x := res.(*sqlInsertResponse)
+		if x.id != expected {
+			t.Errorf("table insert error: expected id:%s but got:%s", expected, x.id)
+		}
+	default:
+		t.Errorf("table insert error: invalid response type expected sqlInsertResponse")
+	}
+}
+
 func TestTable1(t *testing.T) {
 	tbl := newTable("table1")
 	tbl.getAddColumn("col1")
@@ -79,4 +91,34 @@ func TestTable2(t *testing.T) {
 	validateRecordValue(t, r, 1, "val1")
 	validateRecordValue(t, r, 2, "val2")
 	validateRecordValue(t, r, 3, "val3")
+}
+
+// INSERT
+
+func TestTableSqlInsert(t *testing.T) {
+	tbl := newTable("table1")
+	//
+	pc := newTokens()
+	lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
+	req := parse(pc).(*sqlInsertRequest)
+	res := tbl.sqlInsert(req)
+	validateSqlInsertResponseId(t, res, "0")
+	t.Log(res.String())
+	//
+	pc = newTokens()
+	lex(" insert into stocks (ticker, bid, ask) values (MSFT, 37, 38) ", pc)
+	req = parse(pc).(*sqlInsertRequest)
+	res = tbl.sqlInsert(req)
+	validateSqlInsertResponseId(t, res, "1")
+	t.Log(res.String())
+}
+
+func BenchmarkTableSqlInser(b *testing.B) {
+	tbl := newTable("table1")
+	for i := 0; i < b.N; i++ {
+		pc := newTokens()
+		lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
+		req := parse(pc).(*sqlInsertRequest)
+		tbl.sqlInsert(req)
+	}
 }

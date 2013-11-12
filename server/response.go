@@ -26,23 +26,35 @@ const (
 // response 
 type response interface {
 	getResponseStatus() responseStatusType
+	String() string
 }
 
-// statusResponse 
-type statusResponse struct {
+// errorResponse 
+type errorResponse struct {
 	response
-	status responseStatusType
-	msg    string
+	msg string
 }
 
-func (r *statusResponse) getResponsStatus() responseStatusType {
-	return r.status
+func (r *errorResponse) getResponsStatus() responseStatusType {
+	return responseStatusErr
 }
 
-// TODO String stub will optimize later
-func (r *statusResponse) String() string {
-	if r.status == responseStatusOk {
-		return `{"status":"ok"}`
-	}
+func (r *errorResponse) String() string {
 	return `{"status":"err" "msg":"` + r.msg + `"}`
 }
+
+// sqlInsertResponse is a response for sql insert statement
+type sqlInsertResponse struct {
+	response
+	id string
+}
+
+func (r *sqlInsertResponse) getResponsStatus() responseStatusType {
+	return responseStatusOk
+}
+
+func (r *sqlInsertResponse) String() string {
+	return `{"response":"insert" "status":"ok" "id":"` + r.id + `"}`
+}
+
+//

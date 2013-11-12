@@ -59,9 +59,8 @@ func (act cmdRequest) getRequestType() requestType {
 
 // columnValue pair 
 type columnValue struct {
-	col     string
-	val     string
-	ordinal int // stub for optimization when processing the request 
+	col string
+	val string
 }
 
 // temporarely stub for sqlFilter type that will be more capble in future versions
@@ -74,7 +73,7 @@ func (f *sqlFilter) addFilter(col string, val string) {
 	f.val = val
 }
 
-// sqlInsertRequest is an request for sql insert statement
+// sqlInsertRequest is a request for sql insert statement
 type sqlInsertRequest struct {
 	sqlRequest
 	table   string

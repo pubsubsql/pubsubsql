@@ -36,7 +36,6 @@ type table struct {
 	colSlice []*column
 	records  []*record
 	// 
-
 }
 
 // table factory 
@@ -111,4 +110,14 @@ func (t *table) getRecord(id int) *record {
 // getRecordCount returns total number of records in the table
 func (t *table) getRecordCount() int {
 	return len(t.records)
+}
+
+// sqlInsert proceses sql insert request and returns response
+func (t *table) sqlInsert(req *sqlInsertRequest) response {
+	rec := t.addRecord()
+	for _, colVal := range req.colVals {
+		rec.setValue(t.getAddColumn(colVal.col), colVal.val)
+	}
+	res := sqlInsertResponse{id: rec.getId()}
+	return &res
 }
