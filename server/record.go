@@ -30,6 +30,13 @@ func newRecord(columns int, id string) *record {
 	return &r
 }
 
+func newRecord2(columns int) *record {
+	r := record{
+		values: make([]string, columns, columns),
+	}
+	return &r
+}
+
 // getValue retrieves value based on column ordinal
 func (r *record) getValue(ordinal int) string {
 	if len(r.values) > ordinal {

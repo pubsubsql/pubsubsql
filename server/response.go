@@ -35,6 +35,10 @@ type errorResponse struct {
 	msg string
 }
 
+func newErrorResponse(msg string) *errorResponse {
+	return &errorResponse{msg: msg}
+}
+
 func (r *errorResponse) getResponsStatus() responseStatusType {
 	return responseStatusErr
 }
@@ -57,4 +61,17 @@ func (r *sqlInsertResponse) String() string {
 	return `{"response":"insert" "status":"ok" "id":"` + r.id + `"}`
 }
 
-//
+// sqlSelectResponse is a response for sql select statement
+type sqlSelectResponse struct {
+	response
+	columns []*column
+	records []*record
+}
+
+func (r *sqlSelectResponse) copyRecordData(source *record) {
+	dest := newRecord2(len(r.columns))
+	for idx, col := range r.columns {
+		dest.setValue(idx, source.getValue(col.ordinal))
+	}
+	addRecordToSlice(&r.records, dest)
+}

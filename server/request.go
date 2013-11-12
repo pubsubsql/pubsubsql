@@ -92,14 +92,14 @@ func (a *sqlInsertRequest) setValueAt(idx int, val string) {
 	a.colVals[idx].val = val
 }
 
-// sqlSelectRequest is an request for sql select statement
+// sqlSelectRequest is a request for sql select statement
 type sqlSelectRequest struct {
 	sqlRequest
 	table  string
 	filter sqlFilter
 }
 
-// sqlUpdateRequest is an request for sql update statement
+// sqlUpdateRequest is a request for sql update statement
 type sqlUpdateRequest struct {
 	sqlRequest
 	table   string
@@ -111,27 +111,27 @@ func (a *sqlUpdateRequest) addColVal(col string, val string) {
 	a.colVals = append(a.colVals, &columnValue{col: col, val: val})
 }
 
-// sqlDeleteRequest is an request for sql delete statement
+// sqlDeleteRequest is a request for sql delete statement
 type sqlDeleteRequest struct {
 	sqlRequest
 	table  string
 	filter sqlFilter
 }
 
-// sqlSubscribeRequest is an request for sql subscribe statement
+// sqlSubscribeRequest is a request for sql subscribe statement
 type sqlSubscribeRequest struct {
 	sqlRequest
 	table  string
 	filter sqlFilter
 }
 
-// sqlUnsubscribeRequest is an request for sql unsubscribe statement
+// sqlUnsubscribeRequest is a request for sql unsubscribe statement
 type sqlUnsubscribeRequest struct {
 	sqlRequest
 	table string
 }
 
-// sqlKeyRequest is an request for key statement 
+// sqlKeyRequest is a request for key statement 
 // key defines unique index
 type sqlKeyRequest struct {
 	sqlRequest
@@ -139,7 +139,7 @@ type sqlKeyRequest struct {
 	column string
 }
 
-// sqlTagRequest is an request for tag statement 
+// sqlTagRequest is a request for tag statement 
 // tag defines non-unique index
 type sqlTagRequest struct {
 	sqlRequest

@@ -89,14 +89,20 @@ func (t *table) getColumnCount() int {
 func (t *table) addRecord() *record {
 	l := len(t.records)
 	r := newRecord(len(t.colSlice), strconv.Itoa(l))
-	//check if records slice needs to grow by 10%
-	if cap(t.records) == l {
-		temp := t.records
-		t.records = make([]*record, l, l+(l/10))
-		copy(t.records, temp)
-	}
-	t.records = append(t.records, r)
+	addRecordToSlice(&t.records, r)
 	return r
+}
+
+// addRecord
+func addRecordToSlice(records *[]*record, r *record) {
+	//check if records slice needs to grow by 10%
+	l := len(*records)
+	if cap(*records) == len(*records) {
+		temp := *records
+		*records = make([]*record, l, l+(l/10))
+		copy(*records, temp)
+	}
+	*records = append(*records, r)
 }
 
 // getRecords returns record by id
@@ -119,5 +125,23 @@ func (t *table) sqlInsert(req *sqlInsertRequest) response {
 		rec.setValue(t.getAddColumn(colVal.col), colVal.val)
 	}
 	res := sqlInsertResponse{id: rec.getId()}
+	return &res
+}
+
+// sqlSelect processes sql select request and returns response
+func (t *table) sqlSelect(req *sqlSelectRequest) response {
+	if req.filter.col != "" {
+		return newErrorResponse("filters are not supported ")
+	}
+	// select * no filter
+	var rows int
+	rows = len(t.records)
+	res := sqlSelectResponse{
+		columns: t.colSlice,
+		records: make([]*record, 0, rows),
+	}
+	for _, source := range t.records {
+		res.copyRecordData(source)
+	}
 	return &res
 }

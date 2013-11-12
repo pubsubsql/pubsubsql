@@ -37,6 +37,21 @@ func validateSqlInsertResponseId(t *testing.T, res response, expected string) {
 	}
 }
 
+func validateSqlSelectResponse(t *testing.T, res response, rows int, cols int) {
+	switch res.(type) {
+	case *sqlSelectResponse:
+		x := res.(*sqlSelectResponse)
+		if len(x.columns) != cols {
+			t.Errorf("table select error: expected column count:%d but got:%d", cols, len(x.columns))
+		}
+		if len(x.records) != rows {
+			t.Errorf("table select error: expected rows count:%d but got:%d", rows, len(x.records))
+		}
+	default:
+		t.Errorf("table select error: invalid response type expected sqlSelectResponse")
+	}
+}
+
 func TestTable1(t *testing.T) {
 	tbl := newTable("table1")
 	tbl.getAddColumn("col1")
@@ -96,7 +111,7 @@ func TestTable2(t *testing.T) {
 // INSERT
 
 func TestTableSqlInsert(t *testing.T) {
-	tbl := newTable("table1")
+	tbl := newTable("stocks")
 	//
 	pc := newTokens()
 	lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
@@ -114,11 +129,39 @@ func TestTableSqlInsert(t *testing.T) {
 }
 
 func BenchmarkTableSqlInser(b *testing.B) {
-	tbl := newTable("table1")
+	tbl := newTable("stocks")
 	for i := 0; i < b.N; i++ {
 		pc := newTokens()
 		lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
 		req := parse(pc).(*sqlInsertRequest)
 		tbl.sqlInsert(req)
 	}
+}
+
+// SELECT
+
+func TestTableSqlSelect(t *testing.T) {
+	tbl := newTable("stocks")
+	//
+	pc := newTokens()
+	lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
+	insert := parse(pc).(*sqlInsertRequest)
+	res := tbl.sqlInsert(insert)
+
+	pc = newTokens()
+	lex(" select * from stocks ", pc)
+	selec := parse(pc).(*sqlSelectRequest)
+	res = tbl.sqlSelect(selec)
+	validateSqlSelectResponse(t, res, 1, 4)
+	//	
+	pc = newTokens()
+	lex(" insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, 'TECH') ", pc)
+	insert = parse(pc).(*sqlInsertRequest)
+	res = tbl.sqlInsert(insert)
+
+	pc = newTokens()
+	lex(" select * from stocks ", pc)
+	selec = parse(pc).(*sqlSelectRequest)
+	res = tbl.sqlSelect(selec)
+	validateSqlSelectResponse(t, res, 2, 5)
 }
