@@ -60,6 +60,15 @@ func newTable(name string) *table {
 	return t
 }
 
+// getColumnCount returns number of columns
+func (t *table) getColumnCount() int {
+	l := len(t.colSlice)
+	if l != len(t.colMap) {
+		panic("Something bad happened column slice and map do not match")
+	}
+	return l
+}
+
 // addColumn adds column and returns column ordinal
 func (t *table) addColumn(name string) *column {
 	ordinal := len(t.colSlice)
@@ -91,23 +100,20 @@ func (t *table) getColumn(name string) *column {
 	return nil
 }
 
-// getColumnCount returns total number of defined columns in the table
-func (t *table) getColumnCount() int {
-	return len(t.colSlice)
-}
-
-// addRecord adds new record to the table and returns newly added record
+// newRecord creates new record but does not add it to the table
 func (t *table) newRecord() (*record, int) {
 	l := len(t.records)
 	r := newRecord(len(t.colSlice), strconv.Itoa(l))
 	return r, l
 }
 
+// adNewRecord add newly created record to the table
 func (t *table) addNewRecord(r *record) {
 	addRecordToSlice(&t.records, r)
 }
 
-// addRecord
+// addRecordToSlice generic helper function that adds record to the slice and
+// automatically expands the slice
 func addRecordToSlice(records *[]*record, r *record) {
 	//check if records slice needs to grow by 10%
 	l := len(*records)

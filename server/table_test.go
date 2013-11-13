@@ -55,16 +55,16 @@ func validateSqlSelectResponse(t *testing.T, res response, rows int, cols int) {
 func validateOkResponse(t *testing.T, res response) {
 	switch res.(type) {
 	case *okResponse:
-	
+
 	default:
 		t.Errorf("invalid response type expected okResponse")
 	}
 }
 
-func validateErrorResponse(t* testing.T, res response) {
+func validateErrorResponse(t *testing.T, res response) {
 	switch res.(type) {
 	case *errorResponse:
-	
+
 	default:
 		t.Errorf("invalid response type expected errorResponse")
 	}
@@ -136,7 +136,7 @@ func insertHelper(t *table, sqlInsert string) response {
 	lex(sqlInsert, pc)
 	req := parse(pc).(*sqlInsertRequest)
 	return t.sqlInsert(req)
-} 
+}
 
 func TestTableSqlInsert(t *testing.T) {
 	tbl := newTable("stocks")
@@ -164,7 +164,7 @@ func selectHelper(t *table, sqlSelect string) response {
 	lex(sqlSelect, pc)
 	req := parse(pc).(*sqlSelectRequest)
 	return t.sqlSelect(req)
-} 
+}
 
 func TestTableSqlSelect(t *testing.T) {
 	tbl := newTable("stocks")
@@ -180,13 +180,47 @@ func TestTableSqlSelect(t *testing.T) {
 
 // KEY
 
-func TestTableSqlKey(t *testing.T) {
-	tbl := newTable("stocks")
-	//
+func keyHelper(t *table, sqlKey string) response {
 	pc := newTokens()
-	lex(" key stocks ticker ", pc)
-	key := parse(pc).(*sqlKeyRequest)
-	res := tbl.sqlKey(key)
-	validateOkResponse(t, res)	
+	lex(sqlKey, pc)
+	req := parse(pc).(*sqlKeyRequest)
+	return t.sqlKey(req)
+}
+
+func TestTableSqlKey1(t *testing.T) {
+	tbl := newTable("stocks")
+	// define key
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// insert record
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "0")
+	// now define key for new column 
+	res = keyHelper(tbl, "key stocks sector")
+	validateErrorResponse(t, res)
+	// should fail due to duplicate key 
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	validateErrorResponse(t, res)
+	// now create another record with valid secotor
+	res = insertHelper(tbl, " insert into stocks (ticker, sector, bid, ask) values (MSFT, sec1, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "1")
+	// now sector is now unique empty string for IBM and sec1 for MSFT
+	res = keyHelper(tbl, "key stocks sector")
+	validateOkResponse(t, res)
+	// try to define existing key
+	res = keyHelper(tbl, "key stocks ticker")
+	validateErrorResponse(t, res)
+	res = keyHelper(tbl, "key stocks sector")
+	validateErrorResponse(t, res)
+	// try to insert with duplicate key
+	res = insertHelper(tbl, " insert into stocks (ticker, sector, bid, ask) values (ORCL, sec1, 12, 14.5645) ")
+	validateErrorResponse(t, res)
+	// try to insert with duplicate key and new column which should not be created
+	l := tbl.getColumnCount()
+	res = insertHelper(tbl, " insert into stocks (col1, col2, ticker, sector, bid, ask) values (col1, col2, ORCL, sec1, 12, 14.5645) ")
+	validateErrorResponse(t, res)
+	if l != tbl.getColumnCount() {
+		t.Errorf("insert failed after duplicate keys rollback failed")
+	}
 
 }
