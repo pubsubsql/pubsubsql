@@ -52,6 +52,24 @@ func validateSqlSelectResponse(t *testing.T, res response, rows int, cols int) {
 	}
 }
 
+func validateOkResponse(t *testing.T, res response) {
+	switch res.(type) {
+	case *okResponse:
+	
+	default:
+		t.Errorf("invalid response type expected okResponse")
+	}
+}
+
+func validateErrorResponse(t* testing.T, res response) {
+	switch res.(type) {
+	case *errorResponse:
+	
+	default:
+		t.Errorf("invalid response type expected errorResponse")
+	}
+}
+
 func TestTable1(t *testing.T) {
 	tbl := newTable("table1")
 	tbl.getAddColumn("col1")
@@ -113,20 +131,21 @@ func TestTable2(t *testing.T) {
 
 // INSERT
 
+func insertHelper(t *table, sqlInsert string) response {
+	pc := newTokens()
+	lex(sqlInsert, pc)
+	req := parse(pc).(*sqlInsertRequest)
+	return t.sqlInsert(req)
+} 
+
 func TestTableSqlInsert(t *testing.T) {
 	tbl := newTable("stocks")
 	//
-	pc := newTokens()
-	lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
-	req := parse(pc).(*sqlInsertRequest)
-	res := tbl.sqlInsert(req)
+	res := insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645)")
 	validateSqlInsertResponseId(t, res, "0")
 	t.Log(res.String())
 	//
-	pc = newTokens()
-	lex(" insert into stocks (ticker, bid, ask) values (MSFT, 37, 38) ", pc)
-	req = parse(pc).(*sqlInsertRequest)
-	res = tbl.sqlInsert(req)
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (MSFT, 37, 38) ")
 	validateSqlInsertResponseId(t, res, "1")
 	t.Log(res.String())
 }
@@ -134,37 +153,40 @@ func TestTableSqlInsert(t *testing.T) {
 func BenchmarkTableSqlInser(b *testing.B) {
 	tbl := newTable("stocks")
 	for i := 0; i < b.N; i++ {
-		pc := newTokens()
-		lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
-		req := parse(pc).(*sqlInsertRequest)
-		tbl.sqlInsert(req)
+		insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	}
 }
 
 // SELECT
 
+func selectHelper(t *table, sqlSelect string) response {
+	pc := newTokens()
+	lex(sqlSelect, pc)
+	req := parse(pc).(*sqlSelectRequest)
+	return t.sqlSelect(req)
+} 
+
 func TestTableSqlSelect(t *testing.T) {
 	tbl := newTable("stocks")
 	//
-	pc := newTokens()
-	lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
-	insert := parse(pc).(*sqlInsertRequest)
-	res := tbl.sqlInsert(insert)
-
-	pc = newTokens()
-	lex(" select * from stocks ", pc)
-	selec := parse(pc).(*sqlSelectRequest)
-	res = tbl.sqlSelect(selec)
+	insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	res := selectHelper(tbl, " select * from stocks ")
 	validateSqlSelectResponse(t, res, 1, 4)
 	//	
-	pc = newTokens()
-	lex(" insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, 'TECH') ", pc)
-	insert = parse(pc).(*sqlInsertRequest)
-	res = tbl.sqlInsert(insert)
-
-	pc = newTokens()
-	lex(" select * from stocks ", pc)
-	selec = parse(pc).(*sqlSelectRequest)
-	res = tbl.sqlSelect(selec)
+	insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, 'TECH') ")
+	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelectResponse(t, res, 2, 5)
+}
+
+// KEY
+
+func TestTableSqlKey(t *testing.T) {
+	tbl := newTable("stocks")
+	//
+	pc := newTokens()
+	lex(" key stocks ticker ", pc)
+	key := parse(pc).(*sqlKeyRequest)
+	res := tbl.sqlKey(key)
+	validateOkResponse(t, res)	
+
 }

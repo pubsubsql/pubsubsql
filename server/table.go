@@ -147,7 +147,7 @@ func (t *table) sqlKey(req *sqlKeyRequest) response {
 	// new column no records
 	if col == nil {
 		t.getAddColumn(req.column)
-		col := t.getColumn(req.column)
+		col = t.getColumn(req.column)
 		col.key = key
 	} else {
 		// index all records and check if there are duplicates
@@ -166,15 +166,15 @@ func (t *table) sqlKey(req *sqlKeyRequest) response {
 
 // rollbackChanges rolls back all of the changes made for a given single operation
 func (t *table) rollback(id int, colLen int, colVals []*columnValue, newColumns []string) {
-	t.colSlice = t.colSlice[:colLen]
 	// back off column changes
+	t.colSlice = t.colSlice[:colLen]
 	for _, newColumn := range newColumns {
 		delete(t.colMap, newColumn)
 	}
 	// remove inserted keys
 	for _, colVal := range colVals {
 		col := t.getColumn(colVal.col)
-		if col.hasKey() {
+		if col != nil && col.hasKey() {
 			val, present := col.key[colVal.val]
 			// make sure to only rollback the key with the given id
 			if present && val == id {
