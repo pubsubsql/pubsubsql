@@ -27,6 +27,16 @@ const (
 type column struct {
 	name    string
 	ordinal int
+	key     map[string]int
+}
+
+func (c *column) hasKey() bool {
+	return c.key != nil
+}
+
+func (c *column) keyContainsValue(k string) bool {
+	_, contains := c.key[k]
+	return contains
 }
 
 // table  
@@ -51,7 +61,7 @@ func newTable(name string) *table {
 }
 
 // addColumn adds column and returns column ordinal
-func (t *table) addColumn(name string) int {
+func (t *table) addColumn(name string) *column {
 	ordinal := len(t.colSlice)
 	col := &column{
 		name:    name,
@@ -59,16 +69,17 @@ func (t *table) addColumn(name string) int {
 	}
 	t.colMap[name] = col
 	t.colSlice = append(t.colSlice, col)
-	return ordinal
+	return col
 }
 
 // getAddColumn tries to retrieve existing column  or adds it if does not exist
-func (t *table) getAddColumn(name string) int {
-	col, ok := t.colMap[name]
-	if ok {
-		return col.ordinal
+// returns true when new column was added
+func (t *table) getAddColumn(name string) (*column, bool) {
+	col, columnExists := t.colMap[name]
+	if columnExists {
+		return col, false
 	}
-	return t.addColumn(name)
+	return t.addColumn(name), true
 }
 
 // getColumn retrieves existing column
@@ -86,11 +97,14 @@ func (t *table) getColumnCount() int {
 }
 
 // addRecord adds new record to the table and returns newly added record
-func (t *table) addRecord() *record {
+func (t *table) newRecord() (*record, int) {
 	l := len(t.records)
 	r := newRecord(len(t.colSlice), strconv.Itoa(l))
+	return r, l
+}
+
+func (t *table) addNewRecord(r *record) {
 	addRecordToSlice(&t.records, r)
-	return r
 }
 
 // addRecord
@@ -118,12 +132,82 @@ func (t *table) getRecordCount() int {
 	return len(t.records)
 }
 
+// sqlKey defines unique index in the table
+func (t *table) sqlKey(req *sqlKeyRequest) response {
+	// key is already defined for this column
+	col := t.getColumn(req.column)
+	if col != nil && col.hasKey() {
+		return newErrorResponse("key already exists")
+	}
+	// new column on existing records
+	if col == nil && len(t.records) > 0 {
+		return newErrorResponse("can not define key for non existant column due to possible duplicates")
+	}
+	key := make(map[string]int, cap(t.records))
+	// new column no records
+	if col == nil {
+		t.getAddColumn(req.column)
+		col := t.getColumn(req.column)
+		col.key = key
+	} else {
+		// index all records and check if there are duplicates
+		key = make(map[string]int, cap(t.records))
+		for idx, rec := range t.records {
+			val := rec.getValue(col.ordinal)
+			if col.keyContainsValue(val) {
+				return newErrorResponse("can not define key due to possible duplicates in existing records")
+			}
+			key[val] = idx
+		}
+	}
+	col.key = key
+	return newOkResponse()
+}
+
+// rollbackChanges rolls back all of the changes made for a given single operation
+func (t *table) rollback(id int, colLen int, colVals []*columnValue, newColumns []string) {
+	t.colSlice = t.colSlice[:colLen]
+	// back off column changes
+	for _, newColumn := range newColumns {
+		delete(t.colMap, newColumn)
+	}
+	// remove inserted keys
+	for _, colVal := range colVals {
+		col := t.getColumn(colVal.col)
+		if col.hasKey() {
+			val, present := col.key[colVal.val]
+			// make sure to only rollback the key with the given id
+			if present && val == id {
+				delete(col.key, colVal.val)
+			}
+		}
+	}
+}
+
 // sqlInsert proceses sql insert request and returns response
 func (t *table) sqlInsert(req *sqlInsertRequest) response {
-	rec := t.addRecord()
+	rec, id := t.newRecord()
+	originalColumnsLen := len(t.colSlice)
+	var newColumns []string
 	for _, colVal := range req.colVals {
-		rec.setValue(t.getAddColumn(colVal.col), colVal.val)
+		col, isNewColumn := t.getAddColumn(colVal.col)
+		if isNewColumn {
+			newColumns = append(newColumns, colVal.col)
+		} else {
+			//check for unique key
+			if col.hasKey() && col.keyContainsValue(colVal.val) {
+				t.rollback(id, originalColumnsLen, req.colVals, newColumns)
+				return newErrorResponse("insert failed due to duplicate column key:" + colVal.col + " value:" + colVal.val)
+			}
+		}
+		// update key
+		if col.hasKey() {
+			col.key[colVal.val] = id
+		}
+		rec.setValue(col.ordinal, colVal.val)
 	}
+
+	t.addNewRecord(rec)
 	res := sqlInsertResponse{id: rec.getId()}
 	return &res
 }

@@ -47,6 +47,23 @@ func (r *errorResponse) String() string {
 	return `{"status":"err" "msg":"` + r.msg + `"}`
 }
 
+// okResponse
+type okResponse struct {
+	response
+}
+
+func newOkResponse() *okResponse {
+	return &okResponse{}
+}
+
+func (r *okResponse) getResponsStatus() responseStatusType {
+	return responseStatusOk
+}
+
+func (r *okResponse) String() string {
+	return `{"status":"ok"}`
+}
+
 // sqlInsertResponse is a response for sql insert statement
 type sqlInsertResponse struct {
 	response

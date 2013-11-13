@@ -55,7 +55,8 @@ func validateSqlSelectResponse(t *testing.T, res response, rows int, cols int) {
 func TestTable1(t *testing.T) {
 	tbl := newTable("table1")
 	tbl.getAddColumn("col1")
-	r := tbl.addRecord()
+	r, _ := tbl.newRecord()
+	tbl.addNewRecord(r)
 	validateTableRecordsCount(t, tbl, 1)
 	validateRecordValuesCount(t, r, 2)
 	validateRecordValue(t, r, 0, "0")
@@ -76,7 +77,8 @@ func TestTable2(t *testing.T) {
 	col2 := tbl.getColumn("col2").ordinal
 	col3 := tbl.getColumn("col3").ordinal
 	//
-	r := tbl.addRecord()
+	r, _ := tbl.newRecord()
+	tbl.addNewRecord(r)
 	validateTableRecordsCount(t, tbl, 1)
 	validateRecordValuesCount(t, r, 4)
 	validateRecordValue(t, r, 0, "0")
@@ -85,7 +87,8 @@ func TestTable2(t *testing.T) {
 	validateRecordValuesCount(t, r, 4)
 	validateRecordValue(t, r, 0, "0")
 	//	
-	r = tbl.addRecord()
+	r, _ = tbl.newRecord()
+	tbl.addNewRecord(r)
 	validateTableRecordsCount(t, tbl, 2)
 	validateRecordValuesCount(t, r, 4)
 	validateRecordValue(t, r, 0, "1")
