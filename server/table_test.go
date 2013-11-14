@@ -187,7 +187,7 @@ func keyHelper(t *table, sqlKey string) response {
 	return t.sqlKey(req)
 }
 
-func TestTableSqlKey1(t *testing.T) {
+func TestTableSqlKey(t *testing.T) {
 	tbl := newTable("stocks")
 	// define key
 	res := keyHelper(tbl, "key stocks ticker")
@@ -221,6 +221,58 @@ func TestTableSqlKey1(t *testing.T) {
 	validateErrorResponse(t, res)
 	if l != tbl.getColumnCount() {
 		t.Errorf("insert failed after duplicate keys rollback failed")
+	}
+}
+
+// TAG
+
+func tagHelper(t *table, sqlTag string) response {
+	pc := newTokens()
+	lex(sqlTag, pc)
+	req := parse(pc).(*sqlTagRequest)
+	return t.sqlTag(req)
+}
+
+func TestTableSqlTag(t *testing.T) {
+	tbl := newTable("stocks")
+	// tag ticker
+	res := tagHelper(tbl, "tag stocks ticker")
+	validateOkResponse(t, res)
+	// insert records
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "0")
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "1")
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (MSFT, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "2")
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "3")
+	if tbl.getTagedColumnValuesCount("ticker", "IBM") != 3 {
+		t.Errorf("invalid taged column values")
+	}
+	if tbl.getTagedColumnValuesCount("ticker", "MSFT") != 1 {
+		t.Errorf("invalid taged column values")
+	}
+	if 4 != tbl.getColumnCount() {
+		t.Errorf("tag failed: expected 4 columns but got %d", tbl.getColumnCount())
+	}
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	if 5 != tbl.getColumnCount() {
+		t.Errorf("tag failed: expected 5 columns but got %d", tbl.getColumnCount())
+	}
+	if tbl.getTagedColumnValuesCount("sector", "") != 4 {
+		t.Errorf("invalid taged column values")
+	}
+	//	
+	res = insertHelper(tbl, " insert into stocks (ticker, sector, bid, ask) values (IBM, 'TECH', 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "4")
+	if tbl.getTagedColumnValuesCount("sector", "") != 4 {
+		t.Errorf("invalid taged column values")
+	}
+	if tbl.getTagedColumnValuesCount("sector", "TECH") != 1 {
+		t.Errorf("invalid taged column values")
 	}
 
 }

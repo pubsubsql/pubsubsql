@@ -44,6 +44,19 @@ func (c *column) keyContainsValue(k string) bool {
 	return contains
 }
 
+// this function is purely for testing porposes
+func (t *table) getTagedColumnValuesCount(col string, val string) int {
+	c := t.getColumn(col)
+	if c == nil || !c.hasTags() {
+		return 0
+	}
+	i := 0
+	for tg := c.tags[val]; tg != nil; tg = tg.next {
+		i++
+	}
+	return i
+}
+
 // table  
 type table struct {
 	name     string
@@ -193,7 +206,7 @@ func (t *table) sqlTag(req *sqlTagRequest) response {
 	tags := make(map[string]*tag, cap(t.records))
 	for idx, rec := range t.records {
 		val := rec.getValue(col.ordinal)
-		addValueToTags(col.tags, val, idx)
+		addValueToTags(tags, val, idx)
 	}
 	//
 	col.tags = tags
