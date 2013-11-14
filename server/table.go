@@ -28,10 +28,15 @@ type column struct {
 	name    string
 	ordinal int
 	key     map[string]int
+	tags    map[string]*tag
 }
 
 func (c *column) hasKey() bool {
 	return c.key != nil
+}
+
+func (c *column) hasTags() bool {
+	return c.tags != nil
 }
 
 func (c *column) keyContainsValue(k string) bool {
@@ -142,8 +147,8 @@ func (t *table) getRecordCount() int {
 func (t *table) sqlKey(req *sqlKeyRequest) response {
 	// key is already defined for this column
 	col := t.getColumn(req.column)
-	if col != nil && col.hasKey() {
-		return newErrorResponse("key already exists")
+	if col != nil && (col.hasKey() || col.hasTags()) {
+		return newErrorResponse("key or tag already defined for column:" + req.column)
 	}
 	// new column on existing records
 	if col == nil && len(t.records) > 0 {
@@ -152,8 +157,7 @@ func (t *table) sqlKey(req *sqlKeyRequest) response {
 	key := make(map[string]int, cap(t.records))
 	// new column no records
 	if col == nil {
-		t.getAddColumn(req.column)
-		col = t.getColumn(req.column)
+		col, _ = t.getAddColumn(req.column)
 		col.key = key
 	} else {
 		// index all records and check if there are duplicates
@@ -170,49 +174,70 @@ func (t *table) sqlKey(req *sqlKeyRequest) response {
 	return newOkResponse()
 }
 
-// rollbackChanges rolls back all of the changes made for a given single operation
-func (t *table) rollback(id int, colLen int, colVals []*columnValue, newColumns []string) {
-	// back off column changes
-	t.colSlice = t.colSlice[:colLen]
-	for _, newColumn := range newColumns {
-		delete(t.colMap, newColumn)
+func addValueToTags(tags map[string]*tag, val string, idx int) {
+	head := tags[val]
+	tg := addTag(head, idx)
+	if head == nil {
+		tags[val] = tg
 	}
-	// remove inserted keys
-	for _, colVal := range colVals {
-		col := t.getColumn(colVal.col)
-		if col != nil && col.hasKey() {
-			val, present := col.key[colVal.val]
-			// make sure to only rollback the key with the given id
-			if present && val == id {
-				delete(col.key, colVal.val)
-			}
-		}
+}
+
+func (t *table) sqlTag(req *sqlTagRequest) response {
+	// tag is already defined for this column
+	col := t.getColumn(req.column)
+	if col != nil && (col.hasKey() || col.hasTags()) {
+		return newErrorResponse("key or tag already defined for column:" + req.column)
 	}
+	col, _ = t.getAddColumn(req.column)
+	// tag existing values
+	tags := make(map[string]*tag, cap(t.records))
+	for idx, rec := range t.records {
+		val := rec.getValue(col.ordinal)
+		addValueToTags(col.tags, val, idx)
+	}
+	//
+	col.tags = tags
+	return newOkResponse()
+}
+
+// removeColumns removes columns starting at particular ordinal
+func (t *table) removeColumns(ordinal int) {
+	if len(t.colSlice) <= ordinal {
+		return
+	}
+	tail := t.colSlice[ordinal:]
+	for _, col := range tail {
+		delete(t.colMap, col.name)
+	}
+	t.colSlice = t.colSlice[:ordinal]
 }
 
 // sqlInsert proceses sql insert request and returns response
 func (t *table) sqlInsert(req *sqlInsertRequest) response {
 	rec, id := t.newRecord()
-	originalColumnsLen := len(t.colSlice)
-	var newColumns []string
-	for _, colVal := range req.colVals {
-		col, isNewColumn := t.getAddColumn(colVal.col)
-		if isNewColumn {
-			newColumns = append(newColumns, colVal.col)
-		} else {
-			//check for unique key
-			if col.hasKey() && col.keyContainsValue(colVal.val) {
-				t.rollback(id, originalColumnsLen, req.colVals, newColumns)
-				return newErrorResponse("insert failed due to duplicate column key:" + colVal.col + " value:" + colVal.val)
-			}
+	// validate unique keys constrain
+	cols := make([]*column, len(req.colVals))
+	originalColLen := len(t.colSlice)
+	for idx, colVal := range req.colVals {
+		col, _ := t.getAddColumn(colVal.col)
+		if col.hasKey() && col.keyContainsValue(colVal.val) {
+			//remove created columns
+			t.removeColumns(originalColLen)
+			return newErrorResponse("insert failed due to duplicate column key:" + colVal.col + " value:" + colVal.val)
 		}
+		cols[idx] = col
+	}
+	// ready to insert	
+	for idx, colVal := range req.colVals {
+		col := cols[idx]
 		// update key
 		if col.hasKey() {
 			col.key[colVal.val] = id
+		} else if col.hasTags() {
+			addValueToTags(col.tags, colVal.val, id)
 		}
 		rec.setValue(col.ordinal, colVal.val)
 	}
-
 	t.addNewRecord(rec)
 	res := sqlInsertResponse{id: rec.getId()}
 	return &res

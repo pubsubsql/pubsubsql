@@ -44,8 +44,8 @@ func addTag(head *tag, idx int) *tag {
 type removeTagReturn int8
 
 const (
-	removeTagLast removeTagReturn  = iota // indicates that last element was removed
-	removeTagSlide 						  // indicates that slide has happened external pointer need to be updated
+	removeTagLast  removeTagReturn = iota // indicates that last element was removed
+	removeTagSlide                        // indicates that slide has happened external pointer need to be updated
 	removeTagNormal
 )
 
@@ -56,7 +56,7 @@ func removeTag(t *tag) removeTagReturn {
 	if t.prev == nil {
 		if t.next == nil {
 			// last element, let caller(columns tag map) handle the rest
-			return removeTagLast 
+			return removeTagLast
 		}
 		// slide and remove	
 		ret = removeTagSlide
@@ -76,5 +76,3 @@ func removeTag(t *tag) removeTagReturn {
 	freeMe.next = nil
 	return ret
 }
-
-
