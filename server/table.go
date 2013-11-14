@@ -39,6 +39,10 @@ func (c *column) hasTags() bool {
 	return c.tags != nil
 }
 
+func (c *column) hasId() bool {
+	return c.ordinal == 0
+}
+
 func (c *column) keyContainsValue(k string) bool {
 	_, contains := c.key[k]
 	return contains
@@ -257,9 +261,60 @@ func (t *table) sqlInsert(req *sqlInsertRequest) response {
 }
 
 // sqlSelect processes sql select request and returns response
+func (t *table) sqlSelectById(req *sqlSelectRequest, c *column) response {
+	res := sqlSelectResponse{
+		columns: t.colSlice,
+		records: make([]*record, 0, 1),
+	}
+	id, err := strconv.ParseInt(req.filter.val, 10, 32)
+	if err == nil && id < int64(len(t.records)) {
+		res.copyRecordData(t.records[id])
+	}
+	return res
+}
+
+func (t *table) sqlSelectByKey(req *sqlSelectRequest, c *column) response {
+	res := sqlSelectResponse{
+		columns: t.colSlice,
+		records: make([]*record, 0, 1),
+	}
+	idx, present := c.key[req.filter.val]
+	if present {
+		res.copyRecordData(t.records[idx])
+	}
+	return res
+}
+
+func (t *table) sqlSelectByTag(req *sqlSelectRequest, c *column) response {
+	res := sqlSelectResponse{
+		columns: t.colSlice,
+		records: make([]*record, 0, 100),
+	}
+	for tg := c.tags[req.filter.val]; tg != nil; tg = tg.next {
+		res.copyRecordData(t.records[tg.idx])
+	}
+	return res
+}
+
 func (t *table) sqlSelect(req *sqlSelectRequest) response {
-	if req.filter.col != "" {
-		return newErrorResponse("filters are not supported ")
+	var c *column
+	if len(req.filter.col) > 0 {
+		c = t.getColumn(req.filter.col)
+		if c == nil {
+			return newErrorResponse("invalid column: " + req.filter.col)
+		}
+	}
+	if c != nil {
+		if c.hasId() {
+			return t.sqlSelectById(req, c)
+		}
+		if c.hasKey() {
+			return t.sqlSelectByKey(req, c)
+		}
+		if c.hasTags() {
+			return t.sqlSelectByTag(req, c)
+		}
+		return newErrorResponse("can not select using non indexed column: " + req.filter.col)
 	}
 	// select * no filter
 	var rows int
