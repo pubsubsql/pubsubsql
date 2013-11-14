@@ -166,16 +166,24 @@ func selectHelper(t *table, sqlSelect string) response {
 	return t.sqlSelect(req)
 }
 
-func TestTableSqlSelect(t *testing.T) {
+func TestTableSqlSelect1(t *testing.T) {
 	tbl := newTable("stocks")
 	//
 	insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+
 	res := selectHelper(tbl, " select * from stocks ")
+	validateSqlSelectResponse(t, res, 1, 4)
+
+	res = selectHelper(tbl, " select * from stocks where id = 0")
 	validateSqlSelectResponse(t, res, 1, 4)
 	//	
 	insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, 'TECH') ")
+
 	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelectResponse(t, res, 2, 5)
+
+	res = selectHelper(tbl, " select * from stocks where id = 1")
+	validateSqlSelectResponse(t, res, 1, 5)
 }
 
 // KEY
@@ -189,24 +197,34 @@ func keyHelper(t *table, sqlKey string) response {
 
 func TestTableSqlKey(t *testing.T) {
 	tbl := newTable("stocks")
-	// define key
+	// define key ticker
 	res := keyHelper(tbl, "key stocks ticker")
 	validateOkResponse(t, res)
 	// insert record
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "0")
+	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
+	validateSqlSelectResponse(t, res, 1, 4)
 	// now define key for new column 
 	res = keyHelper(tbl, "key stocks sector")
 	validateErrorResponse(t, res)
 	// should fail due to duplicate key 
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateErrorResponse(t, res)
-	// now create another record with valid secotor
+	// now create another record with valid sector
 	res = insertHelper(tbl, " insert into stocks (ticker, sector, bid, ask) values (MSFT, sec1, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "1")
+	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
+	validateSqlSelectResponse(t, res, 1, 5)
+	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
+	validateSqlSelectResponse(t, res, 1, 5)
 	// now sector is now unique empty string for IBM and sec1 for MSFT
 	res = keyHelper(tbl, "key stocks sector")
 	validateOkResponse(t, res)
+	res = selectHelper(tbl, " select * from stocks where sector = ''")
+	validateSqlSelectResponse(t, res, 1, 5)
+	res = selectHelper(tbl, " select * from stocks where sector = sec1")
+	validateSqlSelectResponse(t, res, 1, 5)
 	// try to define existing key
 	res = keyHelper(tbl, "key stocks ticker")
 	validateErrorResponse(t, res)
@@ -241,12 +259,24 @@ func TestTableSqlTag(t *testing.T) {
 	// insert records
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "0")
+	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
+	validateSqlSelectResponse(t, res, 1, 4)
+
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "1")
+	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
+	validateSqlSelectResponse(t, res, 2, 4)
+
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (MSFT, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "2")
+	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
+	validateSqlSelectResponse(t, res, 1, 4)
+
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "3")
+	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
+	validateSqlSelectResponse(t, res, 3, 4)
+
 	if tbl.getTagedColumnValuesCount("ticker", "IBM") != 3 {
 		t.Errorf("invalid taged column values")
 	}

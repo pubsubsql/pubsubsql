@@ -270,7 +270,7 @@ func (t *table) sqlSelectById(req *sqlSelectRequest, c *column) response {
 	if err == nil && id < int64(len(t.records)) {
 		res.copyRecordData(t.records[id])
 	}
-	return res
+	return &res
 }
 
 func (t *table) sqlSelectByKey(req *sqlSelectRequest, c *column) response {
@@ -282,7 +282,7 @@ func (t *table) sqlSelectByKey(req *sqlSelectRequest, c *column) response {
 	if present {
 		res.copyRecordData(t.records[idx])
 	}
-	return res
+	return &res
 }
 
 func (t *table) sqlSelectByTag(req *sqlSelectRequest, c *column) response {
@@ -293,7 +293,7 @@ func (t *table) sqlSelectByTag(req *sqlSelectRequest, c *column) response {
 	for tg := c.tags[req.filter.val]; tg != nil; tg = tg.next {
 		res.copyRecordData(t.records[tg.idx])
 	}
-	return res
+	return &res
 }
 
 func (t *table) sqlSelect(req *sqlSelectRequest) response {
