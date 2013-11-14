@@ -81,8 +81,8 @@ func TestTag(t *testing.T) {
 		t.Errorf("corupted list")
 	}
 	// 10 -> 5 -> 2
-	if removeTag(head) {
-		t.Error("remove failed")
+	if removeTag(head) != removeTagSlide {
+		t.Error("remove failed slide")
 	}
 	if head.idx != 10 || head.next.idx != 5 || head.next.next.idx != 2 || head.next.next.next != nil {
 		t.Errorf("corupted list")
@@ -91,7 +91,7 @@ func TestTag(t *testing.T) {
 		t.Errorf("corupted list")
 	}
 	// 10 -> 2
-	if removeTag(head.next) {
+	if removeTag(head.next) != removeTagNormal {
 		t.Error("remove failed")
 	}
 	if head.idx != 10 || head.next.idx != 2 || head.next.next != nil {
@@ -101,14 +101,14 @@ func TestTag(t *testing.T) {
 		t.Errorf("corupted list")
 	}
 	// 10 
-	if removeTag(head.next) {
+	if removeTag(head.next) != removeTagNormal {
 		t.Error("remove failed")
 	}
 	if head.idx != 10 || head.next != nil {
 		t.Errorf("corupted list")
 	}
 	// ->|
-	if !removeTag(head) {
+	if removeTag(head) != removeTagLast {
 		t.Errorf("remove failed")
 	}
 	if head.next != nil || head.prev != nil {

@@ -40,15 +40,26 @@ func addTag(head *tag, idx int) *tag {
 
 // removeTag removes tag from the list and
 // returns true if last element was removed 
-func removeTag(t *tag) bool {
+
+type removeTagReturn int8
+
+const (
+	removeTagLast removeTagReturn  = iota // indicates that last element was removed
+	removeTagSlide 						  // indicates that slide has happened external pointer need to be updated
+	removeTagNormal
+)
+
+func removeTag(t *tag) removeTagReturn {
+	ret := removeTagNormal
 	freeMe := t
 	// handle head case
 	if t.prev == nil {
 		if t.next == nil {
 			// last element, let caller(columns tag map) handle the rest
-			return true
+			return removeTagLast 
 		}
 		// slide and remove	
+		ret = removeTagSlide
 		freeMe = t.next
 		t.idx, t.next = freeMe.idx, freeMe.next
 		if t.next != nil {
@@ -60,8 +71,10 @@ func removeTag(t *tag) bool {
 			t.next.prev = t.prev
 		}
 	}
-	// let GC now that we need to go....
+	// let GC know that we need to go....
 	freeMe.prev = nil
 	freeMe.next = nil
-	return false
+	return ret
 }
+
+
