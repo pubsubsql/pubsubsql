@@ -29,6 +29,7 @@ type column struct {
 	ordinal int
 	key     map[string]int
 	tags    map[string]*tag
+	tagIndex int
 }
 
 func (c *column) hasKey() bool {
@@ -67,6 +68,7 @@ type table struct {
 	colMap   map[string]*column
 	colSlice []*column
 	records  []*record
+	tagedColumns []*column
 	// 
 }
 
@@ -77,6 +79,7 @@ func newTable(name string) *table {
 		colMap:   make(map[string]*column),
 		colSlice: make([]*column, 0, tableCOLUMNS),
 		records:  make([]*record, 0, tableRECORDS),
+		tagedColumns: make([]*column, 0, tableCOLUMNS),
 	}
 	t.addColumn("id")
 	return t
@@ -97,6 +100,7 @@ func (t *table) addColumn(name string) *column {
 	col := &column{
 		name:    name,
 		ordinal: ordinal,
+		tagIndex: -1,
 	}
 	t.colMap[name] = col
 	t.colSlice = append(t.colSlice, col)
@@ -191,11 +195,22 @@ func (t *table) sqlKey(req *sqlKeyRequest) response {
 	return newOkResponse()
 }
 
-func addValueToTags(tags map[string]*tag, val string, idx int) {
+func addValueToTags(tags map[string]*tag, val string, idx int) *tag {
 	head := tags[val]
 	tg := addTag(head, idx)
 	if head == nil {
 		tags[val] = tg
+	}
+	return tg
+}
+
+func (t *table) tagValue(col *column, idx int, rec *record) {
+	val := rec.getValue(col.ordinal)
+	tg := addValueToTags(col.tags, val, idx)	
+	if len(rec.tags) <= col.tagIndex {
+		rec.tags = append(rec.tags, tg) 
+	} else {
+		rec.tags[col.tagIndex] = tg
 	}
 }
 
@@ -206,14 +221,15 @@ func (t *table) sqlTag(req *sqlTagRequest) response {
 		return newErrorResponse("key or tag already defined for column:" + req.column)
 	}
 	col, _ = t.getAddColumn(req.column)
+	t.tagedColumns = append(t.tagedColumns, col) 
+	col.tagIndex = len(t.tagedColumns) - 1
 	// tag existing values
-	tags := make(map[string]*tag, cap(t.records))
+	// we need to figure out how to best estimate capacity
+	col.tags = make(map[string]*tag)
 	for idx, rec := range t.records {
-		val := rec.getValue(col.ordinal)
-		addValueToTags(tags, val, idx)
+		t.tagValue(col, idx, rec)
 	}
 	//
-	col.tags = tags
 	return newOkResponse()
 }
 

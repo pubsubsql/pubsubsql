@@ -19,6 +19,7 @@ package pubsubsql
 // record  
 type record struct {
 	values []string
+	tags []*tag	
 }
 
 // record factory
@@ -60,3 +61,4 @@ func (r *record) setValue(ordinal int, val string) {
 func (r *record) getId() string {
 	return r.values[0]
 }
+
