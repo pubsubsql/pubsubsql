@@ -20,7 +20,7 @@ package pubsubsql
 type tag struct {
 	prev *tag
 	next *tag
-	idx  int // idxord index into table idxords
+	idx  int // idx index into table.records
 }
 
 // addTag adds tag as next element after the head

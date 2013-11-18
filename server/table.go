@@ -69,6 +69,7 @@ type table struct {
 	colSlice     []*column
 	records      []*record
 	tagedColumns []*column
+	keyColumns   []*column
 	// 
 }
 
@@ -130,6 +131,10 @@ func (t *table) getColumn(name string) *column {
 func (t *table) newRecord() (*record, int) {
 	l := len(t.records)
 	r := newRecord(len(t.colSlice), strconv.Itoa(l))
+	ltags := len(t.tagedColumns)
+	if ltags > 0 {
+		r.tags = make([]*tag, ltags)
+	}
 	return r, l
 }
 
@@ -192,6 +197,7 @@ func (t *table) sqlKey(req *sqlKeyRequest) response {
 		}
 	}
 	col.key = key
+	t.keyColumns = append(t.keyColumns, col)
 	return newOkResponse()
 }
 
@@ -347,8 +353,45 @@ func (t *table) sqlSelect(req *sqlSelectRequest) response {
 		columns: t.colSlice,
 		records: make([]*record, 0, len(records)),
 	}
-	for _, source := range records {
-		res.copyRecordData(source)
+	for _, rec := range records {
+		res.copyRecordData(rec)
 	}
 	return &res
+}
+
+func (t *table) deleteRecord(rec *record) {
+	// delete record keys
+	for _, col := range t.keyColumns {
+		delete(col.key, rec.getValue(col.ordinal))
+	}	
+	// delete record tags
+	for _, col := range t.tagedColumns {
+		tg := rec.tags[col.tagIndex]	
+		rec.tags[col.tagIndex] = nil
+		switch removeTag(tg) {
+		case removeTagLast:
+			delete(col.tags, rec.getValue(col.ordinal))
+		case removeTagSlide:
+			// we need to retag the slided record	
+			slidedRecord := t.records[tg.idx]
+			if slidedRecord != nil {
+				slidedRecord.tags[col.tagIndex] = tg
+			}
+		} 
+	}
+	// delete record
+	t.records[rec.idx()] = nil
+}
+
+func (t *table) sqlDelete(req *sqlDeleteRequest) response {
+	records, errResponse := t.getRecordsBySqlFilter(req.filter)
+	if errResponse != nil {
+		return errResponse
+	}
+	for _, rec := range records {
+		if rec != nil {
+			t.deleteRecord(rec)
+		}
+	}
+	return sqlDeleteResponse { deleted: len(records), }
 }

@@ -16,6 +16,8 @@
 
 package pubsubsql
 
+import "strconv"
+
 // record  
 type record struct {
 	values []string
@@ -36,6 +38,15 @@ func newRecord2(columns int) *record {
 		values: make([]string, columns, columns),
 	}
 	return &r
+}
+
+//
+func (r *record) idx() int64 {
+	i, err := strconv.ParseInt(r.values[0], 10, 64)
+	if err != nil {
+		return -1	
+	}
+	return i
 }
 
 // getValue retrieves value based on column ordinal

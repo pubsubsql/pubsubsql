@@ -92,3 +92,10 @@ func (r *sqlSelectResponse) copyRecordData(source *record) {
 	}
 	addRecordToSlice(&r.records, dest)
 }
+
+// sqlDeleteResponse
+type sqlDeleteResponse struct {
+	response
+	deleted int	
+}
+
