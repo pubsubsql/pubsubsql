@@ -25,10 +25,10 @@ const (
 
 // column  
 type column struct {
-	name    string
-	ordinal int
-	key     map[string]int
-	tags    map[string]*tag
+	name     string
+	ordinal  int
+	key      map[string]int
+	tags     map[string]*tag
 	tagIndex int
 }
 
@@ -64,10 +64,10 @@ func (t *table) getTagedColumnValuesCount(col string, val string) int {
 
 // table  
 type table struct {
-	name     string
-	colMap   map[string]*column
-	colSlice []*column
-	records  []*record
+	name         string
+	colMap       map[string]*column
+	colSlice     []*column
+	records      []*record
 	tagedColumns []*column
 	// 
 }
@@ -75,10 +75,10 @@ type table struct {
 // table factory 
 func newTable(name string) *table {
 	t := &table{
-		name:     name,
-		colMap:   make(map[string]*column),
-		colSlice: make([]*column, 0, tableCOLUMNS),
-		records:  make([]*record, 0, tableRECORDS),
+		name:         name,
+		colMap:       make(map[string]*column),
+		colSlice:     make([]*column, 0, tableCOLUMNS),
+		records:      make([]*record, 0, tableRECORDS),
 		tagedColumns: make([]*column, 0, tableCOLUMNS),
 	}
 	t.addColumn("id")
@@ -98,8 +98,8 @@ func (t *table) getColumnCount() int {
 func (t *table) addColumn(name string) *column {
 	ordinal := len(t.colSlice)
 	col := &column{
-		name:    name,
-		ordinal: ordinal,
+		name:     name,
+		ordinal:  ordinal,
 		tagIndex: -1,
 	}
 	t.colMap[name] = col
@@ -206,9 +206,9 @@ func addValueToTags(tags map[string]*tag, val string, idx int) *tag {
 
 func (t *table) tagValue(col *column, idx int, rec *record) {
 	val := rec.getValue(col.ordinal)
-	tg := addValueToTags(col.tags, val, idx)	
+	tg := addValueToTags(col.tags, val, idx)
 	if len(rec.tags) <= col.tagIndex {
-		rec.tags = append(rec.tags, tg) 
+		rec.tags = append(rec.tags, tg)
 	} else {
 		rec.tags[col.tagIndex] = tg
 	}
@@ -221,7 +221,7 @@ func (t *table) sqlTag(req *sqlTagRequest) response {
 		return newErrorResponse("key or tag already defined for column:" + req.column)
 	}
 	col, _ = t.getAddColumn(req.column)
-	t.tagedColumns = append(t.tagedColumns, col) 
+	t.tagedColumns = append(t.tagedColumns, col)
 	col.tagIndex = len(t.tagedColumns) - 1
 	// tag existing values
 	// we need to figure out how to best estimate capacity
