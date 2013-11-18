@@ -378,9 +378,20 @@ func TestTableSqlTag(t *testing.T) {
 	validateSqlDelete(t, res, 4)
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
 	validateSqlSelectResponse(t, res, 0, 5)
+	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
+	validateSqlSelectResponse(t, res, 1, 5)
 	if tbl.getTagedColumnValuesCount("sector", "TECH") != 0 {
 		t.Errorf("invalid taged column values")
 	}
-	
-
+	if tbl.getTagedColumnValuesCount("sector", "") != 1 {
+		t.Errorf("invalid taged column values")
+	}
+	res = deleteHelper(tbl, " delete from stocks where sector = ''")
+	validateSqlDelete(t, res, 1)
+	if tbl.getTagedColumnValuesCount("sector", "") != 0 {
+		t.Errorf("invalid taged column values")
+	}
+	//	
+	res = selectHelper(tbl, " select * from stocks ")
+	validateSqlSelectResponse(t, res, 0, 5)
 }
