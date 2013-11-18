@@ -373,5 +373,14 @@ func TestTableSqlTag(t *testing.T) {
 	if tbl.getTagedColumnValuesCount("sector", "TECH") != 1 {
 		t.Errorf("invalid taged column values")
 	}
+	//
+	res = deleteHelper(tbl, " delete from stocks where ticker = 'IBM'")
+	validateSqlDelete(t, res, 4)
+	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
+	validateSqlSelectResponse(t, res, 0, 5)
+	if tbl.getTagedColumnValuesCount("sector", "TECH") != 0 {
+		t.Errorf("invalid taged column values")
+	}
+	
 
 }
