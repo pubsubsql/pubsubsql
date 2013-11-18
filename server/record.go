@@ -44,7 +44,7 @@ func newRecord2(columns int) *record {
 func (r *record) idx() int64 {
 	i, err := strconv.ParseInt(r.values[0], 10, 64)
 	if err != nil {
-		return -1	
+		return -1
 	}
 	return i
 }

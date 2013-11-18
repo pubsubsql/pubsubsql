@@ -354,7 +354,9 @@ func (t *table) sqlSelect(req *sqlSelectRequest) response {
 		records: make([]*record, 0, len(records)),
 	}
 	for _, rec := range records {
-		res.copyRecordData(rec)
+		if rec != nil {
+			res.copyRecordData(rec)
+		}
 	}
 	return &res
 }
@@ -363,10 +365,10 @@ func (t *table) deleteRecord(rec *record) {
 	// delete record keys
 	for _, col := range t.keyColumns {
 		delete(col.key, rec.getValue(col.ordinal))
-	}	
+	}
 	// delete record tags
 	for _, col := range t.tagedColumns {
-		tg := rec.tags[col.tagIndex]	
+		tg := rec.tags[col.tagIndex]
 		rec.tags[col.tagIndex] = nil
 		switch removeTag(tg) {
 		case removeTagLast:
@@ -377,7 +379,7 @@ func (t *table) deleteRecord(rec *record) {
 			if slidedRecord != nil {
 				slidedRecord.tags[col.tagIndex] = tg
 			}
-		} 
+		}
 	}
 	// delete record
 	t.records[rec.idx()] = nil
@@ -388,10 +390,12 @@ func (t *table) sqlDelete(req *sqlDeleteRequest) response {
 	if errResponse != nil {
 		return errResponse
 	}
+	deleted := 0
 	for _, rec := range records {
 		if rec != nil {
+			deleted++
 			t.deleteRecord(rec)
 		}
 	}
-	return sqlDeleteResponse { deleted: len(records), }
+	return &sqlDeleteResponse{deleted: deleted}
 }

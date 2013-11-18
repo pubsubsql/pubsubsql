@@ -37,21 +37,6 @@ func validateSqlInsertResponseId(t *testing.T, res response, expected string) {
 	}
 }
 
-func validateSqlSelectResponse(t *testing.T, res response, rows int, cols int) {
-	switch res.(type) {
-	case *sqlSelectResponse:
-		x := res.(*sqlSelectResponse)
-		if len(x.columns) != cols {
-			t.Errorf("table select error: expected column count:%d but got:%d", cols, len(x.columns))
-		}
-		if len(x.records) != rows {
-			t.Errorf("table select error: expected rows count:%d but got:%d", rows, len(x.records))
-		}
-	default:
-		t.Errorf("table select error: invalid response type expected sqlSelectResponse")
-	}
-}
-
 func validateOkResponse(t *testing.T, res response) {
 	switch res.(type) {
 	case *okResponse:
@@ -166,6 +151,21 @@ func selectHelper(t *table, sqlSelect string) response {
 	return t.sqlSelect(req)
 }
 
+func validateSqlSelectResponse(t *testing.T, res response, rows int, cols int) {
+	switch res.(type) {
+	case *sqlSelectResponse:
+		x := res.(*sqlSelectResponse)
+		if len(x.columns) != cols {
+			t.Errorf("table select error: expected column count:%d but got:%d", cols, len(x.columns))
+		}
+		if len(x.records) != rows {
+			t.Errorf("table select error: expected rows count:%d but got:%d", rows, len(x.records))
+		}
+	default:
+		t.Errorf("table select error: invalid response type expected sqlSelectResponse")
+	}
+}
+
 func TestTableSqlSelect1(t *testing.T) {
 	tbl := newTable("stocks")
 	//
@@ -186,6 +186,52 @@ func TestTableSqlSelect1(t *testing.T) {
 	validateSqlSelectResponse(t, res, 1, 5)
 }
 
+// DELETE
+
+func deleteHelper(t *table, sqlDelete string) response {
+	pc := newTokens()
+	lex(sqlDelete, pc)
+	req := parse(pc).(*sqlDeleteRequest)
+	return t.sqlDelete(req)
+}
+
+func validateSqlDelete(t *testing.T, res response, expected int) {
+	switch res.(type) {
+	case *sqlDeleteResponse:
+		x := res.(*sqlDeleteResponse)
+		if x.deleted != expected {
+			t.Errorf("table delete error: expected deleted %d but got %d", expected, x.deleted)
+		}
+	case *errorResponse:
+		x := res.(*errorResponse)
+		t.Errorf(x.msg)
+	default:
+		t.Errorf("table delete error: invalid response type expected sqlDeleteResponse")
+	}
+}
+
+func TestTableSqlDelete(t *testing.T) {
+	tbl := newTable("stocks")
+	// 1 record
+	res := insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "0")
+	res = deleteHelper(tbl, " delete from stocks ")
+	validateSqlDelete(t, res, 1)
+	res = selectHelper(tbl, " select * from stocks ")
+	validateSqlSelectResponse(t, res, 0, 4)
+	// 3 records
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "1")
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "2")
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	validateSqlInsertResponseId(t, res, "3")
+	res = deleteHelper(tbl, " delete from stocks ")
+	validateSqlDelete(t, res, 3)
+	res = selectHelper(tbl, " select * from stocks ")
+	validateSqlSelectResponse(t, res, 0, 4)
+}
+
 // KEY
 
 func keyHelper(t *table, sqlKey string) response {
@@ -200,7 +246,7 @@ func TestTableSqlKey(t *testing.T) {
 	// define key ticker
 	res := keyHelper(tbl, "key stocks ticker")
 	validateOkResponse(t, res)
-	// insert record
+	// insert record 
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "0")
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
@@ -240,6 +286,29 @@ func TestTableSqlKey(t *testing.T) {
 	if l != tbl.getColumnCount() {
 		t.Errorf("insert failed after duplicate keys rollback failed")
 	}
+
+	res = selectHelper(tbl, " select * from stocks ")
+	validateSqlSelectResponse(t, res, 2, 5)
+	// delete by key
+	res = deleteHelper(tbl, " delete from stocks where ticker = 'IBM'")
+	validateSqlDelete(t, res, 1)
+	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
+	validateSqlSelectResponse(t, res, 0, 5)
+	res = selectHelper(tbl, " select * from stocks ")
+	validateSqlSelectResponse(t, res, 1, 5)
+
+	res = deleteHelper(tbl, " delete from stocks where ticker = NA")
+	res = selectHelper(tbl, " select * from stocks ")
+	validateSqlSelectResponse(t, res, 1, 5)
+	// delete by sec 
+	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
+	validateSqlSelectResponse(t, res, 1, 5)
+	res = deleteHelper(tbl, " delete from stocks where sector = 'sec1'")
+	validateSqlDelete(t, res, 1)
+	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
+	validateSqlSelectResponse(t, res, 0, 5)
+	res = selectHelper(tbl, " select * from stocks ")
+	validateSqlSelectResponse(t, res, 0, 5)
 }
 
 // TAG

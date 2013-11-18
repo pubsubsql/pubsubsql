@@ -96,6 +96,5 @@ func (r *sqlSelectResponse) copyRecordData(source *record) {
 // sqlDeleteResponse
 type sqlDeleteResponse struct {
 	response
-	deleted int	
+	deleted int
 }
-
