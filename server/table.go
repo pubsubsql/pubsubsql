@@ -263,13 +263,13 @@ func (t *table) sqlInsert(req *sqlInsertRequest) response {
 	// ready to insert	
 	for idx, colVal := range req.colVals {
 		col := cols[idx]
+		rec.setValue(col.ordinal, colVal.val)
 		// update key
 		if col.hasKey() {
 			col.key[colVal.val] = id
 		} else if col.hasTags() {
-			addValueToTags(col.tags, colVal.val, id)
+			t.tagValue(col, id, rec)
 		}
-		rec.setValue(col.ordinal, colVal.val)
 	}
 	t.addNewRecord(rec)
 	res := sqlInsertResponse{id: rec.getId()}
