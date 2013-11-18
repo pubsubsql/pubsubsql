@@ -137,11 +137,11 @@ func (t *table) addNewRecord(r *record) {
 // addRecordToSlice generic helper function that adds record to the slice and
 // automatically expands the slice
 func addRecordToSlice(records *[]*record, r *record) {
-	//check if records slice needs to grow by 10%
+	//check if records slice needs to grow by third 
 	l := len(*records)
 	if cap(*records) == len(*records) {
 		temp := *records
-		*records = make([]*record, l, l+(l/10))
+		*records = make([]*record, l, l+(l/3))
 		copy(*records, temp)
 	}
 	*records = append(*records, r)
@@ -260,70 +260,78 @@ func (t *table) sqlInsert(req *sqlInsertRequest) response {
 	return &res
 }
 
-// sqlSelect processes sql select request and returns response
-func (t *table) sqlSelectById(req *sqlSelectRequest, c *column) response {
-	res := sqlSelectResponse{
-		columns: t.colSlice,
-		records: make([]*record, 0, 1),
+func (t *table) getRecordById(val string) []*record {
+	idx, err := strconv.ParseInt(val, 10, 32)
+	if err != nil {
+		return nil
 	}
-	id, err := strconv.ParseInt(req.filter.val, 10, 32)
-	if err == nil && id < int64(len(t.records)) {
-		res.copyRecordData(t.records[id])
-	}
-	return &res
+	records := make([]*record, 1, 1)
+	records[0] = t.records[idx]
+	return records
 }
 
-func (t *table) sqlSelectByKey(req *sqlSelectRequest, c *column) response {
-	res := sqlSelectResponse{
-		columns: t.colSlice,
-		records: make([]*record, 0, 1),
+func (t *table) getRecordByKey(val string, col *column) []*record {
+	idx, present := col.key[val]
+	if !present {
+		return nil
 	}
-	idx, present := c.key[req.filter.val]
-	if present {
-		res.copyRecordData(t.records[idx])
-	}
-	return &res
+	records := make([]*record, 1, 1)
+	records[0] = t.records[idx]
+	return records
 }
 
-func (t *table) sqlSelectByTag(req *sqlSelectRequest, c *column) response {
-	res := sqlSelectResponse{
-		columns: t.colSlice,
-		records: make([]*record, 0, 100),
+func (t *table) getRecordsByTag(val string, col *column) []*record {
+	// we need to optimize allocations
+	// perhaps its possible to know in advance how manny records
+	// will be returned
+	records := make([]*record, 0, 100)
+	for tg := col.tags[val]; tg != nil; tg = tg.next {
+		records = append(records, t.records[tg.idx])
+		l := len(records)
+		if cap(records) == l {
+			temp := records
+			records = make([]*record, l, l+(l/3))
+			copy(records, temp)
+		}
 	}
-	for tg := c.tags[req.filter.val]; tg != nil; tg = tg.next {
-		res.copyRecordData(t.records[tg.idx])
+	return records
+}
+
+// returns error response
+func (t *table) getRecordsBySqlFilter(filter sqlFilter) ([]*record, response) {
+	var col *column
+	if len(filter.col) > 0 {
+		col = t.getColumn(filter.col)
+		if col == nil {
+			return nil, newErrorResponse("invalid column: " + filter.col)
+		}
 	}
-	return &res
+	if col == nil {
+		// all
+		return t.records, nil
+	}
+	if col.hasId() {
+		return t.getRecordById(filter.val), nil
+	}
+	if col.hasKey() {
+		return t.getRecordByKey(filter.val, col), nil
+	}
+	if col.hasTags() {
+		return t.getRecordsByTag(filter.val, col), nil
+	}
+	return nil, newErrorResponse("can not use non indexed column " + filter.col + " as valid filter")
 }
 
 func (t *table) sqlSelect(req *sqlSelectRequest) response {
-	var c *column
-	if len(req.filter.col) > 0 {
-		c = t.getColumn(req.filter.col)
-		if c == nil {
-			return newErrorResponse("invalid column: " + req.filter.col)
-		}
+	records, errResponse := t.getRecordsBySqlFilter(req.filter)
+	if errResponse != nil {
+		return errResponse
 	}
-	if c != nil {
-		if c.hasId() {
-			return t.sqlSelectById(req, c)
-		}
-		if c.hasKey() {
-			return t.sqlSelectByKey(req, c)
-		}
-		if c.hasTags() {
-			return t.sqlSelectByTag(req, c)
-		}
-		return newErrorResponse("can not select using non indexed column: " + req.filter.col)
-	}
-	// select * no filter
-	var rows int
-	rows = len(t.records)
 	res := sqlSelectResponse{
 		columns: t.colSlice,
-		records: make([]*record, 0, rows),
+		records: make([]*record, 0, len(records)),
 	}
-	for _, source := range t.records {
+	for _, source := range records {
 		res.copyRecordData(source)
 	}
 	return &res
