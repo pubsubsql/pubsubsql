@@ -18,22 +18,25 @@ package pubsubsql
 
 import "fmt"
 
-// tokenProducer produces tokens for the parser 
+// tokenProducer produces tokens for the parser. 
 type tokenProducer interface {
 	Produce() *token
 }
 
-// parser 
+// parser  
 type parser struct {
 	tokens tokenProducer
 }
 
+// Indicates that error happened during parse phase and returns errorRequest
 func (p *parser) parseError(s string) *errorRequest {
 	e := errorRequest{
 		err: s,
 	}
 	return &e
 }
+
+// Helper functions
 
 func (p *parser) parseSqlEqualVal(colval *columnValue, t *token) request {
 	//col
@@ -76,10 +79,10 @@ func (p *parser) parseColumnName(column *string) request {
 	return nil
 }
 
-func (p *parser) parseEOF(act request) request {
+func (p *parser) parseEOF(req request) request {
 	t := p.tokens.Produce()
 	if t.typ == tokenTypeEOF {
-		return act
+		return req
 	}
 	return p.parseError("expected EOF")
 }
@@ -92,19 +95,21 @@ func (p *parser) parseSqlWhere(filter *sqlFilter, t *token) request {
 	return p.parseSqlEqualVal(&(filter.columnValue), nil)
 }
 
-// INSERT
+// INSERT sql statement
+
+// Parses sql insert statement and returns sqlInsertRequest on success.
 func (p *parser) parseSqlInsert() request {
 	// into
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlInto {
 		return p.parseError("expected into")
 	}
-	act := &sqlInsertRequest{
+	req := &sqlInsertRequest{
 		colVals: make([]*columnValue, 0, 10),
 	}
 	// table name
-	if erract := p.parseTableName(&act.table); erract != nil {
-		return erract
+	if errreq := p.parseTableName(&req.table); errreq != nil {
+		return errreq
 	}
 	// (
 	t = p.tokens.Produce()
@@ -114,14 +119,14 @@ func (p *parser) parseSqlInsert() request {
 	// columns
 	columns := 0
 	expectedType := tokenTypeSqlColumn
-	var erract request
+	var errreq request
 	var str string
 	for expectedType == tokenTypeSqlColumn {
-		erract, expectedType, str = p.parseSqlInsertColumn()
-		if erract != nil {
-			return erract
+		errreq, expectedType, str = p.parseSqlInsertColumn()
+		if errreq != nil {
+			return errreq
 		}
-		act.addColumn(str)
+		req.addColumn(str)
 		columns++
 	}
 	// values
@@ -138,12 +143,12 @@ func (p *parser) parseSqlInsert() request {
 	expectedType = tokenTypeSqlValue
 	values := 0
 	for expectedType == tokenTypeSqlValue {
-		erract, expectedType, str = p.parseSqlInsertValue()
-		if erract != nil {
-			return erract
+		errreq, expectedType, str = p.parseSqlInsertValue()
+		if errreq != nil {
+			return errreq
 		}
 		if values < columns {
-			act.setValueAt(values, str)
+			req.setValueAt(values, str)
 		}
 		values++
 	}
@@ -152,7 +157,7 @@ func (p *parser) parseSqlInsert() request {
 		return p.parseError(s)
 	}
 	// done
-	return act
+	return req
 }
 
 func (p *parser) parseSqlInsertColumn() (request, tokenType, string) {
@@ -187,7 +192,9 @@ func (p *parser) parseSqlInsertValue() (request, tokenType, string) {
 	return p.parseError("expected , or ) "), tokenTypeError, ""
 }
 
-// SELECT
+// SELECT sql statement
+
+// Parses sql select statement and returns sqlSelectRequest on success.
 func (p *parser) parseSqlSelect() request {
 	// *
 	t := p.tokens.Produce()
@@ -199,57 +206,59 @@ func (p *parser) parseSqlSelect() request {
 	if t.typ != tokenTypeSqlFrom {
 		return p.parseError("expected from")
 	}
-	act := new(sqlSelectRequest)
+	req := new(sqlSelectRequest)
 	// table name
-	if erract := p.parseTableName(&act.table); erract != nil {
-		return erract
+	if errreq := p.parseTableName(&req.table); errreq != nil {
+		return errreq
 	}
 	// possible eof
 	t = p.tokens.Produce()
 	if t.typ == tokenTypeEOF {
-		return act
+		return req
 	}
 	// where
-	if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
-		return erract
+	if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+		return errreq
 	}
 	// we are good
-	return act
+	return req
 }
 
-// UPDATE
+// UPDATE sql statement
+
+// Parses sql update statement and returns sqlUpdateRequest on success.
 func (p *parser) parseSqlUpdate() request {
-	act := &sqlUpdateRequest{
+	req := &sqlUpdateRequest{
 		colVals: make([]*columnValue, 0, 10),
 	}
 	// table name
-	if erract := p.parseTableName(&act.table); erract != nil {
-		return erract
+	if errreq := p.parseTableName(&req.table); errreq != nil {
+		return errreq
 	}
 	// set
 	t := p.tokens.Produce()
 	if t.typ == tokenTypeSqlSet {
-		return p.parseSqlUpdateColVals(act)
+		return p.parseSqlUpdateColVals(req)
 	}
 	return p.parseError("expected set keyword")
 }
 
-func (p *parser) parseSqlUpdateColVals(act *sqlUpdateRequest) request {
+func (p *parser) parseSqlUpdateColVals(req *sqlUpdateRequest) request {
 	count := 0
 loop:
 	for t := p.tokens.Produce(); ; t = p.tokens.Produce() {
 		switch t.typ {
 		case tokenTypeSqlColumn:
 			colval := new(columnValue)
-			act.colVals = append(act.colVals, colval)
-			if erract := p.parseSqlEqualVal(colval, t); erract != nil {
-				return erract
+			req.colVals = append(req.colVals, colval)
+			if errreq := p.parseSqlEqualVal(colval, t); errreq != nil {
+				return errreq
 			}
 			count++
 
 		case tokenTypeSqlWhere:
-			if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
-				return erract
+			if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+				return errreq
 			}
 			// we must be at the end
 			break loop
@@ -267,35 +276,71 @@ loop:
 	if count == 0 {
 		return p.parseError("expected at least on.col value pair")
 	}
-	return act
+	return req
 }
 
-// DELETE
+// DELETE sql statement
+
+// Parses sql delete statement and returns sqlDeleteRequest on success.
 func (p *parser) parseSqlDelete() request {
 	// from
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlFrom {
 		return p.parseError("expected from")
 	}
-	act := new(sqlDeleteRequest)
+	req := new(sqlDeleteRequest)
 	// table name
-	if erract := p.parseTableName(&act.table); erract != nil {
-		return erract
+	if errreq := p.parseTableName(&req.table); errreq != nil {
+		return errreq
 	}
 	// possible eof
 	t = p.tokens.Produce()
 	if t.typ == tokenTypeEOF {
-		return act
+		return req
 	}
 	// than it must be where
-	if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
-		return erract
+	if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+		return errreq
 	}
 	// we are good
-	return act
+	return req
 }
 
-// SUBSCRIBE 
+// KEY sql statement
+
+// Parses sql key statement and returns sqlKeyRequest on success.
+func (p *parser) parseSqlKey() request {
+	req := new(sqlKeyRequest)
+	// table name
+	if errreq := p.parseTableName(&req.table); errreq != nil {
+		return errreq
+	}
+	// column name
+	if errreq := p.parseColumnName(&req.column); errreq != nil {
+		return errreq
+	}
+	return p.parseEOF(req)
+}
+
+// TAG sql statement
+
+// Parses sql tag statement and returns sqlRequest on success.
+func (p *parser) parseSqlTag() request {
+	req := new(sqlTagRequest)
+	// table name
+	if errreq := p.parseTableName(&req.table); errreq != nil {
+		return errreq
+	}
+	// column name
+	if errreq := p.parseColumnName(&req.column); errreq != nil {
+		return errreq
+	}
+	return p.parseEOF(req)
+}
+
+// SUBSCRIBE sql statement
+
+// Parses sql subscribe statement and returns sqlSubscribeRequest on success.
 func (p *parser) parseSqlSubscribe() request {
 	// *
 	t := p.tokens.Produce()
@@ -307,68 +352,42 @@ func (p *parser) parseSqlSubscribe() request {
 	if t.typ != tokenTypeSqlFrom {
 		return p.parseError("expected from")
 	}
-	act := new(sqlSubscribeRequest)
+	req := new(sqlSubscribeRequest)
 	// table name
-	if erract := p.parseTableName(&act.table); erract != nil {
-		return erract
+	if errreq := p.parseTableName(&req.table); errreq != nil {
+		return errreq
 	}
 	// possible eof
 	t = p.tokens.Produce()
 	if t.typ == tokenTypeEOF {
-		return act
+		return req
 	}
 	// where
-	if erract := p.parseSqlWhere(&(act.filter), t); erract != nil {
-		return erract
+	if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+		return errreq
 	}
 	// we are good
-	return act
+	return req
 }
 
-// UNSUBSCRIBE
+// UNSUBSCRIBE sql statement
+
+// Parses sql unsubscribe statement and returns sqlUnsubscribeRequest on success.
 func (p *parser) parseSqlUnsubscribe() request {
 	// from
 	t := p.tokens.Produce()
 	if t.typ != tokenTypeSqlFrom {
 		return p.parseError("expected from")
 	}
-	act := new(sqlUnsubscribeRequest)
+	req := new(sqlUnsubscribeRequest)
 	// table name
-	if erract := p.parseTableName(&act.table); erract != nil {
-		return erract
+	if errreq := p.parseTableName(&req.table); errreq != nil {
+		return errreq
 	}
-	return p.parseEOF(act)
+	return p.parseEOF(req)
 }
 
-// KEY
-func (p *parser) parseSqlKey() request {
-	act := new(sqlKeyRequest)
-	// table name
-	if erract := p.parseTableName(&act.table); erract != nil {
-		return erract
-	}
-	// column name
-	if erract := p.parseColumnName(&act.column); erract != nil {
-		return erract
-	}
-	return p.parseEOF(act)
-}
-
-// TAG
-func (p *parser) parseSqlTag() request {
-	act := new(sqlTagRequest)
-	// table name
-	if erract := p.parseTableName(&act.table); erract != nil {
-		return erract
-	}
-	// column name
-	if erract := p.parseColumnName(&act.column); erract != nil {
-		return erract
-	}
-	return p.parseEOF(act)
-}
-
-// run runs the parser
+// Runs the parser.
 func (p *parser) run() request {
 	t := p.tokens.Produce()
 	switch t.typ {
@@ -401,7 +420,7 @@ func (p *parser) run() request {
 	return p.parseError("invalid request")
 }
 
-// parse parses tokens and returns an request 
+// Parses tokens and returns an request.
 func parse(tokens tokenProducer) request {
 	p := &parser{
 		tokens: tokens,
