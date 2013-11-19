@@ -98,17 +98,30 @@ func (t *table) getColumn(name string) *column {
 	return nil
 }
 
+// Deletes columns starting at particular ordinal.
+func (t *table) removeColumns(ordinal int) {
+	if len(t.colSlice) <= ordinal {
+		return
+	}
+	tail := t.colSlice[ordinal:]
+	for _, col := range tail {
+		delete(t.colMap, col.name)
+	}
+	t.colSlice = t.colSlice[:ordinal]
+}
+
 // RECORDS functions
 
-// newRecord creates new record but does not add it to the table
-func (t *table) newRecord() (*record, int) {
-	l := len(t.records)
-	r := newRecord(len(t.colSlice), strconv.Itoa(l))
+// Creates new record but does not add it to the table.
+// Returns new record and to be record id
+func (t *table) prepareRecord() (*record, int) {
+	id := len(t.records)
+	r := newRecord(len(t.colSlice), id)
 	ltags := len(t.tagedColumns)
 	if ltags > 0 {
 		r.tags = make([]*tag, ltags)
 	}
-	return r, l
+	return r, id
 }
 
 // adNewRecord add newly created record to the table
@@ -129,7 +142,7 @@ func addRecordToSlice(records *[]*record, r *record) {
 	*records = append(*records, r)
 }
 
-// getRecords returns record by id
+// Returns record by id
 func (t *table) getRecord(id int) *record {
 	if len(t.records) > id {
 		return t.records[id]
@@ -137,127 +150,27 @@ func (t *table) getRecord(id int) *record {
 	return nil
 }
 
-// getRecordCount returns total number of records in the table
+// Returns total number of records in the table
 func (t *table) getRecordCount() int {
 	return len(t.records)
 }
 
-// sqlKey defines unique index in the table
-func (t *table) sqlKey(req *sqlKeyRequest) response {
-	// key is already defined for this column
-	col := t.getColumn(req.column)
-	if col != nil && col.isIndexed() {
-		return newErrorResponse("key or tag already defined for column:" + req.column)
+// Delete record from the table.
+func (t *table) deleteRecord(rec *record) {
+	// delete record keys
+	for _, col := range t.keyColumns {
+		delete(col.key, rec.getValue(col.ordinal))
 	}
-	// new column on existing records
-	if col == nil && len(t.records) > 0 {
-		return newErrorResponse("can not define key for non existant column due to possible duplicates")
+	// delete record tags
+	for _, col := range t.tagedColumns {
+		t.deleteTag(rec, col)
 	}
-	key := make(map[string]int, cap(t.records))
-	// new column no records
-	if col == nil {
-		col, _ = t.getAddColumn(req.column)
-	} else { // existing column
-		// index all records and check if there are duplicates
-		key = make(map[string]int, cap(t.records))
-		for idx, rec := range t.records {
-			val := rec.getValue(col.ordinal)
-			if col.keyContainsValue(val) {
-				return newErrorResponse("can not define key due to possible duplicates in existing records")
-			}
-			key[val] = idx
-		}
-	}
-	//
-	col.makeKey(key)
-	t.keyColumns = append(t.keyColumns, col)
-	//
-	return newOkResponse()
+	// delete record
+	t.records[rec.idx()] = nil
 }
 
-func addValueToTags(tags map[string]*tag, val string, idx int) *tag {
-	head := tags[val]
-	tg := addTag(head, idx)
-	if head == nil {
-		tags[val] = tg
-	}
-	return tg
-}
-
-func (t *table) tagValue(col *column, idx int, rec *record) {
-	val := rec.getValue(col.ordinal)
-	tg := addValueToTags(col.tags, val, idx)
-	if len(rec.tags) <= col.tagIndex {
-		rec.tags = append(rec.tags, tg)
-	} else {
-		rec.tags[col.tagIndex] = tg
-	}
-}
-
-func (t *table) sqlTag(req *sqlTagRequest) response {
-	// tag is already defined for this column
-	col := t.getColumn(req.column)
-	if col != nil && col.isIndexed() {
-		return newErrorResponse("key or tag already defined for column:" + req.column)
-	}
-	col, _ = t.getAddColumn(req.column)
-	t.tagedColumns = append(t.tagedColumns, col)
-	col.makeTags(len(t.tagedColumns) - 1)
-	// tag existing values
-	for idx, rec := range t.records {
-		t.tagValue(col, idx, rec)
-	}
-	return newOkResponse()
-}
-
-// removeColumns removes columns starting at particular ordinal
-func (t *table) removeColumns(ordinal int) {
-	if len(t.colSlice) <= ordinal {
-		return
-	}
-	tail := t.colSlice[ordinal:]
-	for _, col := range tail {
-		delete(t.colMap, col.name)
-	}
-	t.colSlice = t.colSlice[:ordinal]
-}
-
-func (t *table) insertRecord(cols []*column, colVals []*columnValue, rec *record, id int) {
-	for idx, colVal := range colVals {
-		col := cols[idx]
-		rec.setValue(col.ordinal, colVal.val)
-		// update key
-		switch col.typ {
-		case columnTypeKey:
-			col.key[colVal.val] = id
-		case columnTypeTag:
-			t.tagValue(col, id, rec)
-		}
-	}
-}
-
-// sqlInsert proceses sql insert request and returns response
-func (t *table) sqlInsert(req *sqlInsertRequest) response {
-	rec, id := t.newRecord()
-	// validate unique keys constrain
-	cols := make([]*column, len(req.colVals))
-	originalColLen := len(t.colSlice)
-	for idx, colVal := range req.colVals {
-		col, _ := t.getAddColumn(colVal.col)
-		if col.isKey() && col.keyContainsValue(colVal.val) {
-			//remove created columns
-			t.removeColumns(originalColLen)
-			return newErrorResponse("insert failed due to duplicate column key:" + colVal.col + " value:" + colVal.val)
-		}
-		cols[idx] = col
-	}
-	// ready to insert	
-	t.insertRecord(cols, req.colVals, rec, id)
-	t.addNewRecord(rec)
-	res := sqlInsertResponse{id: rec.getId()}
-	return &res
-}
-
+// Looks up record by id.
+// Returns record slice with max one element.
 func (t *table) getRecordById(val string) []*record {
 	idx, err := strconv.ParseInt(val, 10, 32)
 	if err != nil {
@@ -268,6 +181,8 @@ func (t *table) getRecordById(val string) []*record {
 	return records
 }
 
+// Looks up record by key. 
+// Returns record slice with max one element.
 func (t *table) getRecordByKey(val string, col *column) []*record {
 	idx, present := col.key[val]
 	if !present {
@@ -278,24 +193,7 @@ func (t *table) getRecordByKey(val string, col *column) []*record {
 	return records
 }
 
-func (t *table) getRecordsByTag(val string, col *column) []*record {
-	// we need to optimize allocations
-	// perhaps its possible to know in advance how manny records
-	// will be returned
-	records := make([]*record, 0, 100)
-	for tg := col.tags[val]; tg != nil; tg = tg.next {
-		records = append(records, t.records[tg.idx])
-		l := len(records)
-		if cap(records) == l {
-			temp := records
-			records = make([]*record, l, l+(l/3))
-			copy(records, temp)
-		}
-	}
-	return records
-}
-
-// returns error response
+// Retrieves records based on the supplied filter
 func (t *table) getRecordsBySqlFilter(filter sqlFilter) ([]*record, response) {
 	var col *column
 	if len(filter.col) > 0 {
@@ -319,25 +217,40 @@ func (t *table) getRecordsBySqlFilter(filter sqlFilter) ([]*record, response) {
 	return nil, newErrorResponse("can not use non indexed column " + filter.col + " as valid filter")
 }
 
-func (t *table) sqlSelect(req *sqlSelectRequest) response {
-	records, errResponse := t.getRecordsBySqlFilter(req.filter)
-	if errResponse != nil {
-		return errResponse
-	}
-	res := sqlSelectResponse{
-		columns: t.colSlice,
-		records: make([]*record, 0, len(records)),
-	}
-	for _, rec := range records {
-		if rec != nil {
-			res.copyRecordData(rec)
+// Looks up records by tag. 
+func (t *table) getRecordsByTag(val string, col *column) []*record {
+	// we need to optimize allocations
+	// perhaps its possible to know in advance how manny records
+	// will be returned
+	records := make([]*record, 0, 100)
+	for tg := col.tags[val]; tg != nil; tg = tg.next {
+		records = append(records, t.records[tg.idx])
+		l := len(records)
+		if cap(records) == l {
+			temp := records
+			records = make([]*record, l, l+(l/3))
+			copy(records, temp)
 		}
 	}
-	return &res
+	return records
 }
 
-// UPDATE
+// Bind records values, keys and tags. 
+func (t *table) bindRecord(cols []*column, colVals []*columnValue, rec *record, id int) {
+	for idx, colVal := range colVals {
+		col := cols[idx]
+		rec.setValue(col.ordinal, colVal.val)
+		// update key
+		switch col.typ {
+		case columnTypeKey:
+			col.key[colVal.val] = id
+		case columnTypeTag:
+			t.tagValue(col, id, rec)
+		}
+	}
+}
 
+// Updates record with new values, keys and tags.
 func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record, id int) {
 	for idx, colVal := range colVals {
 		col := cols[idx]
@@ -358,6 +271,95 @@ func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record
 	}
 }
 
+// TAGS helper functions
+
+// Add value to non unique indexed column.
+func addValueToTags(col *column, val string, idx int) *tag {
+	head := col.tags[val]
+	tg := addTag(head, idx)
+	if head == nil {
+		col.tags[val] = tg
+	}
+	return tg
+}
+
+// Binds tag and record.   
+func (t *table) tagValue(col *column, idx int, rec *record) {
+	val := rec.getValue(col.ordinal)
+	tg := addValueToTags(col, val, idx)
+	if len(rec.tags) <= col.tagIndex {
+		rec.tags = append(rec.tags, tg)
+	} else {
+		rec.tags[col.tagIndex] = tg
+	}
+}
+
+// Deletes tag value for a particular record
+func (t *table) deleteTag(rec *record, col *column) {
+	tg := rec.tags[col.tagIndex]
+	rec.tags[col.tagIndex] = nil
+	switch removeTag(tg) {
+	case removeTagLast:
+		delete(col.tags, rec.getValue(col.ordinal))
+	case removeTagSlide:
+		// we need to retag the slided record	
+		slidedRecord := t.records[tg.idx]
+		if slidedRecord != nil {
+			slidedRecord.tags[col.tagIndex] = tg
+		}
+	}
+}
+
+// INSERT sql statement
+
+// Proceses sql insert request by inserting record in the table.
+// On success returns sqlInsertResponse.
+func (t *table) sqlInsert(req *sqlInsertRequest) response {
+	rec, id := t.prepareRecord()
+	// validate unique keys constrain
+	cols := make([]*column, len(req.colVals))
+	originalColLen := len(t.colSlice)
+	for idx, colVal := range req.colVals {
+		col, _ := t.getAddColumn(colVal.col)
+		if col.isKey() && col.keyContainsValue(colVal.val) {
+			//remove created columns
+			t.removeColumns(originalColLen)
+			return newErrorResponse("insert failed due to duplicate column key:" + colVal.col + " value:" + colVal.val)
+		}
+		cols[idx] = col
+	}
+	// ready to insert	
+	t.bindRecord(cols, req.colVals, rec, id)
+	t.addNewRecord(rec)
+	res := sqlInsertResponse{id: rec.idAsString()}
+	return &res
+}
+
+// SELECT sql statement
+
+// Processes sql select request.
+// On success returns sqlSelectResponse.
+func (t *table) sqlSelect(req *sqlSelectRequest) response {
+	records, errResponse := t.getRecordsBySqlFilter(req.filter)
+	if errResponse != nil {
+		return errResponse
+	}
+	res := sqlSelectResponse{
+		columns: t.colSlice,
+		records: make([]*record, 0, len(records)),
+	}
+	for _, rec := range records {
+		if rec != nil {
+			res.copyRecordData(rec)
+		}
+	}
+	return &res
+}
+
+// UPDATE sql statement
+
+// Processes sql update request.
+// On success returns sqlUpdateResponse.
 func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 	records, errResponse := t.getRecordsBySqlFilter(req.filter)
 	if errResponse != nil {
@@ -397,36 +399,10 @@ func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 	return res
 }
 
-// DELETE
+// DELETE sql statement
 
-func (t *table) deleteTag(rec *record, col *column) {
-	tg := rec.tags[col.tagIndex]
-	rec.tags[col.tagIndex] = nil
-	switch removeTag(tg) {
-	case removeTagLast:
-		delete(col.tags, rec.getValue(col.ordinal))
-	case removeTagSlide:
-		// we need to retag the slided record	
-		slidedRecord := t.records[tg.idx]
-		if slidedRecord != nil {
-			slidedRecord.tags[col.tagIndex] = tg
-		}
-	}
-}
-
-func (t *table) deleteRecord(rec *record) {
-	// delete record keys
-	for _, col := range t.keyColumns {
-		delete(col.key, rec.getValue(col.ordinal))
-	}
-	// delete record tags
-	for _, col := range t.tagedColumns {
-		t.deleteTag(rec, col)
-	}
-	// delete record
-	t.records[rec.idx()] = nil
-}
-
+// Processes sql delete request.
+// On success returns sqlDeleteResponse.
 func (t *table) sqlDelete(req *sqlDeleteRequest) response {
 	records, errResponse := t.getRecordsBySqlFilter(req.filter)
 	if errResponse != nil {
@@ -440,4 +416,60 @@ func (t *table) sqlDelete(req *sqlDeleteRequest) response {
 		}
 	}
 	return &sqlDeleteResponse{deleted: deleted}
+}
+
+// Key sql statement
+
+// Processes sql key request.
+// On success returns sqlOkResponse.
+func (t *table) sqlKey(req *sqlKeyRequest) response {
+	// key is already defined for this column
+	col := t.getColumn(req.column)
+	if col != nil && col.isIndexed() {
+		return newErrorResponse("key or tag already defined for column:" + req.column)
+	}
+	// new column on existing records
+	if col == nil && len(t.records) > 0 {
+		return newErrorResponse("can not define key for non existant column due to possible duplicates")
+	}
+	key := make(map[string]int, cap(t.records))
+	// new column no records
+	if col == nil {
+		col, _ = t.getAddColumn(req.column)
+	} else { // existing column
+		// index all records and check if there are duplicates
+		key = make(map[string]int, cap(t.records))
+		for idx, rec := range t.records {
+			val := rec.getValue(col.ordinal)
+			if col.keyContainsValue(val) {
+				return newErrorResponse("can not define key due to possible duplicates in existing records")
+			}
+			key[val] = idx
+		}
+	}
+	//
+	col.makeKey(key)
+	t.keyColumns = append(t.keyColumns, col)
+	//
+	return newOkResponse()
+}
+
+// TAG sql statement
+
+// Processes sql tag request.
+// On success returns sqlOkResponse.
+func (t *table) sqlTag(req *sqlTagRequest) response {
+	// tag is already defined for this column
+	col := t.getColumn(req.column)
+	if col != nil && col.isIndexed() {
+		return newErrorResponse("key or tag already defined for column:" + req.column)
+	}
+	col, _ = t.getAddColumn(req.column)
+	t.tagedColumns = append(t.tagedColumns, col)
+	col.makeTags(len(t.tagedColumns) - 1)
+	// tag existing values
+	for idx, rec := range t.records {
+		t.tagValue(col, idx, rec)
+	}
+	return newOkResponse()
 }

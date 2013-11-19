@@ -86,7 +86,10 @@ type sqlSelectResponse struct {
 }
 
 func (r *sqlSelectResponse) copyRecordData(source *record) {
-	dest := newRecord2(len(r.columns))
+	l := len(r.columns)
+	dest := &record{
+		values: make([]string, l, l),
+	}
 	for idx, col := range r.columns {
 		dest.setValue(idx, source.getValue(col.ordinal))
 	}

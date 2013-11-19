@@ -58,7 +58,7 @@ func validateErrorResponse(t *testing.T, res response) {
 func TestTable1(t *testing.T) {
 	tbl := newTable("table1")
 	tbl.getAddColumn("col1")
-	r, _ := tbl.newRecord()
+	r, _ := tbl.prepareRecord()
 	tbl.addNewRecord(r)
 	validateTableRecordsCount(t, tbl, 1)
 	validateRecordValuesCount(t, r, 2)
@@ -80,7 +80,7 @@ func TestTable2(t *testing.T) {
 	col2 := tbl.getColumn("col2").ordinal
 	col3 := tbl.getColumn("col3").ordinal
 	//
-	r, _ := tbl.newRecord()
+	r, _ := tbl.prepareRecord()
 	tbl.addNewRecord(r)
 	validateTableRecordsCount(t, tbl, 1)
 	validateRecordValuesCount(t, r, 4)
@@ -90,7 +90,7 @@ func TestTable2(t *testing.T) {
 	validateRecordValuesCount(t, r, 4)
 	validateRecordValue(t, r, 0, "0")
 	//	
-	r, _ = tbl.newRecord()
+	r, _ = tbl.prepareRecord()
 	tbl.addNewRecord(r)
 	validateTableRecordsCount(t, tbl, 2)
 	validateRecordValuesCount(t, r, 4)

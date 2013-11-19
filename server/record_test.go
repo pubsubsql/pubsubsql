@@ -33,7 +33,7 @@ func validateRecordValuesCount(t *testing.T, r *record, expected int) {
 }
 
 func TestRecord1(t *testing.T) {
-	r := newRecord(0, "0")
+	r := newRecord(0, 0)
 	validateRecordValue(t, r, 0, "0")
 	r.setValue(0, "val0")
 	validateRecordValue(t, r, 0, "val0")
@@ -46,7 +46,7 @@ func TestRecord1(t *testing.T) {
 }
 
 func TestRecord2(t *testing.T) {
-	r := newRecord(5, "0")
+	r := newRecord(5, 0)
 	validateRecordValue(t, r, 0, "0")
 	validateRecordValuesCount(t, r, 5)
 	r.setValue(0, "val0")

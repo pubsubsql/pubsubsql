@@ -25,31 +25,30 @@ type record struct {
 }
 
 // record factory
-func newRecord(columns int, id string) *record {
+func newRecord(columns int, idx int) *record {
 	r := record{
 		values: make([]string, columns, columns),
 	}
-	r.setValue(0, id)
+	r.setValue(0, strconv.Itoa(idx))
 	return &r
 }
 
-func newRecord2(columns int) *record {
-	r := record{
-		values: make([]string, columns, columns),
-	}
-	return &r
-}
-
-//
-func (r *record) idx() int64 {
-	i, err := strconv.ParseInt(r.values[0], 10, 64)
+// Returns record index in a table.
+func (r *record) idx() int {
+	i, err := strconv.Atoi(r.values[0])
 	if err != nil {
 		return -1
 	}
 	return i
 }
 
-// getValue retrieves value based on column ordinal
+// Returns record index in a table as string.
+func (r *record) idAsString() string {
+	return r.values[0]
+}
+
+// Returns value based on column ordinal.
+// Empty string is returned for invalid ordinal. 
 func (r *record) getValue(ordinal int) string {
 	if len(r.values) > ordinal {
 		return r.values[ordinal]
@@ -57,7 +56,8 @@ func (r *record) getValue(ordinal int) string {
 	return ""
 }
 
-// setValue sets value based on column ordinal 
+// Sets value based on column ordinal. 
+// Automatically adjusts the record if ordinal is invalid.
 func (r *record) setValue(ordinal int, val string) {
 	l := len(r.values)
 	if l <= ordinal {
@@ -66,9 +66,4 @@ func (r *record) setValue(ordinal int, val string) {
 		r.values = append(r.values, temp...)
 	}
 	r.values[ordinal] = val
-}
-
-// getId returns id
-func (r *record) getId() string {
-	return r.values[0]
 }
