@@ -16,15 +16,23 @@
 
 package pubsubsql
 
-// tag implemented as doubly linked list
+type removeTagReturn int8
+
+const (
+	removeTagLast  removeTagReturn = iota // indicates that last element was removed
+	removeTagSlide                        // indicates that slide has happened external pointer need to be updated
+	removeTagNormal
+)
+
+// tag implemented as doubly linked list.
 type tag struct {
 	prev *tag
 	next *tag
 	idx  int // idx index into table.records
 }
 
-// addTag adds tag as next element after the head
-// returns added tag
+// Adds tag as next element after the head.
+// Returns added tag.
 func addTag(head *tag, idx int) *tag {
 	t := &tag{
 		idx: idx,
@@ -38,17 +46,8 @@ func addTag(head *tag, idx int) *tag {
 	return t
 }
 
-// removeTag removes tag from the list and
-// returns true if last element was removed 
-
-type removeTagReturn int8
-
-const (
-	removeTagLast  removeTagReturn = iota // indicates that last element was removed
-	removeTagSlide                        // indicates that slide has happened external pointer need to be updated
-	removeTagNormal
-)
-
+// Removes tag from the list.
+// Returns true if last element was removed.
 func removeTag(t *tag) removeTagReturn {
 	ret := removeTagNormal
 	freeMe := t
@@ -76,3 +75,4 @@ func removeTag(t *tag) removeTagReturn {
 	freeMe.next = nil
 	return ret
 }
+
