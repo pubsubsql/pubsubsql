@@ -18,41 +18,16 @@ package pubsubsql
 
 import "strconv"
 
+// Default values
 const (
 	tableCOLUMNS int = 10
 	tableRECORDS     = 5000
 )
 
-// column  
-type column struct {
-	name     string
-	ordinal  int
-	key      map[string]int
-	tags     map[string]*tag
-	tagIndex int
-}
-
-func (c *column) hasKey() bool {
-	return c.key != nil
-}
-
-func (c *column) hasTags() bool {
-	return c.tags != nil
-}
-
-func (c *column) hasId() bool {
-	return c.ordinal == 0
-}
-
-func (c *column) keyContainsValue(k string) bool {
-	_, contains := c.key[k]
-	return contains
-}
-
 // this function is purely for testing porposes
 func (t *table) getTagedColumnValuesCount(col string, val string) int {
 	c := t.getColumn(col)
-	if c == nil || !c.hasTags() {
+	if c == nil || !c.isTag() {
 		return 0
 	}
 	i := 0
@@ -70,7 +45,6 @@ type table struct {
 	records      []*record
 	tagedColumns []*column
 	keyColumns   []*column
-	// 
 }
 
 // table factory 
@@ -86,7 +60,9 @@ func newTable(name string) *table {
 	return t
 }
 
-// getColumnCount returns number of columns
+// COLUMNS functions
+
+// Returns total number of columns. 
 func (t *table) getColumnCount() int {
 	l := len(t.colSlice)
 	if l != len(t.colMap) {
@@ -95,21 +71,16 @@ func (t *table) getColumnCount() int {
 	return l
 }
 
-// addColumn adds column and returns column ordinal
+// Adds column and returns column added column.
 func (t *table) addColumn(name string) *column {
-	ordinal := len(t.colSlice)
-	col := &column{
-		name:     name,
-		ordinal:  ordinal,
-		tagIndex: -1,
-	}
+	col := newColumn(name, len(t.colSlice))
 	t.colMap[name] = col
 	t.colSlice = append(t.colSlice, col)
 	return col
 }
 
-// getAddColumn tries to retrieve existing column  or adds it if does not exist
-// returns true when new column was added
+// Tries to retrieve existing column or adds it if does not exist.
+// Returns true when new column was added.
 func (t *table) getAddColumn(name string) (*column, bool) {
 	col, columnExists := t.colMap[name]
 	if columnExists {
@@ -118,7 +89,7 @@ func (t *table) getAddColumn(name string) (*column, bool) {
 	return t.addColumn(name), true
 }
 
-// getColumn retrieves existing column
+// Retrieves existing column
 func (t *table) getColumn(name string) *column {
 	col, ok := t.colMap[name]
 	if ok {
@@ -126,6 +97,8 @@ func (t *table) getColumn(name string) *column {
 	}
 	return nil
 }
+
+// RECORDS functions
 
 // newRecord creates new record but does not add it to the table
 func (t *table) newRecord() (*record, int) {
@@ -173,7 +146,7 @@ func (t *table) getRecordCount() int {
 func (t *table) sqlKey(req *sqlKeyRequest) response {
 	// key is already defined for this column
 	col := t.getColumn(req.column)
-	if col != nil && (col.hasKey() || col.hasTags()) {
+	if col != nil && col.isIndexed() {
 		return newErrorResponse("key or tag already defined for column:" + req.column)
 	}
 	// new column on existing records
@@ -184,8 +157,7 @@ func (t *table) sqlKey(req *sqlKeyRequest) response {
 	// new column no records
 	if col == nil {
 		col, _ = t.getAddColumn(req.column)
-		col.key = key
-	} else {
+	} else { // existing column
 		// index all records and check if there are duplicates
 		key = make(map[string]int, cap(t.records))
 		for idx, rec := range t.records {
@@ -196,8 +168,10 @@ func (t *table) sqlKey(req *sqlKeyRequest) response {
 			key[val] = idx
 		}
 	}
-	col.key = key
+	//
+	col.makeKey(key)
 	t.keyColumns = append(t.keyColumns, col)
+	//
 	return newOkResponse()
 }
 
@@ -223,19 +197,16 @@ func (t *table) tagValue(col *column, idx int, rec *record) {
 func (t *table) sqlTag(req *sqlTagRequest) response {
 	// tag is already defined for this column
 	col := t.getColumn(req.column)
-	if col != nil && (col.hasKey() || col.hasTags()) {
+	if col != nil && col.isIndexed() {
 		return newErrorResponse("key or tag already defined for column:" + req.column)
 	}
 	col, _ = t.getAddColumn(req.column)
 	t.tagedColumns = append(t.tagedColumns, col)
-	col.tagIndex = len(t.tagedColumns) - 1
+	col.makeTags(len(t.tagedColumns) - 1)
 	// tag existing values
-	// we need to figure out how to best estimate capacity
-	col.tags = make(map[string]*tag)
 	for idx, rec := range t.records {
 		t.tagValue(col, idx, rec)
 	}
-	//
 	return newOkResponse()
 }
 
@@ -256,9 +227,10 @@ func (t *table) insertRecord(cols []*column, colVals []*columnValue, rec *record
 		col := cols[idx]
 		rec.setValue(col.ordinal, colVal.val)
 		// update key
-		if col.hasKey() {
+		switch col.typ {
+		case columnTypeKey:
 			col.key[colVal.val] = id
-		} else if col.hasTags() {
+		case columnTypeTag:
 			t.tagValue(col, id, rec)
 		}
 	}
@@ -272,7 +244,7 @@ func (t *table) sqlInsert(req *sqlInsertRequest) response {
 	originalColLen := len(t.colSlice)
 	for idx, colVal := range req.colVals {
 		col, _ := t.getAddColumn(colVal.col)
-		if col.hasKey() && col.keyContainsValue(colVal.val) {
+		if col.isKey() && col.keyContainsValue(colVal.val) {
 			//remove created columns
 			t.removeColumns(originalColLen)
 			return newErrorResponse("insert failed due to duplicate column key:" + colVal.col + " value:" + colVal.val)
@@ -336,13 +308,12 @@ func (t *table) getRecordsBySqlFilter(filter sqlFilter) ([]*record, response) {
 		// all
 		return t.records, nil
 	}
-	if col.hasId() {
+	switch col.typ {
+	case columnTypeId:
 		return t.getRecordById(filter.val), nil
-	}
-	if col.hasKey() {
+	case columnTypeKey:
 		return t.getRecordByKey(filter.val, col), nil
-	}
-	if col.hasTags() {
+	case columnTypeTag:
 		return t.getRecordsByTag(filter.val, col), nil
 	}
 	return nil, newErrorResponse("can not use non indexed column " + filter.col + " as valid filter")
@@ -370,22 +341,20 @@ func (t *table) sqlSelect(req *sqlSelectRequest) response {
 func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record, id int) {
 	for idx, colVal := range colVals {
 		col := cols[idx]
-		// update key
-		if col.hasKey() {
+		switch col.typ {
+		case columnTypeKey:
 			// delete previous key
 			delete(col.key, rec.getValue(col.ordinal))
 			rec.setValue(col.ordinal, colVal.val)
 			col.key[colVal.val] = id
-		} else if col.hasTags() {
+		case columnTypeTag:
 			// delete previous tag
 			t.deleteTag(rec, col)
 			rec.setValue(col.ordinal, colVal.val)
 			t.tagValue(col, id, rec)
-		} else {
+		case columnTypeNormal:
 			rec.setValue(col.ordinal, colVal.val)
-
 		}
-
 	}
 }
 
@@ -407,7 +376,7 @@ func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 	originalColLen := len(t.colSlice)
 	for idx, colVal := range req.colVals {
 		col, _ := t.getAddColumn(colVal.col)
-		if col.hasKey() && col.keyContainsValue(colVal.val) {
+		if col.isKey() && col.keyContainsValue(colVal.val) {
 			if onlyRecord == nil || onlyRecord != t.getRecordByKey(colVal.val, col)[0] {
 				//remove created columns
 				t.removeColumns(originalColLen)
