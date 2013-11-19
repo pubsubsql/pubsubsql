@@ -385,7 +385,7 @@ func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record
 			rec.setValue(col.ordinal, colVal.val)
 
 		}
-		
+
 	}
 }
 

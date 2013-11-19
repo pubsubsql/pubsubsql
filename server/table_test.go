@@ -259,7 +259,7 @@ func TestTableSqlUpdate(t *testing.T) {
 	validateSqlSelect(t, res, 0, 5)
 	res = selectHelper(tbl, " select * from stocks where sector = sec3 ")
 	validateSqlSelect(t, res, 2, 5)
-	
+
 }
 
 // DELETE
