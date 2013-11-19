@@ -151,7 +151,7 @@ func selectHelper(t *table, sqlSelect string) response {
 	return t.sqlSelect(req)
 }
 
-func validateSqlSelectResponse(t *testing.T, res response, rows int, cols int) {
+func validateSqlSelect(t *testing.T, res response, rows int, cols int) {
 	switch res.(type) {
 	case *sqlSelectResponse:
 		x := res.(*sqlSelectResponse)
@@ -172,18 +172,94 @@ func TestTableSqlSelect1(t *testing.T) {
 	insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 
 	res := selectHelper(tbl, " select * from stocks ")
-	validateSqlSelectResponse(t, res, 1, 4)
+	validateSqlSelect(t, res, 1, 4)
 
 	res = selectHelper(tbl, " select * from stocks where id = 0")
-	validateSqlSelectResponse(t, res, 1, 4)
+	validateSqlSelect(t, res, 1, 4)
 	//	
 	insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, 'TECH') ")
 
 	res = selectHelper(tbl, " select * from stocks ")
-	validateSqlSelectResponse(t, res, 2, 5)
+	validateSqlSelect(t, res, 2, 5)
 
 	res = selectHelper(tbl, " select * from stocks where id = 1")
-	validateSqlSelectResponse(t, res, 1, 5)
+	validateSqlSelect(t, res, 1, 5)
+}
+
+// UPDATE
+
+func updateHelper(t *table, sqlUpdate string) response {
+	pc := newTokens()
+	lex(sqlUpdate, pc)
+	req := parse(pc).(*sqlUpdateRequest)
+	return t.sqlUpdate(req)
+}
+
+func validateSqlUpdate(t *testing.T, res response, expected int) {
+	switch res.(type) {
+	case *sqlUpdateResponse:
+		x := res.(*sqlUpdateResponse)
+		if x.updated != expected {
+			t.Errorf("table update error: expected update %d but got %d", expected, x.updated)
+		}
+	case *errorResponse:
+		x := res.(*errorResponse)
+		t.Errorf(x.msg)
+	default:
+		t.Errorf("table delete error: invalid response type expected sqlDeleteResponse")
+	}
+}
+
+func TestTableSqlUpdate(t *testing.T) {
+	tbl := newTable("stocks")
+	// 1 record
+	res := insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, sec1) ")
+	validateSqlInsertResponseId(t, res, "0")
+	res = updateHelper(tbl, " update stocks set ticker = 'IBM', bid = 12, ask = 456.34")
+	validateSqlUpdate(t, res, 1)
+	// 3 records
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (MSFT, 12, 14.5645, sec1) ")
+	validateSqlInsertResponseId(t, res, "1")
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (ORCL, 12, 14.5645, sec2) ")
+	validateSqlInsertResponseId(t, res, "2")
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (C, 12, 14.5645, sec2) ")
+	validateSqlInsertResponseId(t, res, "3")
+	//
+	res = updateHelper(tbl, " update stocks set bid = 12 ")
+	validateSqlUpdate(t, res, 4)
+	// create key for ticker
+	res = keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// update by key
+	res = updateHelper(tbl, " update stocks set bid = 13 where ticker = IBM ")
+	validateSqlUpdate(t, res, 1)
+	res = updateHelper(tbl, " update stocks set bid = 13 where ticker = C ")
+	validateSqlUpdate(t, res, 1)
+	// update key by key
+	res = updateHelper(tbl, " update stocks set ticker = 'JPM'  where ticker = IBM ")
+	validateSqlUpdate(t, res, 1)
+	res = selectHelper(tbl, " select * from stocks where ticker = JPM ")
+	validateSqlSelect(t, res, 1, 5)
+	//res = selectHelper(tbl, " select * from stocks where ticker = IBM ")
+	//validateSqlSelect(t, res, 0, 5)
+	// create tag for sector 
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// update by sector
+	res = selectHelper(tbl, " select * from stocks where sector = sec1 ")
+	validateSqlSelect(t, res, 2, 5)
+	res = updateHelper(tbl, " update stocks set bid = 13 where sector = sec1 ")
+	validateSqlUpdate(t, res, 2)
+	res = selectHelper(tbl, " select * from stocks where sector = sec1 ")
+	validateSqlSelect(t, res, 2, 5)
+	// update sector by sector
+	res = updateHelper(tbl, " update stocks set sector = sec3 where sector = sec1 ")
+	validateSqlUpdate(t, res, 2)
+	res = selectHelper(tbl, " select * from stocks where sector = sec1 ")
+	validateSqlSelect(t, res, 0, 5)
+	res = selectHelper(tbl, " select * from stocks where sector = sec3 ")
+	validateSqlSelect(t, res, 2, 5)
+	
 }
 
 // DELETE
@@ -218,7 +294,7 @@ func TestTableSqlDelete(t *testing.T) {
 	res = deleteHelper(tbl, " delete from stocks ")
 	validateSqlDelete(t, res, 1)
 	res = selectHelper(tbl, " select * from stocks ")
-	validateSqlSelectResponse(t, res, 0, 4)
+	validateSqlSelect(t, res, 0, 4)
 	// 3 records
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "1")
@@ -229,7 +305,7 @@ func TestTableSqlDelete(t *testing.T) {
 	res = deleteHelper(tbl, " delete from stocks ")
 	validateSqlDelete(t, res, 3)
 	res = selectHelper(tbl, " select * from stocks ")
-	validateSqlSelectResponse(t, res, 0, 4)
+	validateSqlSelect(t, res, 0, 4)
 }
 
 // KEY
@@ -250,7 +326,7 @@ func TestTableSqlKey(t *testing.T) {
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "0")
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
-	validateSqlSelectResponse(t, res, 1, 4)
+	validateSqlSelect(t, res, 1, 4)
 	// now define key for new column 
 	res = keyHelper(tbl, "key stocks sector")
 	validateErrorResponse(t, res)
@@ -261,16 +337,16 @@ func TestTableSqlKey(t *testing.T) {
 	res = insertHelper(tbl, " insert into stocks (ticker, sector, bid, ask) values (MSFT, sec1, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "1")
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
-	validateSqlSelectResponse(t, res, 1, 5)
+	validateSqlSelect(t, res, 1, 5)
 	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
-	validateSqlSelectResponse(t, res, 1, 5)
+	validateSqlSelect(t, res, 1, 5)
 	// now sector is now unique empty string for IBM and sec1 for MSFT
 	res = keyHelper(tbl, "key stocks sector")
 	validateOkResponse(t, res)
 	res = selectHelper(tbl, " select * from stocks where sector = ''")
-	validateSqlSelectResponse(t, res, 1, 5)
+	validateSqlSelect(t, res, 1, 5)
 	res = selectHelper(tbl, " select * from stocks where sector = sec1")
-	validateSqlSelectResponse(t, res, 1, 5)
+	validateSqlSelect(t, res, 1, 5)
 	// try to define existing key
 	res = keyHelper(tbl, "key stocks ticker")
 	validateErrorResponse(t, res)
@@ -288,27 +364,27 @@ func TestTableSqlKey(t *testing.T) {
 	}
 
 	res = selectHelper(tbl, " select * from stocks ")
-	validateSqlSelectResponse(t, res, 2, 5)
+	validateSqlSelect(t, res, 2, 5)
 	// delete by key
 	res = deleteHelper(tbl, " delete from stocks where ticker = 'IBM'")
 	validateSqlDelete(t, res, 1)
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
-	validateSqlSelectResponse(t, res, 0, 5)
+	validateSqlSelect(t, res, 0, 5)
 	res = selectHelper(tbl, " select * from stocks ")
-	validateSqlSelectResponse(t, res, 1, 5)
+	validateSqlSelect(t, res, 1, 5)
 
 	res = deleteHelper(tbl, " delete from stocks where ticker = NA")
 	res = selectHelper(tbl, " select * from stocks ")
-	validateSqlSelectResponse(t, res, 1, 5)
+	validateSqlSelect(t, res, 1, 5)
 	// delete by sec 
 	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
-	validateSqlSelectResponse(t, res, 1, 5)
+	validateSqlSelect(t, res, 1, 5)
 	res = deleteHelper(tbl, " delete from stocks where sector = 'sec1'")
 	validateSqlDelete(t, res, 1)
 	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
-	validateSqlSelectResponse(t, res, 0, 5)
+	validateSqlSelect(t, res, 0, 5)
 	res = selectHelper(tbl, " select * from stocks ")
-	validateSqlSelectResponse(t, res, 0, 5)
+	validateSqlSelect(t, res, 0, 5)
 }
 
 // TAG
@@ -329,22 +405,22 @@ func TestTableSqlTag(t *testing.T) {
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "0")
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
-	validateSqlSelectResponse(t, res, 1, 4)
+	validateSqlSelect(t, res, 1, 4)
 
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "1")
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
-	validateSqlSelectResponse(t, res, 2, 4)
+	validateSqlSelect(t, res, 2, 4)
 
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (MSFT, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "2")
 	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
-	validateSqlSelectResponse(t, res, 1, 4)
+	validateSqlSelect(t, res, 1, 4)
 
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "3")
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
-	validateSqlSelectResponse(t, res, 3, 4)
+	validateSqlSelect(t, res, 3, 4)
 
 	if tbl.getTagedColumnValuesCount("ticker", "IBM") != 3 {
 		t.Errorf("invalid taged column values")
@@ -377,9 +453,9 @@ func TestTableSqlTag(t *testing.T) {
 	res = deleteHelper(tbl, " delete from stocks where ticker = 'IBM'")
 	validateSqlDelete(t, res, 4)
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
-	validateSqlSelectResponse(t, res, 0, 5)
+	validateSqlSelect(t, res, 0, 5)
 	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
-	validateSqlSelectResponse(t, res, 1, 5)
+	validateSqlSelect(t, res, 1, 5)
 	if tbl.getTagedColumnValuesCount("sector", "TECH") != 0 {
 		t.Errorf("invalid taged column values")
 	}
@@ -393,5 +469,5 @@ func TestTableSqlTag(t *testing.T) {
 	}
 	//	
 	res = selectHelper(tbl, " select * from stocks ")
-	validateSqlSelectResponse(t, res, 0, 5)
+	validateSqlSelect(t, res, 0, 5)
 }

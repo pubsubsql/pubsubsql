@@ -370,17 +370,22 @@ func (t *table) sqlSelect(req *sqlSelectRequest) response {
 func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record, id int) {
 	for idx, colVal := range colVals {
 		col := cols[idx]
-		rec.setValue(col.ordinal, colVal.val)
 		// update key
 		if col.hasKey() {
 			// delete previous key
-			delete(col.key, colVal.val)
+			delete(col.key, rec.getValue(col.ordinal))
+			rec.setValue(col.ordinal, colVal.val)
 			col.key[colVal.val] = id
 		} else if col.hasTags() {
 			// delete previous tag
 			t.deleteTag(rec, col)
+			rec.setValue(col.ordinal, colVal.val)
 			t.tagValue(col, id, rec)
+		} else {
+			rec.setValue(col.ordinal, colVal.val)
+
 		}
+		
 	}
 }
 
