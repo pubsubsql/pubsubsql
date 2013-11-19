@@ -22,7 +22,7 @@ import (
 	"unicode/utf8"
 )
 
-// tokenType identifies the type of lex tokens
+// tokenType identifies the type of lex tokens.
 type tokenType uint8
 
 const (
@@ -56,6 +56,7 @@ const (
 	tokenTypeSqlTag                                   // tag
 )
 
+// String converts tokenType value to a string. 
 func (typ tokenType) String() string {
 	switch typ {
 	case tokenTypeError:
@@ -118,7 +119,7 @@ func (typ tokenType) String() string {
 	return "not implemented"
 }
 
-// token is a a symbol representing lexical unit 
+// token is a symbol representing lexical unit. 
 type token struct {
 	typ tokenType
 	// string identified by lexer as a token based on
@@ -126,6 +127,7 @@ type token struct {
 	val string
 }
 
+// String converts token to a string. 
 func (t token) String() string {
 	if t.typ == tokenTypeEOF {
 		return "EOF"
@@ -133,12 +135,12 @@ func (t token) String() string {
 	return t.val
 }
 
-// tokenConsumer consumes tokens emited by lexer
+// tokenConsumer consumes tokens emited by lexer.
 type tokenConsumer interface {
 	Consume(t *token)
 }
 
-// lexer holds the state of the scanner
+// lexer holds the state of the scanner.
 type lexer struct {
 	input  string        // the string being scanned
 	start  int           // start position of this item
@@ -152,33 +154,33 @@ type lexer struct {
 // as a function that returns the next state.
 type stateFn func(*lexer) stateFn
 
-// errorToken emits an error toekan and terminates the scan
-// by passing back a nil ponter that will be the next statei,
-// terminating l.run
+// Emits an error token and terminates the scan
+// by passing back a nil ponter that will be the next state
+// terminating lexer.run function
 func (l *lexer) errorToken(format string, args ...interface{}) stateFn {
 	l.err = fmt.Sprintf(format, args...)
 	l.tokens.Consume(&token{tokenTypeError, l.err})
 	return nil
 }
 
-// ok returns true if scan was a success  
+// Returns true if scan was a success. 
 func (l *lexer) ok() bool {
 	return len(l.err) > 0
 }
 
-// emit passes a token to the token consumer 
+// Passes a token to the token consumer. 
 func (l *lexer) emit(t tokenType) {
 	l.tokens.Consume(&token{t, l.current()})
 }
 
-// returns current lexeme string
+// Returns current lexeme string.
 func (l *lexer) current() string {
 	str := l.input[l.start:l.pos]
 	l.start = l.pos
 	return str
 }
 
-// next returns the next rune in the input
+// Returns the next rune in the input.
 func (l *lexer) next() (rune int32) {
 	if l.pos >= len(l.input) {
 		l.width = 0
@@ -189,7 +191,7 @@ func (l *lexer) next() (rune int32) {
 	return rune
 }
 
-// end returns whether end was reached in the input
+// Returns whether end was reached in the input.
 func (l *lexer) end() bool {
 	if l.pos >= len(l.input) {
 		return true
@@ -197,36 +199,46 @@ func (l *lexer) end() bool {
 	return false
 }
 
-// ignore skips over the pending input before this point
+// Skips over the pending input before this point.
 func (l *lexer) ignore() {
 	l.start = l.pos
 }
 
-// backup steps back one rune
+// Steps back one rune.
 func (l *lexer) backup() {
 	l.pos -= l.width
 }
 
-// peek returns but does not consume the next rune in the input
+// Returns but does not consume the next rune in the input.
 func (l *lexer) peek() int32 {
 	rune := l.next()
 	l.backup()
 	return rune
 }
 
-// isWhiteSpace determines if rune is valid unicode space character or 0
+// Determines if rune is valid unicode space character or 0.
 func isWhiteSpace(rune int32) bool {
 	return (unicode.IsSpace(rune) || rune == 0)
 }
 
-// scanTillWhiteSpace reads till first unicode White space character
+// Reads till first white space character
+// as defined by isWhiteSpace function
 func (l *lexer) scanTillWhiteSpace() {
 	for rune := l.next(); !isWhiteSpace(rune); rune = l.next() {
 
 	}
 }
 
-// match scans input and matches against the string
+// Skips white space characters in the input.
+func (l *lexer) skipWhiteSpaces() {
+	for rune := l.next(); unicode.IsSpace(rune); rune = l.next() {
+	}
+	l.backup()
+	l.ignore()
+}
+
+// Scans input and matches against the string.
+// Returns true if the expected string was matched.
 func (l *lexer) match(str string, skip int) bool {
 	done := true
 	for _, rune := range str {
@@ -238,14 +250,16 @@ func (l *lexer) match(str string, skip int) bool {
 			done = false
 		}
 	}
-	if false == isWhiteSpace(l.peek()) {
+	if !isWhiteSpace(l.peek()) {
 		done = false
 		l.scanTillWhiteSpace()
 	}
 	return done
 }
 
-// tryMatch scans input and tries to match the string value
+// Scans input and tries to match the expected string.
+// Returns true if the expected string was matched.
+// Does not advance the input if the string was not matched.
 func (l *lexer) tryMatch(val string) bool {
 	i := 0
 	for _, rune := range val {
@@ -260,7 +274,8 @@ func (l *lexer) tryMatch(val string) bool {
 	return true
 }
 
-// lexMatch matches expected string value
+// lexMatch matches expected string value emiting the token on success
+// and returning passed state function.
 func (l *lexer) lexMatch(typ tokenType, value string, skip int, fn stateFn) stateFn {
 	if l.match(value, skip) {
 		l.emit(typ)
@@ -269,9 +284,10 @@ func (l *lexer) lexMatch(typ tokenType, value string, skip int, fn stateFn) stat
 	return l.errorToken("Unexpected token:" + l.current())
 }
 
-// lexSqlIndentifier scans input for valid sql identifier
+// lexSqlIndentifier scans input for valid sql identifier emiting the token on success
+// and returning passed state function.
 func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	// first rune has to be valid unicode letter	
 	if !unicode.IsLetter(l.next()) {
 		return l.errorToken("identifier must begin with a letter " + l.current())
@@ -284,9 +300,10 @@ func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
 	return fn
 }
 
-// lexSqlLeftParenthesis scans input for '('
+// lexSqlLeftParenthesis scans input for '(' emiting the token on success 
+// and returning passed state function.
 func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	if l.next() != '(' {
 		return l.errorToken("expected ( ")
 	}
@@ -294,11 +311,10 @@ func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 	return fn
 }
 
-// lexSqlValue scans input for valid sql value
-// single quoted string 'some string '' '
-// unicode character sequence delimited by white space or ')' or ','
+// lexSqlValue scans input for valid sql value emiting the token on success
+// and returing passed state function.
 func (l *lexer) lexSqlValue(fn stateFn) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	if l.end() {
 		return l.errorToken("expected value but go eof")
 	}
@@ -350,9 +366,9 @@ func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 	return nil
 }
 
-// lexTryMatch tries to match expected value returns next state function depending on the match
+// Tries to match expected value returns next state function depending on the match.
 func (l *lexer) lexTryMatch(typ tokenType, val string, fnMatch stateFn, fnNoMatch stateFn) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	if l.tryMatch(val) {
 		l.emit(typ)
 		return fnMatch
@@ -360,10 +376,38 @@ func (l *lexer) lexTryMatch(typ tokenType, val string, fnMatch stateFn, fnNoMatc
 	return fnNoMatch
 }
 
-// INSERT
+// WHERE sql where clause scan state functions.
+
+func lexSqlWhereColumn(l *lexer) stateFn {
+	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlWhereColumnEqual)
+}
+
+func lexSqlWhereColumnEqual(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	if l.next() == '=' {
+		l.emit(tokenTypeSqlEqual)
+		return lexSqlWhereColumnEqualValue
+	}
+	return l.errorToken("expected = ")
+}
+
+func lexSqlWhereColumnEqualValue(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	return l.lexSqlValue(lexEof)
+}
+
+func lexEof(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	if l.end() {
+		return nil
+	}
+	return l.errorToken("unexpected token at the end of statement")
+}
+
+// INSERT sql statement scan state functions.
 
 func lexSqlInsertInto(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	return l.lexMatch(tokenTypeSqlInto, "into", 0, lexSqlInsertIntoTable)
 }
 
@@ -376,12 +420,12 @@ func lexSqlInsertIntoTableLeftParenthesis(l *lexer) stateFn {
 }
 
 func lexSqlInsertColumn(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlInsertColumnCommaOrRightParenthesis)
 }
 
 func lexSqlInsertColumnCommaOrRightParenthesis(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	switch l.next() {
 	case ',':
 		l.emit(tokenTypeSqlComma)
@@ -394,7 +438,7 @@ func lexSqlInsertColumnCommaOrRightParenthesis(l *lexer) stateFn {
 }
 
 func lexSqlInsertValues(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	return l.lexMatch(tokenTypeSqlValues, "values", 0, lexSqlInsertValuesLeftParenthesis)
 }
 
@@ -407,7 +451,7 @@ func lexSqlInsertVal(l *lexer) stateFn {
 }
 
 func lexSqlInsertValueCommaOrRigthParenthesis(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	switch l.next() {
 	case ',':
 		l.emit(tokenTypeSqlComma)
@@ -420,10 +464,65 @@ func lexSqlInsertValueCommaOrRigthParenthesis(l *lexer) stateFn {
 	return l.errorToken("expected , or ) ")
 }
 
-// DELETE
+// SELECT sql statement scan state functions.
+
+func lexSqlSelectStar(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	if l.next() == '*' {
+		l.emit(tokenTypeSqlStar)
+		return lexSqlFrom
+	}
+	return l.errorToken("expected columns or *")
+}
+
+// UPDATE sql statement scan state functions.
+
+func lexSqlUpdateTable(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlUpdateTableSet)
+}
+
+func lexSqlUpdateTableSet(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	return l.lexMatch(tokenTypeSqlSet, "set", 0, lexSqlColumn)
+}
+
+func lexSqlColumn(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	if l.end() {
+		return nil
+	}
+	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlColumnEqual)
+}
+
+func lexSqlColumnEqual(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	if l.next() == '=' {
+		l.emit(tokenTypeSqlEqual)
+		return lexSqlColumnEqualValue
+	}
+	return l.errorToken("expecgted = ")
+}
+
+func lexSqlColumnEqualValue(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	return l.lexSqlValue(lexSqlCommaOrWhere)
+}
+
+func lexSqlCommaOrWhere(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	if l.next() == ',' {
+		l.emit(tokenTypeSqlComma)
+		return lexSqlColumn
+	}
+	l.backup()
+	return lexSqlWhere
+}
+
+// DELETE sql statement scan state functions.
 
 func lexSqlFrom(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	return l.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlFromTable)
 }
 
@@ -435,104 +534,7 @@ func lexSqlWhere(l *lexer) stateFn {
 	return l.lexTryMatch(tokenTypeSqlWhere, "where", lexSqlWhereColumn, nil)
 }
 
-// WHERE
-// TODO add more where complex expressions
-
-func lexSqlWhereColumn(l *lexer) stateFn {
-	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlWhereColumnEqual)
-}
-
-func lexSqlWhereColumnEqual(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	if l.next() == '=' {
-		l.emit(tokenTypeSqlEqual)
-		return lexSqlWhereColumnEqualValue
-	}
-	return l.errorToken("expected = ")
-}
-
-func lexSqlWhereColumnEqualValue(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	return l.lexSqlValue(lexEof)
-}
-
-func lexEof(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	if l.end() {
-		return nil
-	}
-	return l.errorToken("unexpected token at the end of statement")
-}
-
-// SELECT
-// TODO add ability to select individual columns
-
-func lexSqlSelectStar(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	if l.next() == '*' {
-		l.emit(tokenTypeSqlStar)
-		return lexSqlFrom
-	}
-	return l.errorToken("expected columns or *")
-}
-
-// UPDATE
-
-func lexSqlUpdateTable(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlUpdateTableSet)
-}
-
-func lexSqlUpdateTableSet(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	return l.lexMatch(tokenTypeSqlSet, "set", 0, lexSqlColumn)
-}
-
-func lexSqlColumn(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	if l.end() {
-		return nil
-	}
-	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlColumnEqual)
-}
-
-func lexSqlColumnEqual(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	if l.next() == '=' {
-		l.emit(tokenTypeSqlEqual)
-		return lexSqlColumnEqualValue
-	}
-	return l.errorToken("expecgted = ")
-}
-
-func lexSqlColumnEqualValue(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	return l.lexSqlValue(lexSqlCommaOrWhere)
-}
-
-func lexSqlCommaOrWhere(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	if l.next() == ',' {
-		l.emit(tokenTypeSqlComma)
-		return lexSqlColumn
-	}
-	l.backup()
-	return lexSqlWhere
-}
-
-// UNSUBSCRIBE
-
-func lexSqlUnsubscribeFrom(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
-	return l.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlUnsubscribeFromTable)
-}
-
-func lexSqlUnsubscribeFromTable(l *lexer) stateFn {
-	return l.lexSqlIdentifier(tokenTypeSqlTable, nil)
-}
-
-// KEY 
-// TAG
+// KEY and TAG sql statement scan state functions. 
 
 func lexSqlKeyTable(l *lexer) stateFn {
 	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlKeyColumn)
@@ -542,9 +544,20 @@ func lexSqlKeyColumn(l *lexer) stateFn {
 	return l.lexSqlIdentifier(tokenTypeSqlColumn, nil)
 }
 
+// UNSUBSCRIBE
+
+func lexSqlUnsubscribeFrom(l *lexer) stateFn {
+	l.skipWhiteSpaces()
+	return l.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlUnsubscribeFromTable)
+}
+
+func lexSqlUnsubscribeFromTable(l *lexer) stateFn {
+	return l.lexSqlIdentifier(tokenTypeSqlTable, nil)
+}
+
 // END SQL
 
-// lexCommandST helper function to process status stop start commands
+// Helper function to process status stop start commands.
 func lexCommandST(l *lexer) stateFn {
 	switch l.next() {
 	case 'a':
@@ -558,7 +571,7 @@ func lexCommandST(l *lexer) stateFn {
 	return l.errorToken("Invalid command:" + l.current())
 }
 
-// lexCommandS helper function to process select subscribe status stop start commands
+// Helper function to process select subscribe status stop start commands.
 func lexCommandS(l *lexer) stateFn {
 	switch l.next() {
 	case 'e':
@@ -571,17 +584,9 @@ func lexCommandS(l *lexer) stateFn {
 	return l.errorToken("Invalid command:" + l.current())
 }
 
-// skipWhiteSpaces skips white space characters
-func (l *lexer) lexSkipWhiteSpaces() {
-	for rune := l.next(); unicode.IsSpace(rune); rune = l.next() {
-	}
-	l.backup()
-	l.ignore()
-}
-
-// lexCommand is the initial state function
+// Initial state function.
 func lexCommand(l *lexer) stateFn {
-	l.lexSkipWhiteSpaces()
+	l.skipWhiteSpaces()
 	switch l.next() {
 	case 'u': // update unsubscribe
 		if l.next() == 'p' {
@@ -604,7 +609,7 @@ func lexCommand(l *lexer) stateFn {
 	return l.errorToken("Invalid command:" + l.current())
 }
 
-// run scans the input by executing state functon until 
+// Scans the input by executing state functon until. 
 // the state is nil
 func (l *lexer) run() {
 	for state := lexCommand; state != nil; {
@@ -613,7 +618,7 @@ func (l *lexer) run() {
 	l.emit(tokenTypeEOF)
 }
 
-// lex scans the input by running lexer 
+// Scans the input by running lexer.
 func lex(input string, tokens tokenConsumer) bool {
 	l := &lexer{
 		input:  input,
