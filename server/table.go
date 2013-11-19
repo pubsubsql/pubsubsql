@@ -251,6 +251,19 @@ func (t *table) removeColumns(ordinal int) {
 	t.colSlice = t.colSlice[:ordinal]
 }
 
+func (t *table) insertRecord(cols []*column, colVals []*columnValue, rec *record, id int) {
+	for idx, colVal := range colVals {
+		col := cols[idx]
+		rec.setValue(col.ordinal, colVal.val)
+		// update key
+		if col.hasKey() {
+			col.key[colVal.val] = id
+		} else if col.hasTags() {
+			t.tagValue(col, id, rec)
+		}
+	}
+}
+
 // sqlInsert proceses sql insert request and returns response
 func (t *table) sqlInsert(req *sqlInsertRequest) response {
 	rec, id := t.newRecord()
@@ -267,16 +280,7 @@ func (t *table) sqlInsert(req *sqlInsertRequest) response {
 		cols[idx] = col
 	}
 	// ready to insert	
-	for idx, colVal := range req.colVals {
-		col := cols[idx]
-		rec.setValue(col.ordinal, colVal.val)
-		// update key
-		if col.hasKey() {
-			col.key[colVal.val] = id
-		} else if col.hasTags() {
-			t.tagValue(col, id, rec)
-		}
-	}
+	t.insertRecord(cols, req.colVals, rec, id)
 	t.addNewRecord(rec)
 	res := sqlInsertResponse{id: rec.getId()}
 	return &res
@@ -361,6 +365,81 @@ func (t *table) sqlSelect(req *sqlSelectRequest) response {
 	return &res
 }
 
+// UPDATE
+
+func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record, id int) {
+	for idx, colVal := range colVals {
+		col := cols[idx]
+		rec.setValue(col.ordinal, colVal.val)
+		// update key
+		if col.hasKey() {
+			// delete previous key
+			delete(col.key, colVal.val)
+			col.key[colVal.val] = id
+		} else if col.hasTags() {
+			// delete previous tag
+			t.deleteTag(rec, col)
+			t.tagValue(col, id, rec)
+		}
+	}
+}
+
+func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
+	records, errResponse := t.getRecordsBySqlFilter(req.filter)
+	if errResponse != nil {
+		return errResponse
+	}
+	res := &sqlUpdateResponse{updated: 0}
+	var onlyRecord *record
+	switch len(records) {
+	case 0:
+		return res
+	case 1:
+		onlyRecord = records[0]
+	}
+	// validate duplicate keys
+	cols := make([]*column, len(req.colVals))
+	originalColLen := len(t.colSlice)
+	for idx, colVal := range req.colVals {
+		col, _ := t.getAddColumn(colVal.col)
+		if col.hasKey() && col.keyContainsValue(colVal.val) {
+			if onlyRecord == nil || onlyRecord != t.getRecordByKey(colVal.val, col)[0] {
+				//remove created columns
+				t.removeColumns(originalColLen)
+				return newErrorResponse("update failed due to duplicate column key:" + colVal.col + " value:" + colVal.val)
+			}
+		}
+		cols[idx] = col
+	}
+	// all is valid ready to update
+	updated := 0
+	for _, rec := range records {
+		if rec != nil {
+			t.updateRecord(cols, req.colVals, rec, int(rec.idx()))
+			updated++
+		}
+	}
+	res.updated = updated
+	return res
+}
+
+// DELETE
+
+func (t *table) deleteTag(rec *record, col *column) {
+	tg := rec.tags[col.tagIndex]
+	rec.tags[col.tagIndex] = nil
+	switch removeTag(tg) {
+	case removeTagLast:
+		delete(col.tags, rec.getValue(col.ordinal))
+	case removeTagSlide:
+		// we need to retag the slided record	
+		slidedRecord := t.records[tg.idx]
+		if slidedRecord != nil {
+			slidedRecord.tags[col.tagIndex] = tg
+		}
+	}
+}
+
 func (t *table) deleteRecord(rec *record) {
 	// delete record keys
 	for _, col := range t.keyColumns {
@@ -368,18 +447,7 @@ func (t *table) deleteRecord(rec *record) {
 	}
 	// delete record tags
 	for _, col := range t.tagedColumns {
-		tg := rec.tags[col.tagIndex]
-		rec.tags[col.tagIndex] = nil
-		switch removeTag(tg) {
-		case removeTagLast:
-			delete(col.tags, rec.getValue(col.ordinal))
-		case removeTagSlide:
-			// we need to retag the slided record	
-			slidedRecord := t.records[tg.idx]
-			if slidedRecord != nil {
-				slidedRecord.tags[col.tagIndex] = tg
-			}
-		}
+		t.deleteTag(rec, col)
 	}
 	// delete record
 	t.records[rec.idx()] = nil

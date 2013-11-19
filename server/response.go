@@ -98,3 +98,9 @@ type sqlDeleteResponse struct {
 	response
 	deleted int
 }
+
+// sqlUpdateResponse
+type sqlUpdateResponse struct {
+	response
+	updated int
+}
