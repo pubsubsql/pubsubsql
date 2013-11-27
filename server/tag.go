@@ -75,4 +75,3 @@ func removeTag(t *tag) removeTagReturn {
 	freeMe.next = nil
 	return ret
 }
-

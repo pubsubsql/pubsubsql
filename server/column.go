@@ -34,7 +34,7 @@ type column struct {
 	//
 	key map[string]int
 	//
-	tags     map[string]*tag
+	tagmap   tagMap
 	tagIndex int
 }
 
@@ -73,8 +73,8 @@ func (c *column) makeKey(k map[string]int) {
 // Makes column to be tags container.
 func (c *column) makeTags(tagIndex int) {
 	c.typ = columnTypeTag
+	c.tagmap.init()
 	c.tagIndex = tagIndex
-	c.tags = make(map[string]*tag)
 }
 
 // Determines if value is present for a given key

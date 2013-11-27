@@ -31,7 +31,7 @@ func (t *table) getTagedColumnValuesCount(col string, val string) int {
 		return 0
 	}
 	i := 0
-	for tg := c.tags[val]; tg != nil; tg = tg.next {
+	for tg := c.tagmap.getTag(val); tg != nil; tg = tg.next {
 		i++
 	}
 	return i
@@ -223,7 +223,7 @@ func (t *table) getRecordsByTag(val string, col *column) []*record {
 	// perhaps its possible to know in advance how manny records
 	// will be returned
 	records := make([]*record, 0, 100)
-	for tg := col.tags[val]; tg != nil; tg = tg.next {
+	for tg := col.tagmap.getTag(val); tg != nil; tg = tg.next {
 		records = append(records, t.records[tg.idx])
 		l := len(records)
 		if cap(records) == l {
@@ -275,11 +275,7 @@ func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record
 
 // Add value to non unique indexed column.
 func addValueToTags(col *column, val string, idx int) *tag {
-	head := col.tags[val]
-	tg := addTag(head, idx)
-	if head == nil {
-		col.tags[val] = tg
-	}
+	tg, _ := col.tagmap.addTag(val, idx)
 	return tg
 }
 
@@ -300,7 +296,7 @@ func (t *table) deleteTag(rec *record, col *column) {
 	rec.tags[col.tagIndex] = nil
 	switch removeTag(tg) {
 	case removeTagLast:
-		delete(col.tags, rec.getValue(col.ordinal))
+		col.tagmap.removeTag(rec.getValue(col.ordinal))
 	case removeTagSlide:
 		// we need to retag the slided record	
 		slidedRecord := t.records[tg.idx]
