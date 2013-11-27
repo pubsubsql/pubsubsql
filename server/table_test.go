@@ -340,6 +340,9 @@ func TestTableSqlKey(t *testing.T) {
 	validateSqlSelect(t, res, 1, 5)
 	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
 	validateSqlSelect(t, res, 1, 5)
+	// test update duplicate key
+	res = updateHelper(tbl, " update stocks set ticker = 'MSFT' where ticker = IBM")
+	validateErrorResponse(t, res)
 	// now sector is now unique empty string for IBM and sec1 for MSFT
 	res = keyHelper(tbl, "key stocks sector")
 	validateOkResponse(t, res)

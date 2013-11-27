@@ -49,6 +49,11 @@ func (t *tagMap) addTag(key string, idx int) (*tag, *pubSub) {
 	return addTag(item.head, idx), &item.pubsub
 }
 
+func (t *tagMap) containsTag(key string) bool {
+	_, contains := t.tags[key]
+	return contains
+}
+
 func (t *tagMap) removeTag(key string) {
 	delete(t.tags, key)
 }

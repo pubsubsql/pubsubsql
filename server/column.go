@@ -32,8 +32,6 @@ type column struct {
 	ordinal int
 	typ     columnType
 	//
-	key map[string]int
-	//
 	tagmap   tagMap
 	tagIndex int
 }
@@ -64,12 +62,6 @@ func (c *column) isIndexed() bool {
 	return c.typ != columnTypeNormal
 }
 
-// Makes column to be key container.
-func (c *column) makeKey(k map[string]int) {
-	c.typ = columnTypeKey
-	c.key = k
-}
-
 // Makes column to be tags container.
 func (c *column) makeTags(tagIndex int) {
 	c.typ = columnTypeTag
@@ -79,6 +71,5 @@ func (c *column) makeTags(tagIndex int) {
 
 // Determines if value is present for a given key
 func (c *column) keyContainsValue(k string) bool {
-	_, contains := c.key[k]
-	return contains
+	return c.tagmap.containsTag(k)
 }
