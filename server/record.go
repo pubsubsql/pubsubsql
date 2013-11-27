@@ -18,10 +18,21 @@ package pubsubsql
 
 import "strconv"
 
+// link
+type link struct {
+	pubsub *pubSub
+	tg     *tag
+}
+
+func (l *link) clear() {
+	l.pubsub = nil
+	l.tg = nil
+}
+
 // record  
 type record struct {
 	values []string
-	tags   []*tag
+	links  []link
 }
 
 // record factory

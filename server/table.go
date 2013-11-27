@@ -44,6 +44,7 @@ type table struct {
 	colSlice     []*column
 	records      []*record
 	tagedColumns []*column
+	pubsub       pubSub
 }
 
 // table factory 
@@ -116,10 +117,8 @@ func (t *table) removeColumns(ordinal int) {
 func (t *table) prepareRecord() (*record, int) {
 	id := len(t.records)
 	r := newRecord(len(t.colSlice), id)
-	ltags := len(t.tagedColumns)
-	if ltags > 0 {
-		r.tags = make([]*tag, ltags)
-	}
+	l := len(t.tagedColumns) + 1
+	r.links = make([]link, l)
 	return r, id
 }
 
@@ -257,36 +256,41 @@ func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record
 // TAGS helper functions
 
 // Add value to non unique indexed column.
-func addValueToTags(col *column, val string, idx int) *tag {
-	tg, _ := col.tagmap.addTag(val, idx)
-	return tg
+func addValueToTags(col *column, val string, idx int) (*tag, *pubSub) {
+	return col.tagmap.addTag(val, idx)
 }
 
-// Binds tag and record.   
+// Binds tag, pubsub and record.   
 func (t *table) tagValue(col *column, idx int, rec *record) {
 	val := rec.getValue(col.ordinal)
-	tg := addValueToTags(col, val, idx)
-	if len(rec.tags) <= col.tagIndex {
-		rec.tags = append(rec.tags, tg)
+	tg, pubsub := addValueToTags(col, val, idx)
+	lnk := link{
+		tg:     tg,
+		pubsub: pubsub,
+	}
+	if len(rec.links) <= col.tagIndex {
+		rec.links = append(rec.links, lnk)
 	} else {
-		rec.tags[col.tagIndex] = tg
+		rec.links[col.tagIndex] = lnk
 	}
 }
 
 // Deletes tag value for a particular record
 func (t *table) deleteTag(rec *record, col *column) {
-	tg := rec.tags[col.tagIndex]
-	rec.tags[col.tagIndex] = nil
-	switch removeTag(tg) {
-	case removeTagLast:
-		col.tagmap.removeTag(rec.getValue(col.ordinal))
-	case removeTagSlide:
-		// we need to retag the slided record	
-		slidedRecord := t.records[tg.idx]
-		if slidedRecord != nil {
-			slidedRecord.tags[col.tagIndex] = tg
+	lnk := &rec.links[col.tagIndex]
+	if lnk.tg != nil {
+		switch removeTag(lnk.tg) {
+		case removeTagLast:
+			col.tagmap.removeTag(rec.getValue(col.ordinal))
+		case removeTagSlide:
+			// we need to retag the slided record	
+			slidedRecord := t.records[lnk.tg.idx]
+			if slidedRecord != nil {
+				slidedRecord.links[col.tagIndex].tg = lnk.tg
+			}
 		}
 	}
+	lnk.clear()
 }
 
 // INSERT sql statement
@@ -433,7 +437,7 @@ func (t *table) sqlKey(req *sqlKeyRequest) response {
 func (t *table) tagOrKeyColumn(c string, coltyp columnType) {
 	col, _ := t.getAddColumn(c)
 	t.tagedColumns = append(t.tagedColumns, col)
-	col.makeTags(len(t.tagedColumns) - 1)
+	col.makeTags(len(t.tagedColumns))
 	col.typ = coltyp
 	// tag existing values
 	for idx, rec := range t.records {
