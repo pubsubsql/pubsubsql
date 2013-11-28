@@ -19,9 +19,10 @@ package pubsubsql
 // TODO design and implement
 // responseSender is responsible for channeling reponses to client connection 
 type responseSender struct {
-	i       int
-	publish chan response // channel to publish
-	active  bool          // indicates if channel is active
+	sender chan response // channel to publish responses to
+	quit   chan int      // reader will close quite chan to indicate writers to quit	
+	active bool          // indicates if channel is active
+
 }
 
 func (s *responseSender) isActive() bool {

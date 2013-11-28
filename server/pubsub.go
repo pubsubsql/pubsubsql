@@ -30,27 +30,37 @@ func (p *pubSub) add(s *subscription) {
 	p.head = s
 }
 
-func (p *pubSub) visit() {
+type pubsubVisitor func(s *subscription) bool
+
+func (p *pubSub) visit(v pubsubVisitor) {
 	prev := p.head
 	for sub := p.head; sub != nil; sub = sub.next {
-		if !sub.sender.isActive() {
+		if !sub.active || !v(sub) {
 			if sub == p.head {
 				p.head = sub.next
 				prev = p.head
 			} else {
 				prev.next = sub.next
 			}
-			continue
+		} else {
+			prev = sub
 		}
-		// call visit function
-		prev = sub
 	}
+}
+
+func (p *pubSub) clear() {
+	f := func(s *subscription) bool {
+		s.active = false
+		return false
+	}
+	p.visit(f)
 }
 
 // subscription represents individual client subscription
 type subscription struct {
 	next   *subscription // next node
 	sender *responseSender
+	active bool
 }
 
 // factory
@@ -58,5 +68,6 @@ func newSubscription(sender *responseSender) *subscription {
 	return &subscription{
 		next:   nil,
 		sender: sender,
+		active: true,
 	}
 }
