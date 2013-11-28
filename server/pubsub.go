@@ -18,5 +18,45 @@ package pubsubsql
 
 // pubsub  
 type pubSub struct {
-	temp string
+	head *subscription
+}
+
+func (p *pubSub) hasSubscriptions() bool {
+	return p.head != nil
+}
+
+func (p *pubSub) add(s *subscription) {
+	s.next = p.head
+	p.head = s
+}
+
+func (p *pubSub) visit() {
+	prev := p.head
+	for sub := p.head; sub != nil; sub = sub.next {
+		if !sub.sender.isActive() {
+			if sub == p.head {
+				p.head = sub.next
+				prev = p.head
+			} else {
+				prev.next = sub.next
+			}
+			continue
+		}
+		// call visit function
+		prev = sub
+	}
+}
+
+// subscription represents individual client subscription
+type subscription struct {
+	next   *subscription // next node
+	sender *responseSender
+}
+
+// factory
+func newSubscription(sender *responseSender) *subscription {
+	return &subscription{
+		next:   nil,
+		sender: sender,
+	}
 }

@@ -457,3 +457,10 @@ func (t *table) sqlTag(req *sqlTagRequest) response {
 	t.tagOrKeyColumn(req.column, columnTypeTag)
 	return newOkResponse()
 }
+
+// SUBSCRIBE sql statement
+
+func (t *table) sqlSubscribe(req *sqlSubscribeRequest) response {
+
+	return newOkResponse()
+}
