@@ -25,7 +25,7 @@ func TestPubSubVisitor(t *testing.T) {
 		t.Errorf("should have no subscriptions")
 	}
 	//
-	sender := newResponseSenderStub()
+	sender := newResponseSenderStub(1)
 	sub1 := newSubscription(sender)
 	pubsub.add(sub1)
 	if !pubsub.hasSubscriptions() {

@@ -175,28 +175,42 @@ func (t *table) getRecordById(val string) []*record {
 	return records
 }
 
-// Retrieves records based on the supplied filter
-func (t *table) getRecordsBySqlFilter(filter sqlFilter) ([]*record, response) {
+// Validates sql filter
+// Returns errorResponse on error
+func (t *table) validateSqlFilter(filter sqlFilter) (response, *column) {
 	var col *column
 	if len(filter.col) > 0 {
 		col = t.getColumn(filter.col)
 		if col == nil {
-			return nil, newErrorResponse("invalid column: " + filter.col)
+			return newErrorResponse("invalid column: " + filter.col), nil
 		}
+	}
+	if col != nil && col.typ == columnTypeNormal {
+		return newErrorResponse("can not use non indexed column " + filter.col + " as valid filter"), nil
+	}
+	return nil, col
+}
+
+// Retrieves records based on the supplied filter
+func (t *table) getRecordsBySqlFilter(filter sqlFilter) ([]*record, response) {
+	e, col := t.validateSqlFilter(filter)
+	if e != nil {
+		return nil, e
 	}
 	if col == nil {
 		// all
 		return t.records, nil
 	}
 	switch col.typ {
-	case columnTypeId:
-		return t.getRecordById(filter.val), nil
 	case columnTypeKey:
 		return t.getRecordsByTag(filter.val, col), nil
 	case columnTypeTag:
 		return t.getRecordsByTag(filter.val, col), nil
+	case columnTypeId:
+		return t.getRecordById(filter.val), nil
 	}
-	return nil, newErrorResponse("can not use non indexed column " + filter.col + " as valid filter")
+	// should never get here
+	return nil, nil
 }
 
 // Looks up records by tag. 
@@ -460,7 +474,17 @@ func (t *table) sqlTag(req *sqlTagRequest) response {
 
 // SUBSCRIBE sql statement
 
-func (t *table) sqlSubscribe(req *sqlSubscribeRequest) response {
+// Processes sql subscribe request.
+// Does not return anything, responses are send directly to response sender. 
+func (t *table) sqlSubscribe(req *sqlSubscribeRequest) {
+	// validate
+	e, _ := t.validateSqlFilter(req.filter)
+	if e != nil {
+		// send response
+		return
+	}
+	// create keys and tags 
 
-	return newOkResponse()
+	// publish initial dataset action:add	
+
 }

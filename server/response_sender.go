@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 CompleteD LLC.
+/* Copyright (C) 2013 CompleteDB LLC.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -24,12 +24,12 @@ type responseSender struct {
 		quit   chan int      // reader will close quite chan to indicate writers to quit	
 		active bool          // indicates if channel is active
 	*/
-	i int
+	connectionId uint64
 }
 
 // factory
-func newResponseSenderStub() *responseSender {
+func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
-		i: 0,
+		connectionId: connectionId,
 	}
 }
