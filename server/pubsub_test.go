@@ -23,47 +23,49 @@ func TestPubSubVisitor(t *testing.T) {
 	//
 	if pubsub.hasSubscriptions() {
 		t.Errorf("should have no subscriptions")
-	}	
+	}
 	//
 	sender := newResponseSenderStub()
 	sub1 := newSubscription(sender)
 	pubsub.add(sub1)
 	if !pubsub.hasSubscriptions() {
 		t.Errorf("should have subscriptions")
-	}	
+	}
 	if pubsub.count() != 1 {
 		t.Errorf("expected 1 subscription")
-	}	
+	}
 	//
 	sub2 := newSubscription(sender)
 	pubsub.add(sub2)
 	if pubsub.count() != 2 {
 		t.Errorf("expected 2 subscription")
-	}	
+	}
 	//
 	sub3 := newSubscription(sender)
 	pubsub.add(sub3)
 	if pubsub.count() != 3 {
 		t.Errorf("expected 3 subscription")
-	}	
+	}
+	//
+
+	pubsub.publish(newOkResponse())
+
 	//
 	sub3.deactivate()
 	if pubsub.count() != 2 {
 		t.Errorf("expected 2 subscription")
-	}	
+	}
 	//
 	sub1.deactivate()
 	if pubsub.count() != 1 {
 		t.Errorf("expected 2 subscription")
-	}	
+	}
 	//
 	sub2.deactivate()
 	if pubsub.count() != 0 {
 		t.Errorf("expected 0 subscription")
-	}	
+	}
 	if pubsub.hasSubscriptions() {
 		t.Errorf("should have no subscriptions")
-	}	
+	}
 }
-
-

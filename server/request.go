@@ -145,6 +145,7 @@ type sqlSubscribeRequest struct {
 	sqlRequest
 	table  string
 	filter sqlFilter
+	sender *responseSender
 }
 
 // sqlUnsubscribeRequest is a request for sql unsubscribe statement.

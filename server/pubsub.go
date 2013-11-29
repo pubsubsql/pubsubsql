@@ -16,6 +16,8 @@
 
 package pubsubsql
 
+import "fmt"
+
 // pubsub  
 type pubSub struct {
 	head *subscription
@@ -56,6 +58,14 @@ func (p *pubSub) count() int {
 	}
 	p.visit(f)
 	return i
+}
+
+func (p *pubSub) publish(r response) {
+	f := func(s *subscription) bool {
+		fmt.Println(r)
+		return true
+	}
+	p.visit(f)
 }
 
 // subscription represents individual client subscription
