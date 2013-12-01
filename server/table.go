@@ -503,7 +503,31 @@ func (t *table) deactivateSubscription(subid uint64) {
 }
 
 func (t *table) addSubscription(col *column, val string, sender *responseSender) (*subscription, []*record) {
-	return nil, nil
+	var sub *subscription
+	var records []*record
+	// subscribe to all records
+	if col == nil {
+		sub = t.newSubscription(sender)
+		t.pubsub.add(sub)
+		return sub, t.records
+	}
+	switch col.typ {
+	case columnTypeKey:
+		sub = t.newSubscription(sender)
+		records = t.getRecordsByTag(val, col)
+		col.tagmap.getAddTagItem(val).pubsub.add(sub)
+	case columnTypeTag:
+		sub = t.newSubscription(sender)
+		records = t.getRecordsByTag(val, col)
+		col.tagmap.getAddTagItem(val).pubsub.add(sub)
+	case columnTypeId:
+		records = t.getRecordById(val)
+		if len(records) > 0 {
+			sub = t.newSubscription(sender)
+			records[0].addSubscription(sub)
+		}
+	}
+	return sub, records
 }
 
 func (t *table) publishActionAdd(sub *subscription, records []*record) {

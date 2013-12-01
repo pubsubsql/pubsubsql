@@ -78,3 +78,12 @@ func (r *record) setValue(ordinal int, val string) {
 	}
 	r.values[ordinal] = val
 }
+
+// addSubscription adds subscription to the record.
+func (r *record) addSubscription(sub *subscription) {
+	pubsub := &r.links[0].pubsub
+	if *pubsub == nil {
+		*pubsub = new(pubSub)
+	}
+	pubsub.add(sub)
+}
