@@ -478,6 +478,12 @@ func validateUnsubscribe(t *testing.T, a request, y *sqlUnsubscribeRequest) {
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match  " + x.table)
 		}
+		// filter
+		if x.filter != y.filter {
+			t.Errorf("parse error: filters do not match")
+			t.Errorf(y.filter.col + " " + y.filter.val)
+			t.Errorf(x.filter.col + " " + x.filter.val)
+		}
 
 	default:
 		t.Errorf("parse error: invalid request type expected sqlUnsubscribeRequest")
@@ -503,6 +509,16 @@ func TestParseSqlUnsubscribeStatement2(t *testing.T) {
 	lex(" unsubscribe from", pc)
 	x = parse(pc)
 	expectedError(t, x)
+}
+
+func TestParseSqlUnsubscribeStatement3(t *testing.T) {
+	pc := newTokens()
+	lex("unsubscribe  from stocks where  ticker = 'IBM'", pc)
+	x := parse(pc)
+	var y sqlUnsubscribeRequest
+	y.table = "stocks"
+	y.filter.addFilter("ticker", "IBM")
+	validateUnsubscribe(t, x, &y)
 }
 
 // KEY 

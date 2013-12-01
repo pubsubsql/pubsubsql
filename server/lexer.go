@@ -547,12 +547,7 @@ func lexSqlKeyColumn(l *lexer) stateFn {
 // UNSUBSCRIBE
 
 func lexSqlUnsubscribeFrom(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	return l.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlUnsubscribeFromTable)
-}
-
-func lexSqlUnsubscribeFromTable(l *lexer) stateFn {
-	return l.lexSqlIdentifier(tokenTypeSqlTable, nil)
+	return lexSqlFrom(l)
 }
 
 // END SQL
