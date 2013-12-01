@@ -384,7 +384,17 @@ func (p *parser) parseSqlUnsubscribe() request {
 	if errreq := p.parseTableName(&req.table); errreq != nil {
 		return errreq
 	}
-	return p.parseEOF(req)
+	// possible eof
+	t = p.tokens.Produce()
+	if t.typ == tokenTypeEOF {
+		return req
+	}
+	// than it must be where
+	if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+		return errreq
+	}
+	// we are good
+	return req
 }
 
 // Runs the parser.

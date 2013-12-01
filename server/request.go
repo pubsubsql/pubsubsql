@@ -152,4 +152,5 @@ type sqlSubscribeRequest struct {
 type sqlUnsubscribeRequest struct {
 	sqlRequest
 	table string
+	filter sqlFilter
 }
