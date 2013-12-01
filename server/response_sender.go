@@ -19,17 +19,18 @@ package pubsubsql
 // TODO design and implement
 // responseSender is responsible for channeling reponses to client connection 
 type responseSender struct {
-	/*
-		sender chan response // channel to publish responses to
-		quit   chan int      // reader will close quite chan to indicate writers to quit	
-		active bool          // indicates if channel is active
-	*/
+	sender       chan response // channel to publish responses to
 	connectionId uint64
 }
 
 // factory
 func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
+		sender:       make(chan response, 1000),
 		connectionId: connectionId,
 	}
+}
+
+func (s *responseSender) send(r response) {
+	s.sender <- r
 }

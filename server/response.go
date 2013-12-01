@@ -107,3 +107,9 @@ type sqlUpdateResponse struct {
 	response
 	updated int
 }
+
+// sqlSubscribeResponse
+type sqlSubscribeResponse struct {
+	response
+	pubsubid uint64
+}
