@@ -38,22 +38,48 @@ func (t *tagMap) getTag(key string) *tag {
 	return nil
 }
 
-func (t *tagMap) addTag(key string, idx int) (*tag, *pubSub) {
+// getAddTagItem returns tagItem by key. 
+// Create new tagItem and adds it to map if does not exist.
+func (t *tagMap) getAddTagItem(key string) *tagItem {
 	item := t.tags[key]
 	if item == nil {
 		item = new(tagItem)
 		t.tags[key] = item
+	}
+	return item
+}
+
+// addTag adds tag and returns added tag and pubsub
+func (t *tagMap) addTag(key string, idx int) (*tag, *pubSub) {
+	item := t.getAddTagItem(key)
+	if item.head == nil {
 		item.head = addTag(nil, idx)
 		return item.head, &item.pubsub
 	}
 	return addTag(item.head, idx), &item.pubsub
 }
 
-func (t *tagMap) containsTag(key string) bool {
-	_, contains := t.tags[key]
-	return contains
+// addSubscription adds subscription and returns it 
+func (t *tagMap) addSubscription(key string, sender *responseSender) *subscription {
+	item := t.getAddTagItem(key)
+	sub := newSubscription(sender)
+	item.pubsub.add(sub)
+	return sub
 }
 
+// containsTag returns true only if there is a valid head for a given tagItem
+func (t *tagMap) containsTag(key string) bool {
+	item := t.tags[key]
+	if item != nil && item.head != nil {
+		return true
+	}
+	return false
+}
+
+// removeTag removes tagItem only if there are no active subscriptions
 func (t *tagMap) removeTag(key string) {
-	delete(t.tags, key)
+	item := t.tags[key]
+	if item != nil && item.pubsub.count() == 0 {
+		delete(t.tags, key)
+	}
 }
