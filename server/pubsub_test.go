@@ -26,7 +26,7 @@ func TestPubSubVisitor(t *testing.T) {
 	}
 	//
 	sender := newResponseSenderStub(1)
-	sub1 := newSubscription(sender)
+	sub1 := newSubscription(sender, 1)
 	pubsub.add(sub1)
 	if !pubsub.hasSubscriptions() {
 		t.Errorf("should have subscriptions")
@@ -35,13 +35,13 @@ func TestPubSubVisitor(t *testing.T) {
 		t.Errorf("expected 1 subscription")
 	}
 	//
-	sub2 := newSubscription(sender)
+	sub2 := newSubscription(sender, 2)
 	pubsub.add(sub2)
 	if pubsub.count() != 2 {
 		t.Errorf("expected 2 subscription")
 	}
 	//
-	sub3 := newSubscription(sender)
+	sub3 := newSubscription(sender, 3)
 	pubsub.add(sub3)
 	if pubsub.count() != 3 {
 		t.Errorf("expected 3 subscription")

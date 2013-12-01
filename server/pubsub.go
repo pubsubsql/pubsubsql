@@ -72,13 +72,15 @@ func (p *pubSub) publish(r response) {
 type subscription struct {
 	next   *subscription // next node
 	sender *responseSender
+	id     uint64
 }
 
 // factory
-func newSubscription(sender *responseSender) *subscription {
+func newSubscription(sender *responseSender, id uint64) *subscription {
 	return &subscription{
 		next:   nil,
 		sender: sender,
+		id:     id,
 	}
 }
 

@@ -45,16 +45,20 @@ type table struct {
 	records      []*record
 	tagedColumns []*column
 	pubsub       pubSub
+	//
+	subscriptions map[uint64]*subscription
+	subid         uint64
 }
 
 // table factory 
 func newTable(name string) *table {
 	t := &table{
-		name:         name,
-		colMap:       make(map[string]*column),
-		colSlice:     make([]*column, 0, tableCOLUMNS),
-		records:      make([]*record, 0, tableRECORDS),
-		tagedColumns: make([]*column, 0, tableCOLUMNS),
+		name:          name,
+		colMap:        make(map[string]*column),
+		colSlice:      make([]*column, 0, tableCOLUMNS),
+		records:       make([]*record, 0, tableRECORDS),
+		tagedColumns:  make([]*column, 0, tableCOLUMNS),
+		subscriptions: make(map[uint64]*subscription),
 	}
 	t.addColumn("id")
 	return t
@@ -477,6 +481,26 @@ func (t *table) sqlTag(req *sqlTagRequest) response {
 }
 
 // SUBSCRIBE sql statement
+
+func (t *table) newSubscription(sender *responseSender) *subscription {
+	t.subid++
+	sub := newSubscription(sender, t.subid)
+	t.subscriptions[t.subid] = sub
+	return sub
+}
+
+func (t *table) deactivateSubscriptions() {
+	for _, sub := range t.subscriptions {
+		sub.deactivate()
+	}
+	t.subscriptions = make(map[uint64]*subscription)
+}
+
+func (t *table) deactivateSubscription(subid uint64) {
+	sub := t.subscriptions[subid]
+	sub.deactivate()
+	delete(t.subscriptions, subid)
+}
 
 func (t *table) addSubscription(col *column, val string, sender *responseSender) (*subscription, []*record) {
 	return nil, nil

@@ -60,11 +60,9 @@ func (t *tagMap) addTag(key string, idx int) (*tag, *pubSub) {
 }
 
 // addSubscription adds subscription and returns it 
-func (t *tagMap) addSubscription(key string, sender *responseSender) *subscription {
+func (t *tagMap) addSubscription(key string, sub *subscription) {
 	item := t.getAddTagItem(key)
-	sub := newSubscription(sender)
 	item.pubsub.add(sub)
-	return sub
 }
 
 // containsTag returns true only if there is a valid head for a given tagItem
