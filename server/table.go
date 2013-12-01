@@ -191,26 +191,30 @@ func (t *table) validateSqlFilter(filter sqlFilter) (response, *column) {
 	return nil, col
 }
 
+// Retrieves records based by column value
+func (t *table) getRecordsByValue(val string, col *column) []*record {
+	if col == nil {
+		// all
+		return t.records
+	}
+	switch col.typ {
+	case columnTypeKey:
+		return t.getRecordsByTag(val, col)
+	case columnTypeTag:
+		return t.getRecordsByTag(val, col)
+	case columnTypeId:
+		return t.getRecordById(val)
+	}
+	return nil
+}
+
 // Retrieves records based on the supplied filter
 func (t *table) getRecordsBySqlFilter(filter sqlFilter) ([]*record, response) {
 	e, col := t.validateSqlFilter(filter)
 	if e != nil {
 		return nil, e
 	}
-	if col == nil {
-		// all
-		return t.records, nil
-	}
-	switch col.typ {
-	case columnTypeKey:
-		return t.getRecordsByTag(filter.val, col), nil
-	case columnTypeTag:
-		return t.getRecordsByTag(filter.val, col), nil
-	case columnTypeId:
-		return t.getRecordById(filter.val), nil
-	}
-	// should never get here
-	return nil, nil
+	return t.getRecordsByValue(filter.val, col), nil
 }
 
 // Looks up records by tag. 
@@ -474,17 +478,23 @@ func (t *table) sqlTag(req *sqlTagRequest) response {
 
 // SUBSCRIBE sql statement
 
+func (t *table) addSubscription(col *column, val string, sender *responseSender) (*subscription, []*record) {
+	return nil, nil
+}
+
+func (t *table) publishActionAdd(sub *subscription, records []*record) {
+
+}
+
 // Processes sql subscribe request.
 // Does not return anything, responses are send directly to response sender. 
 func (t *table) sqlSubscribe(req *sqlSubscribeRequest) {
 	// validate
-	e, _ := t.validateSqlFilter(req.filter)
+	e, col := t.validateSqlFilter(req.filter)
 	if e != nil {
 		// send response
 		return
 	}
-	// create keys and tags 
-
-	// publish initial dataset action:add	
-
+	sub, records := t.addSubscription(col, req.filter.val, req.sender)
+	t.publishActionAdd(sub, records)
 }
