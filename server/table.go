@@ -575,3 +575,26 @@ func (t *table) sqlSubscribe(req *sqlSubscribeRequest) {
 		t.publishActionAdd(sub, records, req.sender)
 	}
 }
+
+// UNSUBSCRIBE
+
+// Processes sql unsubscribe request.
+func (t *table) sqlUnSubscribe(req *sqlSubscribeRequest) response {
+	// validate
+	if len(req.filter.col) > 0 && req.filter.col != "pubsubid" {
+		return newErrorResponse("Invalid filter expected pubsubid but got " + req.filter.col)
+	}
+	// unsubscribe by pubsubid for a given connection
+	val := req.filter.val
+	if len(val) > 0 {
+		_, err := strconv.ParseUint(val, 10, 64)
+		if err != nil {
+			return newErrorResponse("Failed to unsubscribe, pubsubid " + val + " is not valid")
+		}
+
+	} else {
+		// unsubscribe all subscriptions for a given connection
+
+	}
+	return newOkResponse()
+}

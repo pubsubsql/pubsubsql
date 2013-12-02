@@ -93,3 +93,43 @@ func (s *subscription) active() bool {
 func (s *subscription) deactivate() {
 	s.sender = nil
 }
+
+//
+
+type mapSubscriptionById map[uint64]*subscription
+type mapSubscriptionByConnection map[uint64]mapSubscriptionById
+
+func newMapSubscriptions() mapSubscriptionByConnection {
+	return make(mapSubscriptionByConnection)
+}
+
+func (m mapSubscriptionByConnection) getOrAdd(connectionId uint64) mapSubscriptionById {
+	if m[connectionId] == nil {
+		m[connectionId] = make(mapSubscriptionById)
+	}
+	return m[connectionId]
+}
+
+func (m mapSubscriptionByConnection) add(connectionId uint64, pubsubid uint64, sub *subscription) {
+	s := m.getOrAdd(connectionId)
+	s[pubsubid] = sub
+}
+
+func (m mapSubscriptionByConnection) deactivate(connectionId uint64, pubsubid uint64) bool {
+	s := m.getOrAdd(connectionId)
+	sub := s[pubsubid]
+	if sub == nil {
+		return false
+	}
+	sub.deactivate()
+	delete(s, pubsubid)
+	return true
+}
+
+func (m mapSubscriptionByConnection) deactivateAll(connectionId uint64) {
+	s := m.getOrAdd(connectionId)
+	for _, sub := range s {
+		sub.deactivate()
+	}
+	delete(m, connectionId)
+}

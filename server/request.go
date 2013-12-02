@@ -151,6 +151,7 @@ type sqlSubscribeRequest struct {
 // sqlUnsubscribeRequest is a request for sql unsubscribe statement.
 type sqlUnsubscribeRequest struct {
 	sqlRequest
-	table  string
-	filter sqlFilter
+	connectionId uint64
+	table        string
+	filter       sqlFilter
 }
