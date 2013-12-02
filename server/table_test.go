@@ -17,6 +17,7 @@
 package pubsubsql
 
 import "testing"
+import "strconv"
 
 func validateTableRecordsCount(t *testing.T, tbl *table, expected int) {
 	val := tbl.getRecordCount()
@@ -579,4 +580,65 @@ func TestTableSqlSubscribe1(t *testing.T) {
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 1")
 	validateErrorResponse(t, res)
 	validateNoResponse(t, sender)
+}
+
+// UNSUBSCRIBE
+
+func unsubscribeHelper(t *table, sqlUnsubscribe string, connectionId uint64) response {
+	pc := newTokens()
+	lex(sqlUnsubscribe, pc)
+	req := parse(pc).(*sqlUnsubscribeRequest)
+	req.connectionId = connectionId
+	return t.sqlUnsubscribe(req)
+}
+
+func validateSqlUnsubscribeResponse(t *testing.T, res response, unsubscribed int) {
+	switch res.(type) {
+	case *sqlUnsubscribeResponse:
+		x := res.(*sqlUnsubscribeResponse)
+		if x.unsubscribed != unsubscribed {
+			t.Errorf("invalid sqlUnsubscribeResponse unsubscribed expected:%d but got:%d", unsubscribed, x.unsubscribed)
+		}
+	case *errorResponse:
+		x := res.(*errorResponse)
+		t.Errorf(x.msg)
+	default:
+		t.Errorf("table unsubscribe error: invalid response type expected sqlUnsubscribeResponse")
+	}
+}
+
+func TestTableSqlUnSubscribe1(t *testing.T) {
+	tbl := newTable("stocks")
+	// key ticker
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// insert records
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
+	validateSqlInsertResponseId(t, res, "0")
+	// SUBSCRIBE
+	// subscribe to table
+	var sender *responseSender
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks ")
+	sub := validateSqlSubscribeResponse(t, res)
+	connectionId := sender.connectionId
+	pubsubid := strconv.FormatUint(sub.pubsubid, 10)
+	// subscribe to existing key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
+	// subscribe to existing tag
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
+	// subscribe to id		
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 0")
+	// subscribe to non existing valid key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")
+	// subscribe to non existing valid tag
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = FIN")
+
+	// unsubscribe	
+	res = unsubscribeHelper(tbl, "unsubscribe from stocks where pubsubid = "+pubsubid, connectionId)
+	validateSqlUnsubscribeResponse(t, res, 1)
+	res = unsubscribeHelper(tbl, "unsubscribe from stocks ", connectionId)
+	validateSqlUnsubscribeResponse(t, res, 5)
 }
