@@ -104,18 +104,20 @@ func newMapSubscriptions() mapSubscriptionByConnection {
 }
 
 func (m mapSubscriptionByConnection) getOrAdd(connectionId uint64) mapSubscriptionById {
-	if m[connectionId] == nil {
-		m[connectionId] = make(mapSubscriptionById)
+	temp := m[connectionId]
+	if temp == nil {
+		temp = make(mapSubscriptionById)
+		m[connectionId] = temp
 	}
-	return m[connectionId]
+	return temp
 }
 
-func (m mapSubscriptionByConnection) add(connectionId uint64, pubsubid uint64, sub *subscription) {
+func (m *mapSubscriptionByConnection) add(connectionId uint64, sub *subscription) {
 	s := m.getOrAdd(connectionId)
-	s[pubsubid] = sub
+	s[sub.id] = sub
 }
 
-func (m mapSubscriptionByConnection) deactivate(connectionId uint64, pubsubid uint64) bool {
+func (m *mapSubscriptionByConnection) deactivate(connectionId uint64, pubsubid uint64) bool {
 	s := m.getOrAdd(connectionId)
 	sub := s[pubsubid]
 	if sub == nil {
@@ -126,10 +128,13 @@ func (m mapSubscriptionByConnection) deactivate(connectionId uint64, pubsubid ui
 	return true
 }
 
-func (m mapSubscriptionByConnection) deactivateAll(connectionId uint64) {
+func (m *mapSubscriptionByConnection) deactivateAll(connectionId uint64) int {
 	s := m.getOrAdd(connectionId)
+	count := 0
 	for _, sub := range s {
 		sub.deactivate()
+		count++
 	}
-	delete(m, connectionId)
+	delete(*m, connectionId)
+	return count
 }

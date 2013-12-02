@@ -69,3 +69,25 @@ func TestPubSubVisitor(t *testing.T) {
 		t.Errorf("should have no subscriptions")
 	}
 }
+
+func TestPubSubMap(t *testing.T) {
+	m := make(mapSubscriptionByConnection)
+	//
+	sender := newResponseSenderStub(1)
+	sub1 := newSubscription(sender, 1)
+	m.add(sender.connectionId, sub1)
+	sub2 := newSubscription(sender, 2)
+	m.add(sender.connectionId, sub2)
+	//
+	sender = newResponseSenderStub(2)
+	sub3 := newSubscription(sender, 3)
+	m.add(sender.connectionId, sub3)
+	//
+	if m.deactivateAll(1) != 2 {
+		t.Errorf("expected 2 subscription")
+	}
+	//
+	if !m.deactivate(2, 3) {
+		t.Errorf("expected 1 subscription")
+	}
+}
