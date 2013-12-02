@@ -345,6 +345,16 @@ func (t *table) sqlInsert(req *sqlInsertRequest) response {
 
 // SELECT sql statement
 
+func (t *table) copyRecordsToSqlSelectResponse(r *sqlSelectResponse, records []*record) {
+	r.columns = t.colSlice
+	r.records = make([]*record, 0, len(records))
+	for _, rec := range records {
+		if rec != nil {
+			r.copyRecordData(rec)
+		}
+	}
+}
+
 // Processes sql select request.
 // On success returns sqlSelectResponse.
 func (t *table) sqlSelect(req *sqlSelectRequest) response {
@@ -352,16 +362,9 @@ func (t *table) sqlSelect(req *sqlSelectRequest) response {
 	if errResponse != nil {
 		return errResponse
 	}
-	res := sqlSelectResponse{
-		columns: t.colSlice,
-		records: make([]*record, 0, len(records)),
-	}
-	for _, rec := range records {
-		if rec != nil {
-			res.copyRecordData(rec)
-		}
-	}
-	return &res
+	var r sqlSelectResponse
+	t.copyRecordsToSqlSelectResponse(&r, records)
+	return &r
 }
 
 // UPDATE sql statement
@@ -548,8 +551,12 @@ func (t *table) subscribe(col *column, val string, sender *responseSender) (*sub
 	return nil, nil
 }
 
-func (t *table) publishActionAdd(sub *subscription, records []*record) {
-
+func (t *table) publishActionAdd(sub *subscription, records []*record, sender *responseSender) {
+	r := &sqlActionAddResponse{
+		pubsubid: sub.id,
+	}
+	t.copyRecordsToSqlSelectResponse(&r.sqlSelectResponse, records)
+	sender.send(r)
 }
 
 // Processes sql subscribe request.
@@ -563,8 +570,8 @@ func (t *table) sqlSubscribe(req *sqlSubscribeRequest) {
 	}
 	// subscribe
 	sub, records := t.subscribe(col, req.filter.val, req.sender)
-	if sub != nil {
+	if sub != nil && len(records) > 0 {
 		// publish initial action add
-		t.publishActionAdd(sub, records)
+		t.publishActionAdd(sub, records, req.sender)
 	}
 }

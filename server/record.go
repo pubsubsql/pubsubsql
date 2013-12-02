@@ -44,6 +44,33 @@ func newRecord(columns int, idx int) *record {
 	return &r
 }
 
+/*
+func (r *record) lock() {
+	r.locked = true
+}
+
+func (r *record) unlock() {
+	r.locked = false
+}
+
+func (r *record) isLocked() bool {
+	return r.locked
+}
+
+func (r *record) clone() *record {
+	lenValues := len(r.values)
+	lenLinks := len(r.links)
+	newRecord := record{
+		locked: false,
+		values: make([]string, lenValues, lenValues),
+		links: make([]link, lenLinks, lenLinks), 	
+	}
+	copy(newRecord.values, r.values)
+	copy(newRecord.links, r.links)	
+	return newRecord
+}
+*/
+
 // Returns record index in a table.
 func (r *record) idx() int {
 	i, err := strconv.Atoi(r.values[0])

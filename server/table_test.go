@@ -489,7 +489,7 @@ func subscribeHelper(t *table, sqlSubscribe string) (response, *responseSender) 
 
 func validateSqlSubscribeResponse(t *testing.T, res response) *sqlSubscribeResponse {
 	if res == nil {
-		t.Errorf("table subscribe error: invalid response nil expected sqlSubscribeResponse")
+		t.Errorf("table subscribe error: invalid response nil, expected sqlSubscribeResponse")
 	}
 	switch res.(type) {
 	case *sqlSubscribeResponse:
@@ -502,6 +502,36 @@ func validateSqlSubscribeResponse(t *testing.T, res response) *sqlSubscribeRespo
 		t.Errorf("table subscribe error: invalid response type expected sqlSubscribeResponse")
 	}
 	return nil
+}
+
+func validateSqlActionAddResponse(t *testing.T, sender *responseSender, pubsubid uint64, records int) {
+	res := sender.tryRecv()
+	if res == nil {
+		t.Errorf("table subscribe error: invalid response nil, expected sqlActionAddResponse")
+	}
+	switch res.(type) {
+	case *sqlActionAddResponse:
+		x := res.(*sqlActionAddResponse)
+		if x.pubsubid != pubsubid {
+			t.Errorf("invalid sqlActionAddResponse pubsubid expected:%d but got:%d", pubsubid, x.pubsubid)
+		}
+		l := len(x.sqlSelectResponse.records)
+		if l != records {
+			t.Errorf("invalid sqlActionAddResponse records expected:%d but got:%d", records, l)
+		}
+	case *errorResponse:
+		x := res.(*errorResponse)
+		t.Errorf(x.msg)
+	default:
+		t.Errorf("table subscribe error: invalid response type expected sqlActionAddResponse")
+	}
+}
+
+func validateNoResponse(t *testing.T, sender *responseSender) {
+	res := sender.tryRecv()
+	if res != nil {
+		t.Errorf("table subscribe error: invalid response, expected nil")
+	}
 }
 
 func TestTableSqlSubscribe1(t *testing.T) {
@@ -517,27 +547,36 @@ func TestTableSqlSubscribe1(t *testing.T) {
 	validateSqlInsertResponseId(t, res, "0")
 	// SUBSCRIBE
 	// subscribe to table
-	res, _ = subscribeHelper(tbl, "subscribe * from stocks ")
-	validateSqlSubscribeResponse(t, res)
+	var sender *responseSender
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks ")
+	sub := validateSqlSubscribeResponse(t, res)
+	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
 	// subscribe to existing key
-	res, _ = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
-	validateSqlSubscribeResponse(t, res)
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
+	sub = validateSqlSubscribeResponse(t, res)
+	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
 	// subscribe to existing tag
-	res, _ = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
-	validateSqlSubscribeResponse(t, res)
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
+	sub = validateSqlSubscribeResponse(t, res)
+	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
 	// subscribe to id		
-	res, _ = subscribeHelper(tbl, "subscribe * from stocks where id = 0")
-	validateSqlSubscribeResponse(t, res)
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 0")
+	sub = validateSqlSubscribeResponse(t, res)
+	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
 	// subscribe to non existing valid key
-	res, _ = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")
 	validateSqlSubscribeResponse(t, res)
+	validateNoResponse(t, sender)
 	// subscribe to non existing valid tag
-	res, _ = subscribeHelper(tbl, "subscribe * from stocks where sector = FIN")
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = FIN")
 	validateSqlSubscribeResponse(t, res)
+	validateNoResponse(t, sender)
 	// subscribe to non existing invalid key/tag
-	res, _ = subscribeHelper(tbl, "subscribe * from stocks where invalidkey = somevalue")
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where invalidkey = somevalue")
 	validateErrorResponse(t, res)
+	validateNoResponse(t, sender)
 	// subscribe to non existing id
-	res, _ = subscribeHelper(tbl, "subscribe * from stocks where id = 1")
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 1")
 	validateErrorResponse(t, res)
+	validateNoResponse(t, sender)
 }

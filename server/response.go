@@ -119,3 +119,9 @@ func newSubscribeResponse(sub *subscription) response {
 		pubsubid: sub.id,
 	}
 }
+
+// sqlActionAddResponse
+type sqlActionAddResponse struct {
+	sqlSelectResponse
+	pubsubid uint64
+}
