@@ -46,7 +46,7 @@ type table struct {
 	tagedColumns []*column
 	pubsub       pubSub
 	//
-	subscriptions map[uint64]*subscription
+	subscriptions mapSubscriptionByConnection
 	subid         uint64
 }
 
@@ -58,7 +58,7 @@ func newTable(name string) *table {
 		colSlice:      make([]*column, 0, tableCOLUMNS),
 		records:       make([]*record, 0, tableRECORDS),
 		tagedColumns:  make([]*column, 0, tableCOLUMNS),
-		subscriptions: make(map[uint64]*subscription),
+		subscriptions: make(mapSubscriptionByConnection),
 	}
 	t.addColumn("id")
 	return t
@@ -491,21 +491,8 @@ func (t *table) sqlTag(req *sqlTagRequest) response {
 func (t *table) newSubscription(sender *responseSender) *subscription {
 	t.subid++
 	sub := newSubscription(sender, t.subid)
-	t.subscriptions[t.subid] = sub
+	t.subscriptions.add(sender.connectionId, sub)
 	return sub
-}
-
-func (t *table) deactivateSubscriptions() {
-	for _, sub := range t.subscriptions {
-		sub.deactivate()
-	}
-	t.subscriptions = make(map[uint64]*subscription)
-}
-
-func (t *table) deactivateSubscription(subid uint64) {
-	sub := t.subscriptions[subid]
-	sub.deactivate()
-	delete(t.subscriptions, subid)
 }
 
 func (t *table) subscribeToTable(sender *responseSender) (*subscription, []*record) {
@@ -579,22 +566,25 @@ func (t *table) sqlSubscribe(req *sqlSubscribeRequest) {
 // UNSUBSCRIBE
 
 // Processes sql unsubscribe request.
-func (t *table) sqlUnSubscribe(req *sqlSubscribeRequest) response {
+func (t *table) sqlUnSubscribe(req *sqlUnsubscribeRequest) response {
 	// validate
 	if len(req.filter.col) > 0 && req.filter.col != "pubsubid" {
 		return newErrorResponse("Invalid filter expected pubsubid but got " + req.filter.col)
 	}
 	// unsubscribe by pubsubid for a given connection
+	res := new(sqlUnsubscribeResponse)
 	val := req.filter.val
 	if len(val) > 0 {
-		_, err := strconv.ParseUint(val, 10, 64)
+		pubsubid, err := strconv.ParseUint(val, 10, 64)
 		if err != nil {
 			return newErrorResponse("Failed to unsubscribe, pubsubid " + val + " is not valid")
 		}
-
+		if !t.subscriptions.deactivate(req.connectionId, pubsubid) {
+			res.unsubscribed = 1
+		}
 	} else {
 		// unsubscribe all subscriptions for a given connection
-
+		res.unsubscribed = t.subscriptions.deactivateAll(req.connectionId)
 	}
-	return newOkResponse()
+	return res
 }

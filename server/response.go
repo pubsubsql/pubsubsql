@@ -125,3 +125,9 @@ type sqlActionAddResponse struct {
 	sqlSelectResponse
 	pubsubid uint64
 }
+
+// sqlUnsubscribeResponse
+type sqlUnsubscribeResponse struct {
+	response
+	unsubscribed int
+}
