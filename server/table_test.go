@@ -474,3 +474,70 @@ func TestTableSqlTag(t *testing.T) {
 	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelect(t, res, 0, 5)
 }
+
+// SUBSCRIBE
+
+func subscribeHelper(t *table, sqlSubscribe string) (response, *responseSender) {
+	sender := newResponseSenderStub(0)
+	pc := newTokens()
+	lex(sqlSubscribe, pc)
+	req := parse(pc).(*sqlSubscribeRequest)
+	req.sender = sender
+	t.sqlSubscribe(req)
+	return sender.tryRecv(), sender
+}
+
+func validateSqlSubscribeResponse(t *testing.T, res response) *sqlSubscribeResponse {
+	if res == nil {
+		t.Errorf("table subscribe error: invalid response nil expected sqlSubscribeResponse")
+	}
+	switch res.(type) {
+	case *sqlSubscribeResponse:
+		x := res.(*sqlSubscribeResponse)
+		return x
+	case *errorResponse:
+		x := res.(*errorResponse)
+		t.Errorf(x.msg)
+	default:
+		t.Errorf("table subscribe error: invalid response type expected sqlSubscribeResponse")
+	}
+	return nil
+}
+
+func TestTableSqlSubscribe1(t *testing.T) {
+	tbl := newTable("stocks")
+	// key ticker
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// insert records
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
+	validateSqlInsertResponseId(t, res, "0")
+	// SUBSCRIBE
+	// subscribe to table
+	res, _ = subscribeHelper(tbl, "subscribe * from stocks ")
+	validateSqlSubscribeResponse(t, res)
+	// subscribe to existing key
+	res, _ = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
+	validateSqlSubscribeResponse(t, res)
+	// subscribe to existing tag
+	res, _ = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
+	validateSqlSubscribeResponse(t, res)
+	// subscribe to id		
+	res, _ = subscribeHelper(tbl, "subscribe * from stocks where id = 0")
+	validateSqlSubscribeResponse(t, res)
+	// subscribe to non existing valid key
+	res, _ = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")
+	validateSqlSubscribeResponse(t, res)
+	// subscribe to non existing valid tag
+	res, _ = subscribeHelper(tbl, "subscribe * from stocks where sector = FIN")
+	validateSqlSubscribeResponse(t, res)
+	// subscribe to non existing invalid key/tag
+	res, _ = subscribeHelper(tbl, "subscribe * from stocks where invalidkey = somevalue")
+	validateErrorResponse(t, res)
+	// subscribe to non existing id
+	res, _ = subscribeHelper(tbl, "subscribe * from stocks where id = 1")
+	validateErrorResponse(t, res)
+}

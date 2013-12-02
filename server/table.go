@@ -174,6 +174,9 @@ func (t *table) getRecordById(val string) []*record {
 	if err != nil {
 		return nil
 	}
+	if idx < 0 || int64(len(t.records)) <= idx {
+		return nil
+	}
 	records := make([]*record, 1, 1)
 	records[0] = t.records[idx]
 	return records
