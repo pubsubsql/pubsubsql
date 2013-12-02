@@ -502,32 +502,44 @@ func (t *table) deactivateSubscription(subid uint64) {
 	delete(t.subscriptions, subid)
 }
 
-func (t *table) addSubscription(col *column, val string, sender *responseSender) (*subscription, []*record) {
-	var sub *subscription
-	var records []*record
-	// subscribe to all records
+func (t *table) subscribeToTable(sender *responseSender) (*subscription, []*record) {
+	sub := t.newSubscription(sender)
+	t.pubsub.add(sub)
+	// send
+	// TODO
+	return sub, t.records
+}
+
+func (t *table) subscribeToKeyOrTag(col *column, val string, sender *responseSender) (*subscription, []*record) {
+	sub := t.newSubscription(sender)
+	records := t.getRecordsByTag(val, col)
+	col.tagmap.getAddTagItem(val).pubsub.add(sub)
+	return sub, records
+}
+
+func (t *table) subscribeToId(id string, sender *responseSender) (*subscription, []*record) {
+	records := t.getRecordById(id)
+	if len(records) > 0 {
+		sub := t.newSubscription(sender)
+		records[0].addSubscription(sub)
+		return sub, records
+	}
+	return nil, nil
+}
+
+func (t *table) subscribe(col *column, val string, sender *responseSender) (*subscription, []*record) {
 	if col == nil {
-		sub = t.newSubscription(sender)
-		t.pubsub.add(sub)
-		return sub, t.records
+		return t.subscribeToTable(sender)
 	}
 	switch col.typ {
 	case columnTypeKey:
-		sub = t.newSubscription(sender)
-		records = t.getRecordsByTag(val, col)
-		col.tagmap.getAddTagItem(val).pubsub.add(sub)
+		return t.subscribeToKeyOrTag(col, val, sender)
 	case columnTypeTag:
-		sub = t.newSubscription(sender)
-		records = t.getRecordsByTag(val, col)
-		col.tagmap.getAddTagItem(val).pubsub.add(sub)
+		return t.subscribeToKeyOrTag(col, val, sender)
 	case columnTypeId:
-		records = t.getRecordById(val)
-		if len(records) > 0 {
-			sub = t.newSubscription(sender)
-			records[0].addSubscription(sub)
-		}
+		return t.subscribeToId(val, sender)
 	}
-	return sub, records
+	return nil, nil
 }
 
 func (t *table) publishActionAdd(sub *subscription, records []*record) {
@@ -540,9 +552,13 @@ func (t *table) sqlSubscribe(req *sqlSubscribeRequest) {
 	// validate
 	e, col := t.validateSqlFilter(req.filter)
 	if e != nil {
-		// send response
+		req.sender.send(e)
 		return
 	}
-	sub, records := t.addSubscription(col, req.filter.val, req.sender)
-	t.publishActionAdd(sub, records)
+	// subscribe
+	sub, records := t.subscribe(col, req.filter.val, req.sender)
+	if sub != nil {
+		// publish initial action add
+		t.publishActionAdd(sub, records)
+	}
 }
