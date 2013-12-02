@@ -113,3 +113,9 @@ type sqlSubscribeResponse struct {
 	response
 	pubsubid uint64
 }
+
+func newSubscribeResponse(sub *subscription) response {
+	return &sqlSubscribeResponse{
+		pubsubid: sub.id,
+	}
+}

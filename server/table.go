@@ -505,8 +505,7 @@ func (t *table) deactivateSubscription(subid uint64) {
 func (t *table) subscribeToTable(sender *responseSender) (*subscription, []*record) {
 	sub := t.newSubscription(sender)
 	t.pubsub.add(sub)
-	// send
-	// TODO
+	sender.send(newSubscribeResponse(sub))
 	return sub, t.records
 }
 
@@ -514,6 +513,7 @@ func (t *table) subscribeToKeyOrTag(col *column, val string, sender *responseSen
 	sub := t.newSubscription(sender)
 	records := t.getRecordsByTag(val, col)
 	col.tagmap.getAddTagItem(val).pubsub.add(sub)
+	sender.send(newSubscribeResponse(sub))
 	return sub, records
 }
 
@@ -522,8 +522,10 @@ func (t *table) subscribeToId(id string, sender *responseSender) (*subscription,
 	if len(records) > 0 {
 		sub := t.newSubscription(sender)
 		records[0].addSubscription(sub)
+		sender.send(newSubscribeResponse(sub))
 		return sub, records
 	}
+	sender.send(newErrorResponse("id: " + id + " does not exist"))
 	return nil, nil
 }
 
@@ -539,6 +541,7 @@ func (t *table) subscribe(col *column, val string, sender *responseSender) (*sub
 	case columnTypeId:
 		return t.subscribeToId(val, sender)
 	}
+	sender.send(newErrorResponse("Unexpected logical error"))
 	return nil, nil
 }
 
