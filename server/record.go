@@ -44,6 +44,11 @@ func newRecord(columns int, idx int) *record {
 	return &r
 }
 
+func (r *record) releaseData() {
+	r.values = nil
+	r.links = nil
+}
+
 /*
 func (r *record) lock() {
 	r.locked = true

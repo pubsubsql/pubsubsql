@@ -430,7 +430,9 @@ func (t *table) sqlDelete(req *sqlDeleteRequest) response {
 	for _, rec := range records {
 		if rec != nil {
 			deleted++
+			t.onDelete(rec)
 			t.deleteRecord(rec)
+			rec.releaseData()
 		}
 	}
 	return &sqlDeleteResponse{deleted: deleted}
@@ -591,8 +593,20 @@ func publishActionInsert(t *table, sub *subscription, rec *record) bool {
 	return sub.sender.send(r)
 }
 
+func publishActionDelete(t *table, sub *subscription, rec *record) bool {
+	r := &sqlActionDeleteResponse{
+		id:       rec.idAsString(),
+		pubsubid: sub.id,
+	}
+	return sub.sender.send(r)
+}
+
 func (t *table) onInsert(rec *record) {
 	t.visitSubscriptions(rec, publishActionInsert)
+}
+
+func (t *table) onDelete(rec *record) {
+	t.visitSubscriptions(rec, publishActionDelete)
 }
 
 // UNSUBSCRIBE

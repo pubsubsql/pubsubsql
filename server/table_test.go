@@ -656,6 +656,127 @@ func TestTableActionInsert(t *testing.T) {
 	validateActionInsert(t, senders)
 }
 
+func clearResponses(senders []*responseSender) {
+	for _, sender := range senders {
+		sender.tryRecv()
+	}
+}
+
+func validateActionDelete(t *testing.T, senders []*responseSender) {
+	for _, sender := range senders {
+		res := sender.tryRecv()
+		if res == nil {
+			t.Errorf("table onDelete error: invalid response nil, expected sqlActionDeleteResponse")
+		}
+		switch res.(type) {
+		case *sqlActionDeleteResponse:
+
+		case *errorResponse:
+			x := res.(*errorResponse)
+			t.Errorf(x.msg)
+		default:
+			t.Errorf("table subscribe error: invalid response type expected sqlActionDeleteResponse")
+		}
+	}
+}
+
+func validateActionAdd(t *testing.T, senders []*responseSender) {
+	for _, sender := range senders {
+		res := sender.tryRecv()
+		if res == nil {
+			t.Errorf("table onDelete error: invalid response nil, expected sqlActionAddResponse")
+		}
+		switch res.(type) {
+		case *sqlActionAddResponse:
+
+		case *errorResponse:
+			x := res.(*errorResponse)
+			t.Errorf(x.msg)
+		default:
+			t.Errorf("table subscribe error: invalid response type expected sqlActionAddResponse")
+		}
+	}
+}
+
+func TestTableActionDelete1(t *testing.T) {
+	senders := make([]*responseSender, 0)
+	tbl := newTable("stocks")
+	// key ticker
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// SUBSCRIBE
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
+
+	// subscribe to table
+	var sender *responseSender
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks ")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to record id
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 0 ")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to existing key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to existing tag
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	validateActionAdd(t, senders)
+
+	// delete all records 
+	deleteHelper(tbl, " delete from stocks ")
+
+	// validate delete 3 messages per each subscription
+	validateActionDelete(t, senders)
+
+}
+
+func TestTableActionDelete2(t *testing.T) {
+	senders := make([]*responseSender, 0)
+	tbl := newTable("stocks")
+	// key ticker
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// SUBSCRIBE
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (ORCL, 12, 14.56, TECH) ")
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (MSFT, 12, 14.56, TECH) ")
+
+	// subscribe to table
+	var sender *responseSender
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks ")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to existing tag
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	validateActionAdd(t, senders)
+
+	// delete all records 
+	deleteHelper(tbl, " delete from stocks ")
+
+	// validate delete 3 messages per each subscription
+	validateActionDelete(t, senders)
+	validateActionDelete(t, senders)
+	validateActionDelete(t, senders)
+}
+
 // UNSUBSCRIBE
 
 func unsubscribeHelper(t *table, sqlUnsubscribe string, connectionId uint64) response {

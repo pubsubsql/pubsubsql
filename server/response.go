@@ -136,6 +136,13 @@ type sqlActionInsertResponse struct {
 	sqlActionDataResponse
 }
 
+// sqlActonDeleteResponse
+type sqlActionDeleteResponse struct {
+	response
+	id       string
+	pubsubid uint64
+}
+
 // sqlUnsubscribeResponse
 type sqlUnsubscribeResponse struct {
 	response
