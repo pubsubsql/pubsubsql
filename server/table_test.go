@@ -582,6 +582,80 @@ func TestTableSqlSubscribe1(t *testing.T) {
 	validateNoResponse(t, sender)
 }
 
+func validateActionInsert(t *testing.T, senders []*responseSender) {
+	for _, sender := range senders {
+		res := sender.tryRecv()
+		if res == nil {
+			t.Errorf("table onInsert error: invalid response nil, expected sqlActionInsertResponse")
+		}
+		switch res.(type) {
+		case *sqlActionInsertResponse:
+
+		case *errorResponse:
+			x := res.(*errorResponse)
+			t.Errorf(x.msg)
+		default:
+			t.Errorf("table subscribe error: invalid response type expected sqlActionInsertResponse")
+		}
+	}
+}
+
+func TestTableActionInsert(t *testing.T) {
+	senders := make([]*responseSender, 0)
+	tbl := newTable("stocks")
+	// key ticker
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// SUBSCRIBE
+
+	// subscribe to table
+	var sender *responseSender
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks ")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to existing key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to existing tag
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// insert record
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
+	validateSqlInsertResponseId(t, res, "0")
+
+	// validate insert
+	validateActionInsert(t, senders)
+
+	// subscribe to non existant key and tag and test onInsert
+
+	senders = make([]*responseSender, 0)
+	// subscribe to non existing valid key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+	validateNoResponse(t, sender)
+	// subscribe to non existing valid tag
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = FIN")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+	validateNoResponse(t, sender)
+
+	// insert record
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (MSFT, 12, 14.56, FIN) ")
+	validateSqlInsertResponseId(t, res, "1")
+
+	// validate insert
+	validateActionInsert(t, senders)
+}
+
 // UNSUBSCRIBE
 
 func unsubscribeHelper(t *table, sqlUnsubscribe string, connectionId uint64) response {
