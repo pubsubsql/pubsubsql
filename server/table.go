@@ -340,6 +340,7 @@ func (t *table) sqlInsert(req *sqlInsertRequest) response {
 	t.bindRecord(cols, req.colVals, rec, id)
 	t.addNewRecord(rec)
 	res := sqlInsertResponse{id: rec.idAsString()}
+	t.onInsert(rec)
 	return &res
 }
 
@@ -353,6 +354,12 @@ func (t *table) copyRecordsToSqlSelectResponse(r *sqlSelectResponse, records []*
 			r.copyRecordData(rec)
 		}
 	}
+}
+
+func (t *table) copyRecordToSqlSelectResponse(r *sqlSelectResponse, rec *record) {
+	r.columns = t.colSlice
+	r.records = make([]*record, 0, 1)
+	r.copyRecordData(rec)
 }
 
 // Processes sql select request.
@@ -538,14 +545,6 @@ func (t *table) subscribe(col *column, val string, sender *responseSender) (*sub
 	return nil, nil
 }
 
-func (t *table) publishActionAdd(sub *subscription, records []*record, sender *responseSender) {
-	r := &sqlActionAddResponse{
-		pubsubid: sub.id,
-	}
-	t.copyRecordsToSqlSelectResponse(&r.sqlSelectResponse, records)
-	sender.send(r)
-}
-
 // Processes sql subscribe request.
 // Does not return anything, responses are send directly to response sender. 
 func (t *table) sqlSubscribe(req *sqlSubscribeRequest) {
@@ -559,8 +558,41 @@ func (t *table) sqlSubscribe(req *sqlSubscribeRequest) {
 	sub, records := t.subscribe(col, req.filter.val, req.sender)
 	if sub != nil && len(records) > 0 {
 		// publish initial action add
-		t.publishActionAdd(sub, records, req.sender)
+		t.publishActionAdd(sub, records)
 	}
+}
+
+// PUBSUB helpers
+type publishAction func(tbl *table, sub *subscription, rec *record) bool
+
+func (t *table) visitSubscriptions(rec *record, publishActionFunc publishAction) {
+	f := func(sub *subscription) bool {
+		return publishActionFunc(t, sub, rec)
+	}
+	t.pubsub.visit(f)
+	for _, lnk := range rec.links {
+		if lnk.pubsub != nil {
+			lnk.pubsub.visit(f)
+		}
+	}
+}
+
+func (t *table) publishActionAdd(sub *subscription, records []*record) bool {
+	r := new(sqlActionAddResponse)
+	r.pubsubid = sub.id
+	t.copyRecordsToSqlSelectResponse(&r.sqlSelectResponse, records)
+	return sub.sender.send(r)
+}
+
+func publishActionInsert(t *table, sub *subscription, rec *record) bool {
+	r := new(sqlActionInsertResponse)
+	r.pubsubid = sub.id
+	t.copyRecordToSqlSelectResponse(&r.sqlSelectResponse, rec)
+	return sub.sender.send(r)
+}
+
+func (t *table) onInsert(rec *record) {
+	t.visitSubscriptions(rec, publishActionInsert)
 }
 
 // UNSUBSCRIBE

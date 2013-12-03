@@ -31,8 +31,13 @@ func newResponseSenderStub(connectionId uint64) *responseSender {
 	}
 }
 
-func (s *responseSender) send(r response) {
-	s.sender <- r
+func (s *responseSender) send(r response) bool {
+	select {
+	case s.sender <- r:
+		return true
+	default:
+	}
+	return false
 }
 
 func (s *responseSender) tryRecv() response {

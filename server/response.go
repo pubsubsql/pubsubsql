@@ -120,10 +120,20 @@ func newSubscribeResponse(sub *subscription) response {
 	}
 }
 
-// sqlActionAddResponse
-type sqlActionAddResponse struct {
+// sqlActionDataResponse
+type sqlActionDataResponse struct {
 	sqlSelectResponse
 	pubsubid uint64
+}
+
+// sqlActionAddResponse
+type sqlActionAddResponse struct {
+	sqlActionDataResponse
+}
+
+// sqlActionInsertResponse
+type sqlActionInsertResponse struct {
+	sqlActionDataResponse
 }
 
 // sqlUnsubscribeResponse
