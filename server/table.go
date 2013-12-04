@@ -435,8 +435,9 @@ func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 		onlyRecord = records[0]
 	}
 	// validate duplicate keys
-	cols := make([]*column, len(req.colVals))
+	cols := make([]*column, len(req.colVals)+1)
 	originalColLen := len(t.colSlice)
+	cols[0] = t.colSlice[0]
 	for idx, colVal := range req.colVals {
 		col, _ := t.getAddColumn(colVal.col)
 		if col.isKey() && col.keyContainsValue(colVal.val) {
@@ -446,13 +447,13 @@ func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 				return newErrorResponse("update failed due to duplicate column key:" + colVal.col + " value:" + colVal.val)
 			}
 		}
-		cols[idx] = col
+		cols[idx+1] = col
 	}
 	// all is valid ready to update
 	updated := 0
 	for _, rec := range records {
 		if rec != nil {
-			ra := t.updateRecord(cols, req.colVals, rec, int(rec.idx()))
+			ra := t.updateRecord(cols[1:], req.colVals, rec, int(rec.idx()))
 			if hasWhatToRemove(ra) {
 				t.publishActionRemove(ra.removed, rec)
 			}
