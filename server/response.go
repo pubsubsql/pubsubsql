@@ -143,6 +143,13 @@ type sqlActionDeleteResponse struct {
 	pubsubid uint64
 }
 
+// sqlActionRemoveResponse
+type sqlActionRemoveResponse struct {
+	response
+	id       string
+	pubsubid uint64
+}
+
 // sqlUnsubscribeResponse
 type sqlUnsubscribeResponse struct {
 	response

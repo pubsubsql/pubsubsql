@@ -257,25 +257,65 @@ func (t *table) bindRecord(cols []*column, colVals []*columnValue, rec *record, 
 	}
 }
 
+type pubsubRA struct {
+	removed []*pubSub
+	added   map[*pubSub]int
+}
+
+func newPubsubRA() *pubsubRA {
+	return &pubsubRA{
+		removed: make([]*pubSub, 0, 3),
+		added:   make(map[*pubSub]int),
+	}
+}
+
+func getIfHasData(ra *pubsubRA) *pubsubRA {
+	if ra != nil && (len(ra.removed) > 0 || len(ra.added) > 0) {
+		return ra
+	}
+	return nil
+}
+
+func hasWhatToRemove(ra *pubsubRA) bool {
+	return ra != nil && len(ra.removed) > 0
+}
+
+func (ra *pubsubRA) toBeRemoved(pubsub *pubSub) {
+	if pubsub != nil {
+		ra.removed = append(ra.removed, pubsub)
+	}
+}
+
+func (ra *pubsubRA) toBeAdded(pubsub *pubSub) {
+	if pubsub != nil {
+		ra.added[pubsub] = 0
+	}
+}
+
+func (t *table) updateRecordKeyTag(col *column, val string, rec *record, id int, ra **pubsubRA) {
+	if *ra == nil {
+		*ra = newPubsubRA()
+	}
+	ra.toBeRemoved(t.deleteTag(rec, col))
+	rec.setValue(col.ordinal, val)
+	ra.toBeAdded(t.tagValue(col, id, rec))
+}
+
 // Updates record with new values, keys and tags.
-func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record, id int) {
+func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record, id int) *pubsubRA {
+	var ra *pubsubRA
 	for idx, colVal := range colVals {
 		col := cols[idx]
 		switch col.typ {
 		case columnTypeKey:
-			// delete previous key
-			t.deleteTag(rec, col)
-			rec.setValue(col.ordinal, colVal.val)
-			t.tagValue(col, id, rec)
+			t.updateRecordKeyTag(col, colVal.val, rec, id, &ra)
 		case columnTypeTag:
-			// delete previous tag
-			t.deleteTag(rec, col)
-			rec.setValue(col.ordinal, colVal.val)
-			t.tagValue(col, id, rec)
+			t.updateRecordKeyTag(col, colVal.val, rec, id, &ra)
 		case columnTypeNormal:
 			rec.setValue(col.ordinal, colVal.val)
 		}
 	}
+	return getIfHasData(ra)
 }
 
 // TAGS helper functions
@@ -286,7 +326,7 @@ func addValueToTags(col *column, val string, idx int) (*tag, *pubSub) {
 }
 
 // Binds tag, pubsub and record.   
-func (t *table) tagValue(col *column, idx int, rec *record) {
+func (t *table) tagValue(col *column, idx int, rec *record) *pubSub {
 	val := rec.getValue(col.ordinal)
 	tg, pubsub := addValueToTags(col, val, idx)
 	lnk := link{
@@ -298,10 +338,11 @@ func (t *table) tagValue(col *column, idx int, rec *record) {
 	} else {
 		rec.links[col.tagIndex] = lnk
 	}
+	return pubsub
 }
 
 // Deletes tag value for a particular record
-func (t *table) deleteTag(rec *record, col *column) {
+func (t *table) deleteTag(rec *record, col *column) *pubSub {
 	lnk := &rec.links[col.tagIndex]
 	if lnk.tg != nil {
 		switch removeTag(lnk.tg) {
@@ -315,7 +356,9 @@ func (t *table) deleteTag(rec *record, col *column) {
 			}
 		}
 	}
+	ret := lnk.pubsub
 	lnk.clear()
+	return ret
 }
 
 // INSERT sql statement
@@ -409,7 +452,10 @@ func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 	updated := 0
 	for _, rec := range records {
 		if rec != nil {
-			t.updateRecord(cols, req.colVals, rec, int(rec.idx()))
+			ra := t.updateRecord(cols, req.colVals, rec, int(rec.idx()))
+			if hasWhatToRemove(ra) {
+				t.publishActionRemove(ra.removed, rec)
+			}
 			updated++
 		}
 	}
@@ -584,6 +630,20 @@ func (t *table) publishActionAdd(sub *subscription, records []*record) bool {
 	r.pubsubid = sub.id
 	t.copyRecordsToSqlSelectResponse(&r.sqlSelectResponse, records)
 	return sub.sender.send(r)
+}
+
+func (t *table) publishActionRemove(pubsubs []*pubSub, rec *record) {
+	f := func(sub *subscription) bool {
+		r := &sqlActionRemoveResponse{
+			id:       rec.idAsString(),
+			pubsubid: sub.id,
+		}
+		return sub.sender.send(r)
+	}
+	t.pubsub.visit(f)
+	for _, pubsub := range pubsubs {
+		pubsub.visit(f)
+	}
 }
 
 func publishActionInsert(t *table, sub *subscription, rec *record) bool {
