@@ -37,7 +37,7 @@ func (t *table) getTagedColumnValuesCount(col string, val string) int {
 	return i
 }
 
-// table  
+// table
 type table struct {
 	name         string
 	colMap       map[string]*column
@@ -50,7 +50,7 @@ type table struct {
 	subid         uint64
 }
 
-// table factory 
+// table factory
 func newTable(name string) *table {
 	t := &table{
 		name:          name,
@@ -66,7 +66,7 @@ func newTable(name string) *table {
 
 // COLUMNS functions
 
-// Returns total number of columns. 
+// Returns total number of columns.
 func (t *table) getColumnCount() int {
 	l := len(t.colSlice)
 	if l != len(t.colMap) {
@@ -134,7 +134,7 @@ func (t *table) addNewRecord(r *record) {
 // addRecordToSlice generic helper function that adds record to the slice and
 // automatically expands the slice
 func addRecordToSlice(records *[]*record, r *record) {
-	//check if records slice needs to grow by third 
+	//check if records slice needs to grow by third
 	l := len(*records)
 	if cap(*records) == len(*records) {
 		temp := *records
@@ -224,7 +224,7 @@ func (t *table) getRecordsBySqlFilter(filter sqlFilter) ([]*record, response) {
 	return t.getRecordsByValue(filter.val, col), nil
 }
 
-// Looks up records by tag. 
+// Looks up records by tag.
 func (t *table) getRecordsByTag(val string, col *column) []*record {
 	// we need to optimize allocations
 	// perhaps its possible to know in advance how manny records
@@ -242,7 +242,7 @@ func (t *table) getRecordsByTag(val string, col *column) []*record {
 	return records
 }
 
-// Bind records values, keys and tags. 
+// Bind records values, keys and tags.
 func (t *table) bindRecord(cols []*column, colVals []*columnValue, rec *record, id int) {
 	for idx, colVal := range colVals {
 		col := cols[idx]
@@ -325,7 +325,7 @@ func addValueToTags(col *column, val string, idx int) (*tag, *pubSub) {
 	return col.tagmap.addTag(val, idx)
 }
 
-// Binds tag, pubsub and record.   
+// Binds tag, pubsub and record.
 func (t *table) tagValue(col *column, idx int, rec *record) *pubSub {
 	val := rec.getValue(col.ordinal)
 	tg, pubsub := addValueToTags(col, val, idx)
@@ -349,7 +349,7 @@ func (t *table) deleteTag(rec *record, col *column) *pubSub {
 		case removeTagLast:
 			col.tagmap.removeTag(rec.getValue(col.ordinal))
 		case removeTagSlide:
-			// we need to retag the slided record	
+			// we need to retag the slided record
 			slidedRecord := t.records[lnk.tg.idx]
 			if slidedRecord != nil {
 				slidedRecord.links[col.tagIndex].tg = lnk.tg
@@ -379,7 +379,7 @@ func (t *table) sqlInsert(req *sqlInsertRequest) response {
 		}
 		cols[idx] = col
 	}
-	// ready to insert	
+	// ready to insert
 	t.bindRecord(cols, req.colVals, rec, id)
 	t.addNewRecord(rec)
 	res := sqlInsertResponse{id: rec.idAsString()}
@@ -594,7 +594,7 @@ func (t *table) subscribe(col *column, val string, sender *responseSender) (*sub
 }
 
 // Processes sql subscribe request.
-// Does not return anything, responses are send directly to response sender. 
+// Does not return anything, responses are send directly to response sender.
 func (t *table) sqlSubscribe(req *sqlSubscribeRequest) {
 	// validate
 	e, col := t.validateSqlFilter(req.filter)

@@ -29,7 +29,7 @@ func (l *link) clear() {
 	l.tg = nil
 }
 
-// record  
+// record
 type record struct {
 	values []string
 	links  []link
@@ -68,10 +68,10 @@ func (r *record) clone() *record {
 	newRecord := record{
 		locked: false,
 		values: make([]string, lenValues, lenValues),
-		links: make([]link, lenLinks, lenLinks), 	
+		links: make([]link, lenLinks, lenLinks),
 	}
 	copy(newRecord.values, r.values)
-	copy(newRecord.links, r.links)	
+	copy(newRecord.links, r.links)
 	return newRecord
 }
 */
@@ -91,7 +91,7 @@ func (r *record) idAsString() string {
 }
 
 // Returns value based on column ordinal.
-// Empty string is returned for invalid ordinal. 
+// Empty string is returned for invalid ordinal.
 func (r *record) getValue(ordinal int) string {
 	if len(r.values) > ordinal {
 		return r.values[ordinal]
@@ -99,7 +99,7 @@ func (r *record) getValue(ordinal int) string {
 	return ""
 }
 
-// Sets value based on column ordinal. 
+// Sets value based on column ordinal.
 // Automatically adjusts the record if ordinal is invalid.
 func (r *record) setValue(ordinal int, val string) {
 	l := len(r.values)

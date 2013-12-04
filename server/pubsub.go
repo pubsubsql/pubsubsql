@@ -18,7 +18,7 @@ package pubsubsql
 
 import "fmt"
 
-// pubsub  
+// pubsub
 type pubSub struct {
 	head *subscription
 }

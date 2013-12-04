@@ -23,13 +23,13 @@ const (
 	responseStatusErr                           // error.
 )
 
-// response 
+// response
 type response interface {
 	getResponseStatus() responseStatusType
 	String() string
 }
 
-// errorResponse 
+// errorResponse
 type errorResponse struct {
 	response
 	msg string

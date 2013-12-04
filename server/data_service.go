@@ -21,7 +21,7 @@ type requestItem struct {
 	responser *responseSender
 }
 
-// dataService prer-processes sqlRequests and channels them to approptiate tables for further proccessging 
+// dataService prer-processes sqlRequests and channels them to approptiate tables for further proccessging
 type dataService struct {
 	requests chan *requestItem
 	stoper   *Stoper

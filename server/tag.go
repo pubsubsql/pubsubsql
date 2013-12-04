@@ -57,7 +57,7 @@ func removeTag(t *tag) removeTagReturn {
 			// last element, let caller(columns tag map) handle the rest
 			return removeTagLast
 		}
-		// slide and remove	
+		// slide and remove
 		ret = removeTagSlide
 		freeMe = t.next
 		t.idx, t.next = freeMe.idx, freeMe.next

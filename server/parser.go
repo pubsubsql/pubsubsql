@@ -18,12 +18,12 @@ package pubsubsql
 
 import "fmt"
 
-// tokenProducer produces tokens for the parser. 
+// tokenProducer produces tokens for the parser.
 type tokenProducer interface {
 	Produce() *token
 }
 
-// parser  
+// parser
 type parser struct {
 	tokens tokenProducer
 }

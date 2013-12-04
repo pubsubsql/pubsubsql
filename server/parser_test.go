@@ -321,7 +321,7 @@ func TestParseSqlUpdateStatement3(t *testing.T) {
 	expectedError(t, x)
 }
 
-// DELETE 
+// DELETE
 func validateDelete(t *testing.T, a request, y *sqlDeleteRequest) {
 	switch a.(type) {
 	case *errorRequest:
@@ -521,7 +521,7 @@ func TestParseSqlUnsubscribeStatement3(t *testing.T) {
 	validateUnsubscribe(t, x, &y)
 }
 
-// KEY 
+// KEY
 func validateKey(t *testing.T, a request, y *sqlKeyRequest) {
 	switch a.(type) {
 	case *errorRequest:

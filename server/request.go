@@ -49,7 +49,7 @@ func (act sqlRequest) getRequestType() requestType {
 	return requestTypeSql
 }
 
-// cmdRequest is a generic command request. 
+// cmdRequest is a generic command request.
 type cmdRequest struct {
 	request
 }
@@ -124,7 +124,7 @@ type sqlDeleteRequest struct {
 	filter sqlFilter
 }
 
-// sqlKeyRequest is a request for sql key statement. 
+// sqlKeyRequest is a request for sql key statement.
 // Key defines unique index.
 type sqlKeyRequest struct {
 	sqlRequest
@@ -132,7 +132,7 @@ type sqlKeyRequest struct {
 	column string
 }
 
-// sqlTagRequest is a request for sql tag statement. 
+// sqlTagRequest is a request for sql tag statement.
 // Tag defines non-unique index.
 type sqlTagRequest struct {
 	sqlRequest

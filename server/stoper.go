@@ -33,7 +33,7 @@ func NewStoper() *Stoper {
 	}
 }
 
-// Enter starts goroutine participation in shutdown protocol. 
+// Enter starts goroutine participation in shutdown protocol.
 func (s *Stoper) Enter() {
 	atomic.AddInt64(&s.counter, 1)
 }

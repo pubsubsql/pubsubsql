@@ -16,7 +16,7 @@
 
 package pubsubsql
 
-// tagItem is a holder for tags and pubsub 
+// tagItem is a holder for tags and pubsub
 type tagItem struct {
 	head   *tag
 	pubsub pubSub
@@ -38,7 +38,7 @@ func (t *tagMap) getTag(key string) *tag {
 	return nil
 }
 
-// getAddTagItem returns tagItem by key. 
+// getAddTagItem returns tagItem by key.
 // Create new tagItem and adds it to map if does not exist.
 func (t *tagMap) getAddTagItem(key string) *tagItem {
 	item := t.tags[key]
@@ -59,7 +59,7 @@ func (t *tagMap) addTag(key string, idx int) (*tag, *pubSub) {
 	return addTag(item.head, idx), &item.pubsub
 }
 
-// addSubscription adds subscription and returns it 
+// addSubscription adds subscription and returns it
 func (t *tagMap) addSubscription(key string, sub *subscription) {
 	item := t.getAddTagItem(key)
 	item.pubsub.add(sub)

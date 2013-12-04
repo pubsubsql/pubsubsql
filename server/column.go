@@ -26,7 +26,7 @@ const (
 	columnTypeTag                      // tag column
 )
 
-// column  
+// column
 type column struct {
 	name    string
 	ordinal int

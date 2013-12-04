@@ -90,7 +90,7 @@ func TestTable2(t *testing.T) {
 	validateTableRecordsCount(t, tbl, 1)
 	validateRecordValuesCount(t, r, 4)
 	validateRecordValue(t, r, 0, "0")
-	//	
+	//
 	r, _ = tbl.prepareRecord()
 	tbl.addNewRecord(r)
 	validateTableRecordsCount(t, tbl, 2)
@@ -177,7 +177,7 @@ func TestTableSqlSelect1(t *testing.T) {
 
 	res = selectHelper(tbl, " select * from stocks where id = 0")
 	validateSqlSelect(t, res, 1, 4)
-	//	
+	//
 	insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, 'TECH') ")
 
 	res = selectHelper(tbl, " select * from stocks ")
@@ -243,7 +243,7 @@ func TestTableSqlUpdate(t *testing.T) {
 	validateSqlSelect(t, res, 1, 5)
 	//res = selectHelper(tbl, " select * from stocks where ticker = IBM ")
 	//validateSqlSelect(t, res, 0, 5)
-	// create tag for sector 
+	// create tag for sector
 	res = tagHelper(tbl, "tag stocks sector")
 	validateOkResponse(t, res)
 	// update by sector
@@ -323,15 +323,15 @@ func TestTableSqlKey(t *testing.T) {
 	// define key ticker
 	res := keyHelper(tbl, "key stocks ticker")
 	validateOkResponse(t, res)
-	// insert record 
+	// insert record
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "0")
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
 	validateSqlSelect(t, res, 1, 4)
-	// now define key for new column 
+	// now define key for new column
 	res = keyHelper(tbl, "key stocks sector")
 	validateErrorResponse(t, res)
-	// should fail due to duplicate key 
+	// should fail due to duplicate key
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateErrorResponse(t, res)
 	// now create another record with valid sector
@@ -380,7 +380,7 @@ func TestTableSqlKey(t *testing.T) {
 	res = deleteHelper(tbl, " delete from stocks where ticker = NA")
 	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelect(t, res, 1, 5)
-	// delete by sec 
+	// delete by sec
 	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
 	validateSqlSelect(t, res, 1, 5)
 	res = deleteHelper(tbl, " delete from stocks where sector = 'sec1'")
@@ -444,7 +444,7 @@ func TestTableSqlTag(t *testing.T) {
 	if tbl.getTagedColumnValuesCount("sector", "") != 4 {
 		t.Errorf("invalid taged column values")
 	}
-	//	
+	//
 	res = insertHelper(tbl, " insert into stocks (ticker, sector, bid, ask) values (IBM, 'TECH', 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "4")
 	if tbl.getTagedColumnValuesCount("sector", "") != 4 {
@@ -471,7 +471,7 @@ func TestTableSqlTag(t *testing.T) {
 	if tbl.getTagedColumnValuesCount("sector", "") != 0 {
 		t.Errorf("invalid taged column values")
 	}
-	//	
+	//
 	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelect(t, res, 0, 5)
 }
@@ -560,7 +560,7 @@ func TestTableSqlSubscribe1(t *testing.T) {
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
 	sub = validateSqlSubscribeResponse(t, res)
 	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
-	// subscribe to id		
+	// subscribe to id
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 0")
 	sub = validateSqlSubscribeResponse(t, res)
 	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
@@ -685,6 +685,7 @@ func validateActionAdd(t *testing.T, senders []*responseSender) {
 		res := sender.tryRecv()
 		if res == nil {
 			t.Errorf("table onDelete error: invalid response nil, expected sqlActionAddResponse")
+			continue
 		}
 		switch res.(type) {
 		case *sqlActionAddResponse:
@@ -694,6 +695,25 @@ func validateActionAdd(t *testing.T, senders []*responseSender) {
 			t.Errorf(x.msg)
 		default:
 			t.Errorf("table subscribe error: invalid response type expected sqlActionAddResponse")
+		}
+	}
+}
+
+func validateActionRemove(t *testing.T, senders []*responseSender) {
+	for _, sender := range senders {
+		res := sender.tryRecv()
+		if res == nil {
+			t.Errorf("table onRemove error: invalid response nil, expected sqlActionRemoveResponse")
+			continue
+		}
+		switch res.(type) {
+		case *sqlActionRemoveResponse:
+
+		case *errorResponse:
+			x := res.(*errorResponse)
+			t.Errorf(x.msg)
+		default:
+			t.Errorf("table onRemove error: invalid response type expected sqlActionRemoveResponse")
 		}
 	}
 }
@@ -733,7 +753,7 @@ func TestTableActionDelete1(t *testing.T) {
 
 	validateActionAdd(t, senders)
 
-	// delete all records 
+	// delete all records
 	deleteHelper(tbl, " delete from stocks ")
 
 	// validate delete 3 messages per each subscription
@@ -768,13 +788,46 @@ func TestTableActionDelete2(t *testing.T) {
 
 	validateActionAdd(t, senders)
 
-	// delete all records 
+	// delete all records
 	deleteHelper(tbl, " delete from stocks ")
 
 	// validate delete 3 messages per each subscription
 	validateActionDelete(t, senders)
 	validateActionDelete(t, senders)
 	validateActionDelete(t, senders)
+}
+
+func TestTableActionRemove(t *testing.T) {
+	senders := make([]*responseSender, 0)
+	var sender *responseSender
+	tbl := newTable("stocks")
+	// key ticker
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// SUBSCRIBE
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
+
+	// subscribe to existing key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to existing tag
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	validateActionAdd(t, senders)
+
+	// update recore to generate acion remove
+	res = updateHelper(tbl, " update stocks set ticker = GS, sector = FIN where ticker = IBM ")
+	validateSqlUpdate(t, res, 1)
+
+	validateActionRemove(t, senders)
+
 }
 
 // UNSUBSCRIBE
@@ -824,14 +877,14 @@ func TestTableSqlUnSubscribe1(t *testing.T) {
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
 	// subscribe to existing tag
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
-	// subscribe to id		
+	// subscribe to id
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 0")
 	// subscribe to non existing valid key
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")
 	// subscribe to non existing valid tag
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = FIN")
 
-	// unsubscribe	
+	// unsubscribe
 	res = unsubscribeHelper(tbl, "unsubscribe from stocks where pubsubid = "+pubsubid, connectionId)
 	validateSqlUnsubscribeResponse(t, res, 1)
 	res = unsubscribeHelper(tbl, "unsubscribe from stocks ", connectionId)

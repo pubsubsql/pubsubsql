@@ -26,23 +26,23 @@ import (
 type tokenType uint8
 
 const (
-	tokenTypeError                   tokenType = iota // error occured 
+	tokenTypeError                   tokenType = iota // error occured
 	tokenTypeEOF                                      // last token
 	tokenTypeCmdHelp                                  // help
 	tokenTypeCmdStatus                                // status
 	tokenTypeCmdStop                                  // stop
-	tokenTypeCmdStart                                 // start	
+	tokenTypeCmdStart                                 // start
 	tokenTypeSqlTable                                 // table name
 	tokenTypeSqlColumn                                // column name
 	tokenTypeSqlInsert                                // insert
 	tokenTypeSqlInto                                  // into
-	tokenTypeSqlUpdate                                // update	
+	tokenTypeSqlUpdate                                // update
 	tokenTypeSqlSet                                   // set
 	tokenTypeSqlDelete                                // delete
 	tokenTypeSqlFrom                                  // from
 	tokenTypeSqlSelect                                // select
 	tokenTypeSqlSubscribe                             // subscribe
-	tokenTypeSqlUnsubscribe                           // unsubscribe 
+	tokenTypeSqlUnsubscribe                           // unsubscribe
 	tokenTypeSqlWhere                                 // where
 	tokenTypeSqlValues                                // values
 	tokenTypeSqlStar                                  // *
@@ -50,13 +50,13 @@ const (
 	tokenTypeSqlLeftParenthesis                       // (
 	tokenTypeSqlRightParenthesis                      // )
 	tokenTypeSqlComma                                 // ,
-	tokenTypeSqlValue                                 // 'some string' string or continous sequence of chars delimited by WHITE SPACE | ' | , | ( | ) 
+	tokenTypeSqlValue                                 // 'some string' string or continous sequence of chars delimited by WHITE SPACE | ' | , | ( | )
 	tokenTypeSqlValueWithSingleQuote                  // '' becomes ' inside the string, parser will need to replace the string
 	tokenTypeSqlKey                                   // key
 	tokenTypeSqlTag                                   // tag
 )
 
-// String converts tokenType value to a string. 
+// String converts tokenType value to a string.
 func (typ tokenType) String() string {
 	switch typ {
 	case tokenTypeError:
@@ -119,7 +119,7 @@ func (typ tokenType) String() string {
 	return "not implemented"
 }
 
-// token is a symbol representing lexical unit. 
+// token is a symbol representing lexical unit.
 type token struct {
 	typ tokenType
 	// string identified by lexer as a token based on
@@ -127,7 +127,7 @@ type token struct {
 	val string
 }
 
-// String converts token to a string. 
+// String converts token to a string.
 func (t token) String() string {
 	if t.typ == tokenTypeEOF {
 		return "EOF"
@@ -163,12 +163,12 @@ func (l *lexer) errorToken(format string, args ...interface{}) stateFn {
 	return nil
 }
 
-// Returns true if scan was a success. 
+// Returns true if scan was a success.
 func (l *lexer) ok() bool {
 	return len(l.err) > 0
 }
 
-// Passes a token to the token consumer. 
+// Passes a token to the token consumer.
 func (l *lexer) emit(t tokenType) {
 	l.tokens.Consume(&token{t, l.current()})
 }
@@ -288,7 +288,7 @@ func (l *lexer) lexMatch(typ tokenType, value string, skip int, fn stateFn) stat
 // and returning passed state function.
 func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
 	l.skipWhiteSpaces()
-	// first rune has to be valid unicode letter	
+	// first rune has to be valid unicode letter
 	if !unicode.IsLetter(l.next()) {
 		return l.errorToken("identifier must begin with a letter " + l.current())
 	}
@@ -300,7 +300,7 @@ func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
 	return fn
 }
 
-// lexSqlLeftParenthesis scans input for '(' emiting the token on success 
+// lexSqlLeftParenthesis scans input for '(' emiting the token on success
 // and returning passed state function.
 func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 	l.skipWhiteSpaces()
@@ -331,13 +331,13 @@ func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 					if rune == '\'' {
 						typ = tokenTypeSqlValueWithSingleQuote
 					} else {
-						// since we read lookahead after single quote that ends the string 
+						// since we read lookahead after single quote that ends the string
 						// for lookahead
 						l.backup()
 						// for single quote which is not part of the value
 						l.backup()
 						l.emit(typ)
-						// now ignore that single quote 
+						// now ignore that single quote
 						l.next()
 						l.ignore()
 						//
@@ -355,7 +355,7 @@ func (l *lexer) lexSqlValue(fn stateFn) stateFn {
 				return l.errorToken("string was not delimited")
 			}
 		}
-		// value 
+		// value
 	} else {
 		for rune = l.next(); !isWhiteSpace(rune) && rune != ',' && rune != ')'; rune = l.next() {
 		}
@@ -534,7 +534,7 @@ func lexSqlWhere(l *lexer) stateFn {
 	return l.lexTryMatch(tokenTypeSqlWhere, "where", lexSqlWhereColumn, nil)
 }
 
-// KEY and TAG sql statement scan state functions. 
+// KEY and TAG sql statement scan state functions.
 
 func lexSqlKeyTable(l *lexer) stateFn {
 	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlKeyColumn)
@@ -604,7 +604,7 @@ func lexCommand(l *lexer) stateFn {
 	return l.errorToken("Invalid command:" + l.current())
 }
 
-// Scans the input by executing state functon until. 
+// Scans the input by executing state functon until.
 // the state is nil
 func (l *lexer) run() {
 	for state := lexCommand; state != nil; {

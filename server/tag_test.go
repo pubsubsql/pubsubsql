@@ -100,7 +100,7 @@ func TestTag(t *testing.T) {
 	if invalidNextPrev(head) {
 		t.Errorf("corupted list")
 	}
-	// 10 
+	// 10
 	if removeTag(head.next) != removeTagNormal {
 		t.Error("remove failed")
 	}

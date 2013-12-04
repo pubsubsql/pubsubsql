@@ -93,7 +93,7 @@ func BenchmarkUpdate4(b *testing.B) {
 
 // END BENCHMARKS
 
-// INSERT 
+// INSERT
 func TestSqlInsertStatement(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("insert into stocks (	ticker,bid, ask		 ) values (IBM, '34.43', 465.123)", &consumer)
@@ -121,7 +121,7 @@ func TestSqlInsertStatement(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
-// DELETE 
+// DELETE
 func TestSqlDeleteStatement1(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" delete	 	 from stocks", &consumer)
