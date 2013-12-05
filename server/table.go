@@ -292,7 +292,7 @@ func (ra *pubsubRA) toBeRemoved(pubsub *pubSub) {
 
 func (ra *pubsubRA) toBeAdded(pubsub *pubSub) {
 	if pubsub != nil {
-		ra.added[pubsub] = 0
+		ra.added[pubsub] = 1
 	}
 }
 
@@ -468,9 +468,12 @@ func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 			if hasWhatToRemove(ra) {
 				t.onRemove(ra.removed, rec)
 			}
+			var added *map[*pubSub]int
 			if hasWhatToAdd(ra) {
+				added = &ra.added
 				t.onAdd(ra.added, rec)
 			}
+			t.onUpdate(cols, rec, added)
 		}
 	}
 	res.updated = updated
@@ -692,6 +695,23 @@ func (t *table) onAdd(added map[*pubSub]int, rec *record) {
 	}
 	for pubsub, _ := range added {
 		pubsub.visit(f)
+	}
+}
+
+func (t *table) onUpdate(cols []*column, rec *record, added *map[*pubSub]int) {
+	f := func(sub *subscription) bool {
+		r := newSqlActionUpdateResponse(sub.id, cols, rec)
+		return sub.sender.send(r)
+	}
+	t.pubsub.visit(f)
+	for _, lnk := range rec.links {
+		if lnk.pubsub != nil {
+			// ignore updates for record that was just added
+			if added != nil && (*added)[lnk.pubsub] != 0 {
+				continue
+			}
+			lnk.pubsub.visit(f)
+		}
 	}
 }
 

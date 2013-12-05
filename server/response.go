@@ -150,6 +150,30 @@ type sqlActionRemoveResponse struct {
 	pubsubid uint64
 }
 
+// sqlActionUpdateResponse
+type sqlActionUpdateResponse struct {
+	response
+	pubsubid uint64
+	cols     []*column
+	rec      *record
+}
+
+func newSqlActionUpdateResponse(pubsubid uint64, cols []*column, rec *record) *sqlActionUpdateResponse {
+	res := sqlActionUpdateResponse{
+		pubsubid: pubsubid,
+		cols:     cols,
+	}
+	// copy updated data
+	l := len(cols)
+	res.rec = &record{
+		values: make([]string, l, l),
+	}
+	for idx, col := range cols {
+		res.rec.setValue(idx, rec.getValue(col.ordinal))
+	}
+	return &res
+}
+
 // sqlUnsubscribeResponse
 type sqlUnsubscribeResponse struct {
 	response
