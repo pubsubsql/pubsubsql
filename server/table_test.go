@@ -718,7 +718,69 @@ func validateActionRemove(t *testing.T, senders []*responseSender) {
 	}
 }
 
-func TestgTableActionAddOnKeyUpdate(t *testing.T) {
+func validateActionUpdate(t *testing.T, senders []*responseSender) {
+	for _, sender := range senders {
+		res := sender.tryRecv()
+		if res == nil {
+			t.Errorf("table onUpdate error: invalid response nil, expected sqlActionUpdateResponse")
+			continue
+		}
+		switch res.(type) {
+		case *sqlActionUpdateResponse:
+
+		case *errorResponse:
+			x := res.(*errorResponse)
+			t.Errorf(x.msg)
+		default:
+			t.Errorf("table onRemove error: invalid response type expected sqlActionUpdateResponse")
+		}
+	}
+}
+
+func TestTableActionUpdate(t *testing.T) {
+	senders := make([]*responseSender, 0)
+	var sender *responseSender
+	tbl := newTable("stocks")
+	// key ticker
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// SUBSCRIBE
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
+
+	// subscribe to table
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks ")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to record id
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 0 ")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to existing key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to existing tag
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	validateActionAdd(t, senders)
+
+	// update
+	updateHelper(tbl, "update stocks set bid = 120, ask = 121 where ticker = IBM")
+	validateActionUpdate(t, senders)
+
+	deleteHelper(tbl, "delete from stocks")
+	validateActionDelete(t, senders)
+}
+
+func TestTableActionAddOnKeyUpdate(t *testing.T) {
 	senders := make([]*responseSender, 0)
 	var sender *responseSender
 	tbl := newTable("stocks")
@@ -742,6 +804,36 @@ func TestgTableActionAddOnKeyUpdate(t *testing.T) {
 	validateSqlSubscribeResponse(t, res)
 
 	updateHelper(tbl, "update stocks set ticker = MSFT where ticker = IBM")
+	validateActionAdd(t, senders)
+
+	deleteHelper(tbl, "delete from stocks")
+	validateActionDelete(t, senders)
+}
+
+func TestgTableActionAddOnTagUpdate(t *testing.T) {
+	senders := make([]*responseSender, 0)
+	var sender *responseSender
+	tbl := newTable("stocks")
+	// key ticker
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// SUBSCRIBE
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
+
+	// subscribe to non existing key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where secor = FIN")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to non existing key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = FIN")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	updateHelper(tbl, "update stocks set ticker = MSFT where sector = FIN")
 	validateActionAdd(t, senders)
 
 	deleteHelper(tbl, "delete from stocks")
