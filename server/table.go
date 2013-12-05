@@ -280,6 +280,10 @@ func hasWhatToRemove(ra *pubsubRA) bool {
 	return ra != nil && len(ra.removed) > 0
 }
 
+func hasWhatToAdd(ra *pubsubRA) bool {
+	return ra != nil && len(ra.added) > 0
+}
+
 func (ra *pubsubRA) toBeRemoved(pubsub *pubSub) {
 	if pubsub != nil {
 		ra.removed = append(ra.removed, pubsub)
@@ -459,11 +463,14 @@ func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 	updated := 0
 	for _, rec := range records {
 		if rec != nil {
+			updated++
 			ra := t.updateRecord(cols[1:], req.colVals, rec, int(rec.idx()))
 			if hasWhatToRemove(ra) {
-				t.publishActionRemove(ra.removed, rec)
+				t.onRemove(ra.removed, rec)
 			}
-			updated++
+			if hasWhatToAdd(ra) {
+				t.onAdd(ra.added, rec)
+			}
 		}
 	}
 	res.updated = updated
@@ -639,20 +646,6 @@ func (t *table) publishActionAdd(sub *subscription, records []*record) bool {
 	return sub.sender.send(r)
 }
 
-func (t *table) publishActionRemove(pubsubs []*pubSub, rec *record) {
-	f := func(sub *subscription) bool {
-		r := &sqlActionRemoveResponse{
-			id:       rec.idAsString(),
-			pubsubid: sub.id,
-		}
-		return sub.sender.send(r)
-	}
-	t.pubsub.visit(f)
-	for _, pubsub := range pubsubs {
-		pubsub.visit(f)
-	}
-}
-
 func publishActionInsert(t *table, sub *subscription, rec *record) bool {
 	r := new(sqlActionInsertResponse)
 	r.pubsubid = sub.id
@@ -674,6 +667,32 @@ func (t *table) onInsert(rec *record) {
 
 func (t *table) onDelete(rec *record) {
 	t.visitSubscriptions(rec, publishActionDelete)
+}
+
+func (t *table) onRemove(pubsubs []*pubSub, rec *record) {
+	f := func(sub *subscription) bool {
+		r := &sqlActionRemoveResponse{
+			id:       rec.idAsString(),
+			pubsubid: sub.id,
+		}
+		return sub.sender.send(r)
+	}
+	t.pubsub.visit(f)
+	for _, pubsub := range pubsubs {
+		pubsub.visit(f)
+	}
+}
+
+func (t *table) onAdd(added map[*pubSub]int, rec *record) {
+	f := func(sub *subscription) bool {
+		r := new(sqlActionAddResponse)
+		r.pubsubid = sub.id
+		t.copyRecordToSqlSelectResponse(&r.sqlSelectResponse, rec)
+		return sub.sender.send(r)
+	}
+	for pubsub, _ := range added {
+		pubsub.visit(f)
+	}
 }
 
 // UNSUBSCRIBE
