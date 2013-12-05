@@ -293,12 +293,18 @@ func (ra *pubsubRA) toBeAdded(pubsub *pubSub) {
 }
 
 func (t *table) updateRecordKeyTag(col *column, val string, rec *record, id int, ra **pubsubRA) {
+	r := t.deleteTag(rec, col)
+	rec.setValue(col.ordinal, val)
+	a := t.tagValue(col, id, rec)
+	// updated with the same value ignore this case
+	if r == a {
+		return
+	}
 	if *ra == nil {
 		*ra = newPubsubRA()
 	}
-	ra.toBeRemoved(t.deleteTag(rec, col))
-	rec.setValue(col.ordinal, val)
-	ra.toBeAdded(t.tagValue(col, id, rec))
+	ra.toBeRemoved(r)
+	ra.toBeAdded(a)
 }
 
 // Updates record with new values, keys and tags.
