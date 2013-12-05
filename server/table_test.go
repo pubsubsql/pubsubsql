@@ -718,6 +718,36 @@ func validateActionRemove(t *testing.T, senders []*responseSender) {
 	}
 }
 
+func TestgTableActionAddOnKeyUpdate(t *testing.T) {
+	senders := make([]*responseSender, 0)
+	var sender *responseSender
+	tbl := newTable("stocks")
+	// key ticker
+	res := keyHelper(tbl, "key stocks ticker")
+	validateOkResponse(t, res)
+	// tag sector
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+	// SUBSCRIBE
+	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
+
+	// subscribe to non existing key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	// subscribe to non existing key
+	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")
+	senders = append(senders, sender)
+	validateSqlSubscribeResponse(t, res)
+
+	updateHelper(tbl, "update stocks set ticker = MSFT where ticker = IBM")
+	validateActionAdd(t, senders)
+
+	deleteHelper(tbl, "delete from stocks")
+	validateActionDelete(t, senders)
+}
+
 func TestTableActionDelete1(t *testing.T) {
 	senders := make([]*responseSender, 0)
 	tbl := newTable("stocks")
