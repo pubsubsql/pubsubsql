@@ -27,3 +27,55 @@ func TestDataServiceRunAndStop(t *testing.T) {
 		t.Errorf("stoper.Stop() expected true but got false")
 	}
 }
+
+func sqlHelper(sql string, sender *responseSender) *requestItem {
+	pc := newTokens()
+	lex(sql, pc)
+	req := parse(pc).(request)
+	return &requestItem{
+		req:    req,
+		sender: sender,
+	}
+}
+
+func TestDataService(t *testing.T) {
+	stoper := NewStoper()
+	dataSrv := newDataService(0, stoper)
+	go dataSrv.run()
+	sender := newResponseSenderStub(1)
+	// insert
+	dataSrv.accept(sqlHelper("insert into stocks (ticker, bid, ask, sector) values (IBM, 123, 124, TECH) ", sender))
+	res := sender.recv()
+	validateSqlInsertResponseId(t, res, "0")
+	// select
+	dataSrv.accept(sqlHelper(" select * from stocks ", sender))
+	res = sender.recv()
+	validateSqlSelect(t, res, 1, 5)
+	// key 
+	dataSrv.accept(sqlHelper(" key stocks ticker ", sender))
+	res = sender.recv()
+	validateOkResponse(t, res)
+	// tag 
+	dataSrv.accept(sqlHelper(" tag stocks sector ", sender))
+	res = sender.recv()
+	validateOkResponse(t, res)
+	// subscribe	
+	dataSrv.accept(sqlHelper(" subscribe * from stocks sector = TECH ", sender))
+	res = sender.recv()
+	validateSqlSubscribeResponse(t, res)
+	res = sender.recv() // action add
+	// update
+	dataSrv.accept(sqlHelper(" update stocks set bid = 140 where ticker = IBM ", sender))
+	res = sender.recv() // first is action update
+	res = sender.recv()
+	validateSqlUpdate(t, res, 1)
+	// delete
+	dataSrv.accept(sqlHelper(" delete from stocks where ticker = IBM ", sender))
+	res = sender.recv() // first is action delete
+	res = sender.recv()
+	validateSqlDelete(t, res, 1)
+	// unsubscribe
+	dataSrv.accept(sqlHelper(" unsubscribe from stocks where pubsubid = 1 ", sender))
+	res = sender.recv() // first is action delete
+	validateSqlUnsubscribe(t, res, 1)
+}

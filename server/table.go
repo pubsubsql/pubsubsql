@@ -810,6 +810,7 @@ func (t *table) onSqlSubscribe(req *sqlSubscribeRequest, sender *responseSender)
 }
 
 func (t *table) onSqlUnsubscribe(req *sqlUnsubscribeRequest, sender *responseSender) {
+	req.connectionId = sender.connectionId
 	sender.send(t.sqlUnsubscribe(req))
 }
 

@@ -27,14 +27,14 @@ func validateTableRecordsCount(t *testing.T, tbl *table, expected int) {
 }
 
 func validateSqlInsertResponseId(t *testing.T, res response, expected string) {
-	switch res.(type) {
+	switch typ := res.(type) {
 	case *sqlInsertResponse:
 		x := res.(*sqlInsertResponse)
 		if x.id != expected {
 			t.Errorf("table insert error: expected id:%s but got:%s", expected, x.id)
 		}
 	default:
-		t.Errorf("table insert error: invalid response type expected sqlInsertResponse")
+		t.Errorf("table insert error: invalid response type expected sqlInsertResponse but got %T", typ)
 	}
 }
 
@@ -197,7 +197,7 @@ func updateHelper(t *table, sqlUpdate string) response {
 }
 
 func validateSqlUpdate(t *testing.T, res response, expected int) {
-	switch res.(type) {
+	switch typ := res.(type) {
 	case *sqlUpdateResponse:
 		x := res.(*sqlUpdateResponse)
 		if x.updated != expected {
@@ -207,7 +207,7 @@ func validateSqlUpdate(t *testing.T, res response, expected int) {
 		x := res.(*errorResponse)
 		t.Errorf(x.msg)
 	default:
-		t.Errorf("table delete error: invalid response type expected sqlDeleteResponse")
+		t.Errorf("table update error: invalid response type expected sqlUpdateResponse but got %T", typ)
 	}
 }
 
@@ -962,7 +962,7 @@ func unsubscribeHelper(t *table, sqlUnsubscribe string, connectionId uint64) res
 	return t.sqlUnsubscribe(req)
 }
 
-func validateSqlUnsubscribeResponse(t *testing.T, res response, unsubscribed int) {
+func validateSqlUnsubscribe(t *testing.T, res response, unsubscribed int) {
 	switch res.(type) {
 	case *sqlUnsubscribeResponse:
 		x := res.(*sqlUnsubscribeResponse)
@@ -1008,7 +1008,7 @@ func TestTableSqlUnSubscribe1(t *testing.T) {
 
 	// unsubscribe
 	res = unsubscribeHelper(tbl, "unsubscribe from stocks where pubsubid = "+pubsubid, connectionId)
-	validateSqlUnsubscribeResponse(t, res, 1)
+	validateSqlUnsubscribe(t, res, 1)
 	res = unsubscribeHelper(tbl, "unsubscribe from stocks ", connectionId)
-	validateSqlUnsubscribeResponse(t, res, 5)
+	validateSqlUnsubscribe(t, res, 5)
 }

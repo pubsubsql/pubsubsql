@@ -27,6 +27,7 @@ const (
 // request
 type request interface {
 	getRequestType() requestType
+	getTableName() string
 }
 
 // errorRequest is an error request.
@@ -48,6 +49,10 @@ type sqlRequest struct {
 
 func (act sqlRequest) getRequestType() requestType {
 	return requestTypeSql
+}
+
+func (act sqlRequest) getTableName() string {
+	return act.table
 }
 
 // cmdRequest is a generic command request.

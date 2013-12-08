@@ -62,21 +62,16 @@ func (d *dataService) run() {
 }
 
 func (d *dataService) onSqlRequest(item *requestItem) {
-	switch item.req.(type) {
-	case *sqlRequest:
-		sql := item.req.(*sqlRequest)
-		tbl := d.tables[sql.table]
-		if tbl == nil {
-			// auto create table and enter table event loop
-			tbl = newTable(sql.table)
-			tbl.stoper = d.stoper
-			tbl.requests = make(chan *requestItem, d.bufferSize)
-			go tbl.run()
-		}
-		// forward sql request to the table
-		tbl.requests <- item
-
-	default:
-		panic("Unsuported sql request")
+	tableName := item.req.getTableName()
+	tbl := d.tables[tableName]
+	if tbl == nil {
+		// auto create table and enter table event loop
+		tbl = newTable(tableName)
+		d.tables[tableName] = tbl
+		tbl.stoper = d.stoper
+		tbl.requests = make(chan *requestItem, d.bufferSize)
+		go tbl.run()
 	}
+	// forward sql request to the table
+	tbl.requests <- item
 }

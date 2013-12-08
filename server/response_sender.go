@@ -49,3 +49,7 @@ func (s *responseSender) tryRecv() response {
 	}
 	return nil
 }
+
+func (s *responseSender) recv() response {
+	return <-s.sender
+}
