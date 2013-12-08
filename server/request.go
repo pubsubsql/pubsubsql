@@ -43,6 +43,7 @@ func (act errorRequest) getRequestType() requestType {
 // sqlRequest is a generic sql request.
 type sqlRequest struct {
 	request
+	table string
 }
 
 func (act sqlRequest) getRequestType() requestType {
@@ -78,7 +79,6 @@ func (f *sqlFilter) addFilter(col string, val string) {
 // sqlInsertRequest is a request for sql insert statement.
 type sqlInsertRequest struct {
 	sqlRequest
-	table   string
 	colVals []*columnValue
 }
 
@@ -100,14 +100,12 @@ func (a *sqlInsertRequest) setValueAt(idx int, val string) {
 // sqlSelectRequest is a request for sql select statement.
 type sqlSelectRequest struct {
 	sqlRequest
-	table  string
 	filter sqlFilter
 }
 
 // sqlUpdateRequest is a request for sql update statement.
 type sqlUpdateRequest struct {
 	sqlRequest
-	table   string
 	colVals []*columnValue
 	filter  sqlFilter
 }
@@ -120,7 +118,6 @@ func (a *sqlUpdateRequest) addColVal(col string, val string) {
 // sqlDeleteRequest is a request for sql delete statement.
 type sqlDeleteRequest struct {
 	sqlRequest
-	table  string
 	filter sqlFilter
 }
 
@@ -128,7 +125,6 @@ type sqlDeleteRequest struct {
 // Key defines unique index.
 type sqlKeyRequest struct {
 	sqlRequest
-	table  string
 	column string
 }
 
@@ -136,14 +132,12 @@ type sqlKeyRequest struct {
 // Tag defines non-unique index.
 type sqlTagRequest struct {
 	sqlRequest
-	table  string
 	column string
 }
 
 // sqlSubscribeRequest is a request for sql subscribe statement.
 type sqlSubscribeRequest struct {
 	sqlRequest
-	table  string
 	filter sqlFilter
 	sender *responseSender
 }
@@ -152,6 +146,5 @@ type sqlSubscribeRequest struct {
 type sqlUnsubscribeRequest struct {
 	sqlRequest
 	connectionId uint64
-	table        string
 	filter       sqlFilter
 }

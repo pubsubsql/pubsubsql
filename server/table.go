@@ -48,6 +48,8 @@ type table struct {
 	//
 	subscriptions mapSubscriptionByConnection
 	subid         uint64
+	//
+
 }
 
 // table factory

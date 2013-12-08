@@ -25,13 +25,11 @@ type requestItem struct {
 type dataService struct {
 	requests chan *requestItem
 	stoper   *Stoper
+	tables   map[string]*table
 }
 
 // dataService factory
 func newDataService(bufferSize int, stoper *Stoper) *dataService {
-	if stoper == nil {
-		panic("dataService.stoper can not be nil")
-	}
 	return &dataService{
 		requests: make(chan *requestItem, bufferSize),
 		stoper:   stoper,
