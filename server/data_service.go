@@ -17,8 +17,8 @@
 package pubsubsql
 
 type requestItem struct {
-	req       request
-	responser *responseSender
+	req    request
+	sender *responseSender
 }
 
 // dataService prer-processes sqlRequests and channels them to approptiate tables for further proccessging
@@ -67,10 +67,13 @@ func (d *dataService) onSqlRequest(item *requestItem) {
 		sql := item.req.(*sqlRequest)
 		tbl := d.tables[sql.table]
 		if tbl == nil {
-			// create table and enter table event loop
+			// auto create table and enter table event loop
 			tbl = newTable(sql.table)
-			go tbl.run(d.bufferSize, d.stoper)
+			tbl.stoper = d.stoper
+			tbl.requests = make(chan *requestItem, d.bufferSize)
+			go tbl.run()
 		}
+		// forward sql request to the table
 		tbl.requests <- item
 
 	default:

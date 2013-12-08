@@ -49,7 +49,8 @@ type table struct {
 	subscriptions mapSubscriptionByConnection
 	subid         uint64
 	//
-
+	requests chan *requestItem
+	stoper   *Stoper
 }
 
 // table factory
@@ -741,4 +742,81 @@ func (t *table) sqlUnsubscribe(req *sqlUnsubscribeRequest) response {
 		res.unsubscribed = t.subscriptions.deactivateAll(req.connectionId)
 	}
 	return res
+}
+
+// run
+
+func (t *table) run() {
+	//
+	t.stoper.Enter()
+	defer t.stoper.Leave()
+	for {
+		select {
+		case item := <-t.requests:
+			t.onSqlRequest(item.req, item.sender)
+		case <-t.stoper.GetChan():
+			return
+		}
+	}
+}
+
+func (t *table) onSqlRequest(r request, sender *responseSender) {
+	switch r.(type) {
+	case *sqlInsertRequest:
+		t.onSqlInsert(r.(*sqlInsertRequest), sender)
+
+	case *sqlSelectRequest:
+		t.onSqlSelect(r.(*sqlSelectRequest), sender)
+
+	case *sqlUpdateRequest:
+		t.onSqlUpdate(r.(*sqlUpdateRequest), sender)
+
+	case *sqlDeleteRequest:
+		t.onSqlDelete(r.(*sqlDeleteRequest), sender)
+
+	case *sqlSubscribeRequest:
+		t.onSqlSubscribe(r.(*sqlSubscribeRequest), sender)
+
+	case *sqlUnsubscribeRequest:
+		t.onSqlUnsubscribe(r.(*sqlUnsubscribeRequest), sender)
+
+	case *sqlKeyRequest:
+		t.onSqlKey(r.(*sqlKeyRequest), sender)
+
+	case *sqlTagRequest:
+		t.onSqlTag(r.(*sqlTagRequest), sender)
+	}
+}
+
+func (t *table) onSqlInsert(req *sqlInsertRequest, sender *responseSender) {
+	sender.send(t.sqlInsert(req))
+}
+
+func (t *table) onSqlSelect(req *sqlSelectRequest, sender *responseSender) {
+	sender.send(t.sqlSelect(req))
+}
+
+func (t *table) onSqlUpdate(req *sqlUpdateRequest, sender *responseSender) {
+	sender.send(t.sqlUpdate(req))
+}
+
+func (t *table) onSqlDelete(req *sqlDeleteRequest, sender *responseSender) {
+	sender.send(t.sqlDelete(req))
+}
+
+func (t *table) onSqlSubscribe(req *sqlSubscribeRequest, sender *responseSender) {
+	req.sender = sender
+	t.sqlSubscribe(req)
+}
+
+func (t *table) onSqlUnsubscribe(req *sqlUnsubscribeRequest, sender *responseSender) {
+	sender.send(t.sqlUnsubscribe(req))
+}
+
+func (t *table) onSqlKey(req *sqlKeyRequest, sender *responseSender) {
+	sender.send(t.sqlKey(req))
+}
+
+func (t *table) onSqlTag(req *sqlTagRequest, sender *responseSender) {
+	sender.send(t.sqlTag(req))
 }
