@@ -675,7 +675,7 @@ func validateActionDelete(t *testing.T, senders []*responseSender) {
 		}
 		switch res.(type) {
 		case *sqlActionDeleteResponse:
-
+			validateResponseJSON(t, res)
 		case *errorResponse:
 			x := res.(*errorResponse)
 			t.Errorf(x.msg)
@@ -694,7 +694,7 @@ func validateActionAdd(t *testing.T, senders []*responseSender) {
 		}
 		switch res.(type) {
 		case *sqlActionAddResponse:
-
+			validateResponseJSON(t, res)
 		case *errorResponse:
 			x := res.(*errorResponse)
 			t.Errorf(x.msg)
@@ -713,7 +713,7 @@ func validateActionRemove(t *testing.T, senders []*responseSender) {
 		}
 		switch res.(type) {
 		case *sqlActionRemoveResponse:
-
+			validateResponseJSON(t, res)
 		case *errorResponse:
 			x := res.(*errorResponse)
 			t.Errorf(x.msg)

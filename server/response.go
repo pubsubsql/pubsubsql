@@ -132,7 +132,7 @@ type sqlSelectResponse struct {
 }
 
 func (r *sqlSelectResponse) data(builder *JSONBuilder) {
-	builder.nameIntValue("rows", len(r.records)) 
+	builder.nameIntValue("rows", len(r.records))
 	builder.valueSeparator()
 	builder.string("data")
 	builder.nameSeparator()
@@ -273,7 +273,7 @@ type sqlActionInsertResponse struct {
 }
 
 func (r *sqlActionInsertResponse) toNetworkReadyJSON() []byte {
-	return r.toNetworkReadyJSONHelper("add")
+	return r.toNetworkReadyJSONHelper("insert")
 }
 
 // sqlActonDeleteResponse
@@ -283,11 +283,39 @@ type sqlActionDeleteResponse struct {
 	pubsubid uint64
 }
 
+func (r *sqlActionDeleteResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "delete")
+	builder.valueSeparator()
+	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.valueSeparator()
+	builder.nameValue("id", r.id)
+	builder.endObject()
+	return builder.getNetworkBytes()
+}
+
 // sqlActionRemoveResponse
 type sqlActionRemoveResponse struct {
 	response
 	id       string
 	pubsubid uint64
+}
+
+func (r *sqlActionRemoveResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "remove")
+	builder.valueSeparator()
+	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.valueSeparator()
+	builder.nameValue("id", r.id)
+	builder.endObject()
+	return builder.getNetworkBytes()
 }
 
 // sqlActionUpdateResponse
