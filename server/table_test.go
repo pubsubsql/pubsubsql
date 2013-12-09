@@ -732,7 +732,7 @@ func validateActionUpdate(t *testing.T, senders []*responseSender) {
 		}
 		switch res.(type) {
 		case *sqlActionUpdateResponse:
-
+			validateResponseJSON(t, res)
 		case *errorResponse:
 			x := res.(*errorResponse)
 			t.Errorf(x.msg)
@@ -974,6 +974,7 @@ func validateSqlUnsubscribe(t *testing.T, res response, unsubscribed int) {
 		if x.unsubscribed != unsubscribed {
 			t.Errorf("invalid sqlUnsubscribeResponse unsubscribed expected:%d but got:%d", unsubscribed, x.unsubscribed)
 		}
+		validateResponseJSON(t, res)
 	case *errorResponse:
 		x := res.(*errorResponse)
 		t.Errorf(x.msg)

@@ -131,6 +131,18 @@ type sqlSelectResponse struct {
 	records []*record
 }
 
+func row(builder *JSONBuilder, columns []*column, rec *record) {
+	builder.beginObject()
+		// columns and values
+		for colIndex, col := range columns {
+			if colIndex != 0 {
+				builder.valueSeparator()
+			}
+			builder.nameValue(col.name, rec.getValue(colIndex))
+		}
+	builder.endObject()
+}
+
 func (r *sqlSelectResponse) data(builder *JSONBuilder) {
 	builder.nameIntValue("rows", len(r.records))
 	builder.valueSeparator()
@@ -142,15 +154,7 @@ func (r *sqlSelectResponse) data(builder *JSONBuilder) {
 		if recIndex != 0 {
 			builder.valueSeparator()
 		}
-		builder.beginObject()
-		// columns and values
-		for colIndex, col := range r.columns {
-			if colIndex != 0 {
-				builder.valueSeparator()
-			}
-			builder.nameValue(col.name, rec.getValue(colIndex))
-		}
-		builder.endObject()
+		row(builder, r.columns, rec)
 	}
 	builder.endArray()
 }
@@ -326,6 +330,26 @@ type sqlActionUpdateResponse struct {
 	rec      *record
 }
 
+func (r *sqlActionUpdateResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "update")
+	builder.valueSeparator()
+	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.valueSeparator()
+
+	builder.string("data")
+	builder.nameSeparator()
+	builder.beginArray()
+	row(builder, r.cols, r.rec)
+	builder.endArray()
+
+	builder.endObject()
+	return builder.getNetworkBytes()
+}
+
 func newSqlActionUpdateResponse(pubsubid uint64, cols []*column, rec *record) *sqlActionUpdateResponse {
 	res := sqlActionUpdateResponse{
 		pubsubid: pubsubid,
@@ -347,3 +371,16 @@ type sqlUnsubscribeResponse struct {
 	response
 	unsubscribed int
 }
+
+func (r *sqlUnsubscribeResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "unsubscribe")
+	builder.valueSeparator()
+	builder.nameIntValue("subscriptions", r.unsubscribed)
+	builder.endObject()
+	return builder.getNetworkBytes()
+}
+
