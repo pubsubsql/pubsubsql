@@ -176,18 +176,18 @@ func TestTableSqlSelect1(t *testing.T) {
 	validateSqlSelect(t, res, 1, 4)
 
 	res = selectHelper(tbl, " select * from stocks where id = 0")
-	validateResponseJSON(res, t)
+	validateResponseJSON(t, res)
 	validateSqlSelect(t, res, 1, 4)
 	//
 	insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, 'TECH') ")
 
 	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelect(t, res, 2, 5)
-	validateResponseJSON(res, t)
+	validateResponseJSON(t, res)
 
 	res = selectHelper(tbl, " select * from stocks where id = 1")
 	validateSqlSelect(t, res, 1, 5)
-	validateResponseJSON(res, t)
+	validateResponseJSON(t, res)
 }
 
 // UPDATE
@@ -220,6 +220,7 @@ func TestTableSqlUpdate(t *testing.T) {
 	res := insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, sec1) ")
 	validateSqlInsertResponseId(t, res, "0")
 	res = updateHelper(tbl, " update stocks set ticker = 'IBM', bid = 12, ask = 456.34")
+	validateResponseJSON(t, res)
 	validateSqlUpdate(t, res, 1)
 	// 3 records
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (MSFT, 12, 14.5645, sec1) ")
@@ -230,17 +231,21 @@ func TestTableSqlUpdate(t *testing.T) {
 	validateSqlInsertResponseId(t, res, "3")
 	//
 	res = updateHelper(tbl, " update stocks set bid = 12 ")
+	validateResponseJSON(t, res)
 	validateSqlUpdate(t, res, 4)
 	// create key for ticker
 	res = keyHelper(tbl, "key stocks ticker")
 	validateOkResponse(t, res)
 	// update by key
 	res = updateHelper(tbl, " update stocks set bid = 13 where ticker = IBM ")
+	validateResponseJSON(t, res)
 	validateSqlUpdate(t, res, 1)
 	res = updateHelper(tbl, " update stocks set bid = 13 where ticker = C ")
+	validateResponseJSON(t, res)
 	validateSqlUpdate(t, res, 1)
 	// update key by key
 	res = updateHelper(tbl, " update stocks set ticker = 'JPM'  where ticker = IBM ")
+	validateResponseJSON(t, res)
 	validateSqlUpdate(t, res, 1)
 	res = selectHelper(tbl, " select * from stocks where ticker = JPM ")
 	validateSqlSelect(t, res, 1, 5)
@@ -258,10 +263,13 @@ func TestTableSqlUpdate(t *testing.T) {
 	validateSqlSelect(t, res, 2, 5)
 	// update sector by sector
 	res = updateHelper(tbl, " update stocks set sector = sec3 where sector = sec1 ")
+	validateResponseJSON(t, res)
 	validateSqlUpdate(t, res, 2)
 	res = selectHelper(tbl, " select * from stocks where sector = sec1 ")
+	validateResponseJSON(t, res)
 	validateSqlSelect(t, res, 0, 5)
 	res = selectHelper(tbl, " select * from stocks where sector = sec3 ")
+	validateResponseJSON(t, res)
 	validateSqlSelect(t, res, 2, 5)
 
 }
@@ -296,6 +304,7 @@ func TestTableSqlDelete(t *testing.T) {
 	res := insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "0")
 	res = deleteHelper(tbl, " delete from stocks ")
+	validateResponseJSON(t, res)
 	validateSqlDelete(t, res, 1)
 	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelect(t, res, 0, 4)
@@ -307,6 +316,7 @@ func TestTableSqlDelete(t *testing.T) {
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
 	validateSqlInsertResponseId(t, res, "3")
 	res = deleteHelper(tbl, " delete from stocks ")
+	validateResponseJSON(t, res)
 	validateSqlDelete(t, res, 3)
 	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelect(t, res, 0, 4)

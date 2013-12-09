@@ -115,6 +115,12 @@ func (j *JSONBuilder) nameValue(name string, value string) {
 	j.string(value)
 }
 
+func (j *JSONBuilder) nameIntValue(name string, val int) {
+	j.string(name)
+	j.nameSeparator()
+	j.int(val)
+}
+
 var errorString = `{ "status":"error" "msg":"Failed to build json document due to invalid utf8 string."`
 
 func (j *JSONBuilder) getBytes() []byte {

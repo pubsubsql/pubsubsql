@@ -48,9 +48,7 @@ func TestObject(t *testing.T) {
 func TestInt(t *testing.T) {
 	builder := new(JSONBuilder)
 	builder.beginObject()
-	builder.string("rows")
-	builder.nameSeparator()
-	builder.int(123567)
+	builder.nameIntValue("rows", 123456)
 	builder.endObject()
 	validateBuilder(builder, t)
 }

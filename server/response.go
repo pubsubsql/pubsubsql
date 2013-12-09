@@ -30,6 +30,7 @@ type response interface {
 	toNetworkReadyJSON() []byte
 }
 
+// json helper functions
 func ok(builder *JSONBuilder) {
 	builder.nameValue("status", "ok")
 }
@@ -40,12 +41,6 @@ func id(builder *JSONBuilder, id string) {
 
 func action(builder *JSONBuilder, action string) {
 	builder.nameValue("action", action)
-}
-
-func rows(builder *JSONBuilder, rows int) {
-	builder.string("rows")
-	builder.nameSeparator()
-	builder.int(rows)
 }
 
 // errorResponse
@@ -120,6 +115,8 @@ func (r *sqlInsertResponse) toNetworkReadyJSON() []byte {
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
+	action(builder, "insert")
+	builder.valueSeparator()
 	id(builder, r.id)
 	builder.endObject()
 	return builder.getNetworkBytes()
@@ -133,7 +130,7 @@ type sqlSelectResponse struct {
 }
 
 func (r *sqlSelectResponse) data(builder *JSONBuilder) {
-	rows(builder, len(r.records))
+	builder.nameIntValue("rows", len(r.records)) 
 	builder.valueSeparator()
 	builder.string("data")
 	builder.nameSeparator()
@@ -185,10 +182,34 @@ type sqlDeleteResponse struct {
 	deleted int
 }
 
+func (r *sqlDeleteResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "delete")
+	builder.valueSeparator()
+	builder.nameIntValue("rows", r.deleted)
+	builder.endObject()
+	return builder.getNetworkBytes()
+}
+
 // sqlUpdateResponse
 type sqlUpdateResponse struct {
 	response
 	updated int
+}
+
+func (r *sqlUpdateResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "update")
+	builder.valueSeparator()
+	builder.nameIntValue("rows", r.updated)
+	builder.endObject()
+	return builder.getNetworkBytes()
 }
 
 // sqlSubscribeResponse
