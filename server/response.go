@@ -16,6 +16,8 @@
 
 package pubsubsql
 
+import "strconv"
+
 type responseStatusType int8
 
 const (
@@ -216,6 +218,18 @@ func (r *sqlUpdateResponse) toNetworkReadyJSON() []byte {
 type sqlSubscribeResponse struct {
 	response
 	pubsubid uint64
+}
+
+func (r *sqlSubscribeResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "subscribe")
+	builder.valueSeparator()
+	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.endObject()
+	return builder.getNetworkBytes()
 }
 
 func newSubscribeResponse(sub *subscription) response {
