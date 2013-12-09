@@ -27,6 +27,25 @@ const (
 type response interface {
 	getResponseStatus() responseStatusType
 	String() string
+	toNetworkReadyJSON() []byte
+}
+
+func ok(builder *JSONBuilder) {
+	builder.nameValue("status", "ok")
+}
+
+func id(builder *JSONBuilder, id string) {
+	builder.nameValue("id", id)
+}
+
+func action(builder *JSONBuilder, action string) {
+	builder.nameValue("action", action)
+}
+
+func rows(builder *JSONBuilder, rows int) {
+	builder.string("rows")
+	builder.nameSeparator()
+	builder.int(rows)
 }
 
 // errorResponse
@@ -47,6 +66,16 @@ func (r *errorResponse) String() string {
 	return `{"status":"err" "msg":"` + r.msg + `"}`
 }
 
+func (r *errorResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	builder.nameValue("status", "err")
+	builder.valueSeparator()
+	builder.nameValue("msg", r.msg)
+	builder.endObject()
+	return builder.getNetworkBytes()
+}
+
 // okResponse
 type okResponse struct {
 	response
@@ -64,6 +93,14 @@ func (r *okResponse) String() string {
 	return `{"status":"ok"}`
 }
 
+func (r *okResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.endObject()
+	return builder.getNetworkBytes()
+}
+
 // sqlInsertResponse is a response for sql insert statement
 type sqlInsertResponse struct {
 	response
@@ -78,11 +115,57 @@ func (r *sqlInsertResponse) String() string {
 	return `{"response":"insert" "status":"ok" "id":"` + r.id + `"}`
 }
 
+func (r *sqlInsertResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	id(builder, r.id)
+	builder.endObject()
+	return builder.getNetworkBytes()
+}
+
 // sqlSelectResponse is a response for sql select statement
 type sqlSelectResponse struct {
 	response
 	columns []*column
 	records []*record
+}
+
+func (r *sqlSelectResponse) data(builder *JSONBuilder) {
+	rows(builder, len(r.records))
+	builder.valueSeparator()
+	builder.string("data")
+	builder.nameSeparator()
+	builder.beginArray()
+	for recIndex, rec := range r.records {
+		// another row
+		if recIndex != 0 {
+			builder.valueSeparator()
+		}
+		builder.beginObject()
+		// columns and values
+		for colIndex, col := range r.columns {
+			if colIndex != 0 {
+				builder.valueSeparator()
+			}
+			builder.nameValue(col.name, rec.getValue(colIndex))
+		}
+		builder.endObject()
+	}
+	builder.endArray()
+}
+
+func (r *sqlSelectResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "select")
+	builder.valueSeparator()
+	r.data(builder)
+	builder.endObject()
+	return builder.getNetworkBytes()
 }
 
 func (r *sqlSelectResponse) copyRecordData(source *record) {

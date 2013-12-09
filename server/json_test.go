@@ -23,10 +23,10 @@ import "encoding/json"
 
 func validateBuilder(builder *JSONBuilder, t *testing.T) {
 	var v interface{}
-	err := json.Unmarshal(builder.GetBytes(), &v)
+	err := json.Unmarshal(builder.getBytes(), &v)
 	if err != nil {
 		t.Error("failed to validate JSONBuilder:", err)
-		t.Error(string(builder.GetBytes()))
+		t.Error(string(builder.getBytes()))
 	}
 }
 
@@ -41,6 +41,16 @@ func TestObject(t *testing.T) {
 	builder := new(JSONBuilder)
 	builder.beginObject()
 	builder.nameValue("status", "ok")
+	builder.endObject()
+	validateBuilder(builder, t)
+}
+
+func TestInt(t *testing.T) {
+	builder := new(JSONBuilder)
+	builder.beginObject()
+	builder.string("rows")
+	builder.nameSeparator()
+	builder.int(123567)
 	builder.endObject()
 	validateBuilder(builder, t)
 }

@@ -176,15 +176,18 @@ func TestTableSqlSelect1(t *testing.T) {
 	validateSqlSelect(t, res, 1, 4)
 
 	res = selectHelper(tbl, " select * from stocks where id = 0")
+	validateResponseJSON(res, t)
 	validateSqlSelect(t, res, 1, 4)
 	//
 	insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, 'TECH') ")
 
 	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelect(t, res, 2, 5)
+	validateResponseJSON(res, t)
 
 	res = selectHelper(tbl, " select * from stocks where id = 1")
 	validateSqlSelect(t, res, 1, 5)
+	validateResponseJSON(res, t)
 }
 
 // UPDATE
