@@ -524,6 +524,7 @@ func validateSqlActionAddResponse(t *testing.T, sender *responseSender, pubsubid
 		if l != records {
 			t.Errorf("invalid sqlActionAddResponse records expected:%d but got:%d", records, l)
 		}
+		validateResponseJSON(t, res)
 	case *errorResponse:
 		x := res.(*errorResponse)
 		t.Errorf(x.msg)
@@ -594,7 +595,7 @@ func validateActionInsert(t *testing.T, senders []*responseSender) {
 		}
 		switch res.(type) {
 		case *sqlActionInsertResponse:
-
+			validateResponseJSON(t, res)
 		case *errorResponse:
 			x := res.(*errorResponse)
 			t.Errorf(x.msg)

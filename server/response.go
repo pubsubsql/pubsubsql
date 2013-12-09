@@ -244,14 +244,36 @@ type sqlActionDataResponse struct {
 	pubsubid uint64
 }
 
+func (r *sqlActionDataResponse) toNetworkReadyJSONHelper(act string) []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, act)
+	builder.valueSeparator()
+	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.valueSeparator()
+	r.data(builder)
+	builder.endObject()
+	return builder.getNetworkBytes()
+}
+
 // sqlActionAddResponse
 type sqlActionAddResponse struct {
 	sqlActionDataResponse
 }
 
+func (r *sqlActionAddResponse) toNetworkReadyJSON() []byte {
+	return r.toNetworkReadyJSONHelper("add")
+}
+
 // sqlActionInsertResponse
 type sqlActionInsertResponse struct {
 	sqlActionDataResponse
+}
+
+func (r *sqlActionInsertResponse) toNetworkReadyJSON() []byte {
+	return r.toNetworkReadyJSONHelper("add")
 }
 
 // sqlActonDeleteResponse
