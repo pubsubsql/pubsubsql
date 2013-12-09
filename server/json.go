@@ -26,69 +26,70 @@ type JSONBuilder struct {
 
 // implementation for string function was copied from go source code
 var hex = "0123456789abcdef"
-func (j *JSONBuilder) string(s string) (int) {
-    len0 := j.Len() 
-    j.WriteByte('"')
-    start := 0
-    for i := 0; i < len(s); {
-        if b := s[i]; b < utf8.RuneSelf {
-            if 0x20 <= b && b != '\\' && b != '"' && b != '<' && b != '>' {
-                i++     
-                continue
-            }       
-            if start < i {
-                j.WriteString(s[start:i])
-            }       
-            switch b {
-            case '\\', '"':
-                j.WriteByte('\\')
-                j.WriteByte(b)
-            case '\n':
-                j.WriteByte('\\')
-                j.WriteByte('n')
-            case '\r':
-                j.WriteByte('\\')
-                j.WriteByte('r')
-            default:
-                // This encodes bytes < 0x20 except for \n and \r, 
-                // as well as < and >. The latter are escaped because they
-                // can lead to security holes when user-controlled strings 
-                // are rendered into JSON and served to some browsers.
-                j.WriteString(`\u00`)
-                j.WriteByte(hex[b>>4])
-                j.WriteByte(hex[b&0xF])
-            }       
-            i++     
-            start = i
-            continue
-        }       
-        c, size := utf8.DecodeRuneInString(s[i:])
-        if c == utf8.RuneError && size == 1 {
+
+func (j *JSONBuilder) string(s string) int {
+	len0 := j.Len()
+	j.WriteByte('"')
+	start := 0
+	for i := 0; i < len(s); {
+		if b := s[i]; b < utf8.RuneSelf {
+			if 0x20 <= b && b != '\\' && b != '"' && b != '<' && b != '>' {
+				i++
+				continue
+			}
+			if start < i {
+				j.WriteString(s[start:i])
+			}
+			switch b {
+			case '\\', '"':
+				j.WriteByte('\\')
+				j.WriteByte(b)
+			case '\n':
+				j.WriteByte('\\')
+				j.WriteByte('n')
+			case '\r':
+				j.WriteByte('\\')
+				j.WriteByte('r')
+			default:
+				// This encodes bytes < 0x20 except for \n and \r, 
+				// as well as < and >. The latter are escaped because they
+				// can lead to security holes when user-controlled strings 
+				// are rendered into JSON and served to some browsers.
+				j.WriteString(`\u00`)
+				j.WriteByte(hex[b>>4])
+				j.WriteByte(hex[b&0xF])
+			}
+			i++
+			start = i
+			continue
+		}
+		c, size := utf8.DecodeRuneInString(s[i:])
+		if c == utf8.RuneError && size == 1 {
 			j.err = true
-        }       
-        i += size 
-    }
-    if start < len(s) {
-        j.WriteString(s[start:])
-    }
-    j.WriteByte('"')
-    return j.Len() - len0
+		}
+		i += size
+	}
+	if start < len(s) {
+		j.WriteString(s[start:])
+	}
+	j.WriteByte('"')
+	return j.Len() - len0
 }
 
 func (j *JSONBuilder) beginArray() {
-	j.WriteByte('[')	
+	j.WriteByte('[')
 }
 
 func (j *JSONBuilder) beginObject() {
-	j.WriteByte('{')	
+	j.WriteByte('{')
 }
-  
+
 func (j *JSONBuilder) endArray() {
-	j.WriteByte(']')	
+	j.WriteByte(']')
 }
 
 func (j *JSONBuilder) endObject() {
-	j.WriteByte('}')	
+	j.WriteByte('}')
 }
 
 func (j *JSONBuilder) nameSeparator() {
@@ -99,11 +100,17 @@ func (j *JSONBuilder) valueSeparator() {
 	j.WriteByte(',')
 }
 
-var errorString = `{ "status":"error" "msg":"Failed to build json document due to invalid utf8 string."`
-func (j *JSONBuilder) Bytes() ([]byte) {
-	if j.err {
-		return []byte(errorString)
-	}				
-	return j.Bytes()	
+func (j *JSONBuilder) nameValue(name string, value string) {
+	j.string(name)
+	j.nameSeparator()
+	j.string(value)
 }
 
+var errorString = `{ "status":"error" "msg":"Failed to build json document due to invalid utf8 string."`
+
+func (j *JSONBuilder) GetBytes() []byte {
+	if j.err {
+		return []byte(errorString)
+	}
+	return j.Bytes()
+}
