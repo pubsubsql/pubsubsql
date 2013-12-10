@@ -20,36 +20,39 @@ import "net"
 import "log"
 
 type network struct {
-	listener net.Listener	
+	listener net.Listener
 	stopFlag bool
-	quit chan int
+	quit     chan int
 }
 
 func newNetwork() *network {
-	return &network {
+	return &network{
 		listener: nil,
 		stopFlag: false,
-		quit: make(chan int),
+		quit:     make(chan int),
 	}
 }
 
 func (n *network) start(address string) bool {
-	listener, err := net.Listen("tcp", address)	
+	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		log.Println("Error listening to incoming connections ", err.Error()) 
+		log.Println("Error listening to incoming connections ", err.Error())
 		return false
 	}
 	n.listener = listener
 	// accept connections
 	acceptor := func() {
-		conn, err := n.listener.Accept()		
-		if n.stopFlag {
-			return
-		}
-		if err == nil {
-			go n.handleConnection(conn)
-		} else {
-			log.Println("Error accepting client connection", err.Error()) 
+		for {
+			conn, err := n.listener.Accept()
+			if n.stopFlag {
+				close(n.quit)
+				return
+			}
+			if err == nil {
+				go n.handleConnection(conn)
+			} else {
+				log.Println("Error accepting client connection", err.Error())
+			}
 		}
 	}
 	go acceptor()
@@ -68,4 +71,3 @@ func (n *network) stop() {
 func (n *network) handleConnection(conn net.Conn) {
 
 }
-

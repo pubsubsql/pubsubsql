@@ -133,13 +133,13 @@ type sqlSelectResponse struct {
 
 func row(builder *JSONBuilder, columns []*column, rec *record) {
 	builder.beginObject()
-		// columns and values
-		for colIndex, col := range columns {
-			if colIndex != 0 {
-				builder.valueSeparator()
-			}
-			builder.nameValue(col.name, rec.getValue(colIndex))
+	// columns and values
+	for colIndex, col := range columns {
+		if colIndex != 0 {
+			builder.valueSeparator()
 		}
+		builder.nameValue(col.name, rec.getValue(colIndex))
+	}
 	builder.endObject()
 }
 
@@ -383,4 +383,3 @@ func (r *sqlUnsubscribeResponse) toNetworkReadyJSON() []byte {
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
-
