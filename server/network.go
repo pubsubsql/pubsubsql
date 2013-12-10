@@ -19,17 +19,50 @@ package pubsubsql
 import "net"
 import "log"
 
+//import "encoding/binary"
+
+/*
+func (b *networkBuffer) readHeader() {
+	b.read = binary.LittleEndian.Uint32(b.header)
+} 
+*/
+
+// networkContext
+type networkContext struct {
+	stoper *Stoper
+	router *requestRouter
+}
+
+func newNetworkContextStub() *networkContext {
+	stoper := new(Stoper)
+	//
+	datasrv := newDataService(1000, stoper)
+	go datasrv.run()
+	//
+	router := newRequestRouter(datasrv)
+	//
+	context := new(networkContext)
+	context.stoper = stoper
+	context.router = router
+	//
+	return context
+}
+
+// network
+
 type network struct {
 	listener net.Listener
 	stopFlag bool
 	quit     chan int
+	context  *networkContext
 }
 
-func newNetwork() *network {
+func newNetwork(context *networkContext) *network {
 	return &network{
 		listener: nil,
 		stopFlag: false,
 		quit:     make(chan int),
+		context:  context,
 	}
 }
 
@@ -40,16 +73,20 @@ func (n *network) start(address string) bool {
 		return false
 	}
 	n.listener = listener
+	var connectionId uint64 = 0
 	// accept connections
 	acceptor := func() {
 		for {
 			conn, err := n.listener.Accept()
+			// stop was called
 			if n.stopFlag {
 				close(n.quit)
 				return
 			}
 			if err == nil {
-				go n.handleConnection(conn)
+				connectionId++
+				c := newNetworkConnection(conn, n.context, connectionId)
+				go c.run()
 			} else {
 				log.Println("Error accepting client connection", err.Error())
 			}
@@ -68,6 +105,33 @@ func (n *network) stop() {
 	}
 }
 
-func (n *network) handleConnection(conn net.Conn) {
+//
+
+type networkConnection struct {
+	conn   net.Conn
+	stoper *Stoper
+	router *requestRouter
+	sender *responseSender
+}
+
+func newNetworkConnection(conn net.Conn, context *networkContext, connectionId uint64) *networkConnection {
+	return &networkConnection{
+		conn:   conn,
+		stoper: context.stoper,
+		router: context.router,
+		sender: &responseSender{sender: make(chan response, 1000), connectionId: connectionId},
+	}
+}
+
+func (c *networkConnection) run() {
+	go c.read()
+	c.write()
+}
+
+func (c *networkConnection) read() {
+
+}
+
+func (c *networkConnection) write() {
 
 }

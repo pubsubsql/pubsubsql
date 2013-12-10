@@ -19,7 +19,7 @@ package pubsubsql
 import "testing"
 
 func TestNetworkStartStop(t *testing.T) {
-	n := newNetwork()
+	n := newNetwork(nil)
 	if !n.start("localhost:54321") {
 		t.Error(`network.start("localhost:54321") failed`)
 	}
