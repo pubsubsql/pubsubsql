@@ -116,6 +116,7 @@ func (n *network) start(address string) bool {
 				return
 			}
 			if err == nil {
+				debug("new network connection")
 				connectionId++
 				c := newNetworkConnection(conn, n.context, connectionId, n)
 				n.addConnection(c)
@@ -172,8 +173,6 @@ func (c *networkConnection) getConnectionId() uint64 {
 func (c *networkConnection) run() {
 	go c.read()
 	c.write()
-	c.close()
-	c.close()
 }
 
 func (c *networkConnection) read() {

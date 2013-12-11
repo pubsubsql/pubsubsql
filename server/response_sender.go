@@ -16,11 +16,18 @@
 
 package pubsubsql
 
-// TODO design and implement
+const (
+	quitBySender int = iota
+	quitByNetReader
+	quitByNetWriter
+	quitByNetwork
+)
+
 // responseSender is responsible for channeling reponses to client connection
 type responseSender struct {
 	sender       chan response // channel to publish responses to
 	connectionId uint64
+	quiter       *QuitChan
 }
 
 // factory
@@ -28,14 +35,24 @@ func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
 		sender:       make(chan response, 1000),
 		connectionId: connectionId,
+		quiter:       newQuitChan(),
 	}
 }
 
 func (s *responseSender) send(r response) bool {
 	select {
 	case s.sender <- r:
-		return true
+		if !s.quiter.IsQuit() {
+			return true
+		}
+		debug("sender IsQuit")
+	case <-s.quiter.Chan():
+		debug("sender quit")
 	default:
+		debug("sender queue is full ")
+		// notify client connection that it needs to close due to inability to 
+		// recv responses in a timely manner
+		s.quiter.Quit(quitBySender)
 	}
 	return false
 }

@@ -19,34 +19,38 @@ package pubsubsql
 import "sync"
 
 type QuitChan struct {
-	quit		chan int
-	isquit		bool
-	mutex	    *sync.Mutex 	
+	quit       chan int
+	isquit     bool
+	mutex      *sync.Mutex
+	quitCookie int
 }
 
 // factory
 func newQuitChan() *QuitChan {
 	return &QuitChan{
-		quit: make(chan int, 1),
+		quit:   make(chan int),
 		isquit: false,
 	}
 }
 
 func (q *QuitChan) Quit(quitCookie int) {
 	q.mutex.Lock()
-	if !q.isquit 	{
-		quit <- quitCookie
+	if !q.isquit {
+		q.quitCookie = quitCookie
 		q.isquit = true
 		close(q.quit)
 	}
 	q.mutex.Unlock()
 }
 
-func (q *QuitChan) Chan() (chan int) {
-	return q.quit 
+func (q *QuitChan) Chan() chan int {
+	return q.quit
 }
 
 func (q *QuitChan) IsQuit() bool {
-	return q.isquit 
+	return q.isquit
 }
 
+func (q *QuitChan) QuitCookie() int {
+	return q.quitCookie
+}

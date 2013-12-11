@@ -18,6 +18,7 @@ package pubsubsql
 
 import "testing"
 import "time"
+import "net"
 
 func TestNetworkStartStop(t *testing.T) {
 	n := newNetwork(nil)
@@ -31,7 +32,15 @@ func TestNetworkConnections(t *testing.T) {
 	context := newNetworkContextStub()
 	n := newNetwork(context)
 	n.start("localhost:54321")
-
+	c, err := net.Dial("tcp", "localhost:54321")
+	if err != nil {
+		t.Error(err)
+	}
+	time.Sleep(time.Millisecond * 1000)
+	if n.connectionCount() != 1 {
+		t.Error("Expected 1 network connection")
+	}
 	n.stop()
-	context.stoper.Stop(time.Millisecond * 2000)
+	context.stoper.Stop(time.Millisecond * 1000)
+	c.Close()
 }
