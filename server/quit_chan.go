@@ -21,12 +21,12 @@ import "sync"
 type QuitChan struct {
 	quit       chan int
 	isquit     bool
-	mutex      *sync.Mutex
+	mutex      sync.Mutex
 	quitCookie int
 }
 
 // factory
-func newQuitChan() *QuitChan {
+func NewQuitChan() *QuitChan {
 	return &QuitChan{
 		quit:   make(chan int),
 		isquit: false,

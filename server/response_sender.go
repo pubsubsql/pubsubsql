@@ -35,7 +35,7 @@ func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
 		sender:       make(chan response, 1000),
 		connectionId: connectionId,
-		quiter:       newQuitChan(),
+		quiter:       NewQuitChan(),
 	}
 }
 
