@@ -18,6 +18,7 @@ package pubsubsql
 
 import "net"
 import "log"
+import "sync"
 
 //import "encoding/binary"
 
@@ -50,11 +51,41 @@ func newNetworkContextStub() *networkContext {
 
 // network
 
+type networkConnectionContainer interface {
+	removeConnection(*networkConnection)
+}
+
 type network struct {
+	networkConnectionContainer
+	mutex       sync.Mutex
+	connections map[uint64]*networkConnection
+	//
 	listener net.Listener
 	stopFlag bool
 	quit     chan int
 	context  *networkContext
+}
+
+func (n *network) addConnection(c *networkConnection) {
+	n.mutex.Lock()
+	if n.connections == nil {
+		n.connections = make(map[uint64]*networkConnection)
+	}
+	n.connections[c.getConnectionId()] = c
+	n.mutex.Unlock()
+}
+
+func (n *network) removeConnection(c *networkConnection) {
+	n.mutex.Lock()
+	delete(n.connections, c.getConnectionId())
+	n.mutex.Unlock()
+}
+
+func (n *network) connectionCount() int {
+	n.mutex.Lock()
+	count := len(n.connections)
+	n.mutex.Unlock()
+	return count
 }
 
 func newNetwork(context *networkContext) *network {
@@ -85,7 +116,8 @@ func (n *network) start(address string) bool {
 			}
 			if err == nil {
 				connectionId++
-				c := newNetworkConnection(conn, n.context, connectionId)
+				c := newNetworkConnection(conn, n.context, connectionId, n)
+				n.addConnection(c)
 				go c.run()
 			} else {
 				log.Println("Error accepting client connection", err.Error())
@@ -108,14 +140,16 @@ func (n *network) stop() {
 //
 
 type networkConnection struct {
+	parent networkConnectionContainer
 	conn   net.Conn
 	stoper *Stoper
 	router *requestRouter
 	sender *responseSender
 }
 
-func newNetworkConnection(conn net.Conn, context *networkContext, connectionId uint64) *networkConnection {
+func newNetworkConnection(conn net.Conn, context *networkContext, connectionId uint64, parent networkConnectionContainer) *networkConnection {
 	return &networkConnection{
+		parent: parent,
 		conn:   conn,
 		stoper: context.stoper,
 		router: context.router,
@@ -123,9 +157,22 @@ func newNetworkConnection(conn net.Conn, context *networkContext, connectionId u
 	}
 }
 
+func (c *networkConnection) close() {
+	if c.conn != nil {
+		c.parent.removeConnection(c)
+		c.conn.Close()
+	}
+}
+
+func (c *networkConnection) getConnectionId() uint64 {
+	return c.sender.connectionId
+}
+
 func (c *networkConnection) run() {
 	go c.read()
 	c.write()
+	c.close()
+	c.close()
 }
 
 func (c *networkConnection) read() {
