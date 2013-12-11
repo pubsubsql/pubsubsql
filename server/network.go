@@ -19,12 +19,13 @@ package pubsubsql
 import "net"
 import "log"
 import "sync"
+import "encoding/binary"
+import "errors"
 
 //import "encoding/binary"
 
 /*
 func (b *networkBuffer) readHeader() {
-	b.read = binary.LittleEndian.Uint32(b.header)
 } 
 */
 
@@ -175,7 +176,78 @@ func (c *networkConnection) run() {
 	c.write()
 }
 
+func readHeader(conn net.Conn, bytes []byte) (uint32, error) {
+	n, err := conn.Read(bytes[0:4])
+	if err != nil {
+		log.Println("Error reading from network connection: ", err.Error())
+		return 0, err
+	}
+	if n < 4 {
+		err = errors.New("Failed to read header.")
+		log.Println("Error reading from network connection: ", err.Error())
+		return 0, err
+	}
+	header := binary.LittleEndian.Uint32(bytes)
+	return header, nil
+}
+
+func (c *networkConnection) readData(bytes []byte) error {
+	left := len(bytes)
+	n := 0
+	var err error
+	for left > 0 {
+		if c.sender.quiter.IsQuit() {
+			err = errors.New("Read was interupted by quit event.")
+			return err
+		}
+		bytes = bytes[n:]
+		n, err = c.conn.Read(bytes)
+		if err != nil {
+			log.Println("Error reading from network connection: ", err.Error())
+			return err
+		}
+		left = left - n
+	}
+	return nil
+}
+
 func (c *networkConnection) read() {
+	defer c.close()
+	var max uint32 = 2048
+	size := max + 4
+	bytes := make([]byte, size, size)
+	for {
+		if c.sender.quiter.IsQuit() {
+			return
+		}
+		// read header
+		header, err := readHeader(c.conn, bytes)
+		if err != nil {
+			return
+		}
+		if header > max {
+			log.Println("Error reading from network connection: message size exceedes max allowed value: ", header)
+			return
+		}
+		// read data
+		data := bytes[0:header]
+		err = c.readData(data)
+		if err != nil {
+			return
+		}
+		// convert message to string
+		message := string(data)
+		debug(message)
+		/*
+			tokens := newTokens()
+			if !lex(message, tokens) {
+				// scan error
+				// send error response to the client			
+			}	
+			// 
+		*/
+
+	}
 
 }
 
