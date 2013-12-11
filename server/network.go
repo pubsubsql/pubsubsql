@@ -35,7 +35,7 @@ type networkContext struct {
 }
 
 func newNetworkContextStub() *networkContext {
-	stoper := new(Stoper)
+	stoper := NewStoper()
 	//
 	datasrv := newDataService(1000, stoper)
 	go datasrv.run()
@@ -111,6 +111,7 @@ func (n *network) start(address string) bool {
 			conn, err := n.listener.Accept()
 			// stop was called
 			if n.stopFlag {
+				debug("stop was called")
 				close(n.quit)
 				return
 			}

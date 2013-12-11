@@ -50,11 +50,11 @@ func TestMultiGoroutines(t *testing.T) {
 	perLevel := 5
 	go testStoper(stoper, levels, perLevel)
 	time.Sleep(time.Millisecond * 500)
-	fmt.Println("goroutines in progress:", stoper.Counter())
+	debug(fmt.Sprint("goroutines in progress:", stoper.Counter()))
 	if !stoper.Stop(time.Millisecond * 1000) {
 		t.Errorf("stoper.Stop() expected true but got false")
 	}
-	fmt.Println("goroutines in progress:", stoper.Counter())
+	debug(fmt.Sprint("goroutines in progress:", stoper.Counter()))
 }
 
 func TestMultiGoroutinesMultiCores(t *testing.T) {
@@ -64,9 +64,9 @@ func TestMultiGoroutinesMultiCores(t *testing.T) {
 	perLevel := 6
 	go testStoper(stoper, levels, perLevel)
 	time.Sleep(time.Millisecond * 500)
-	fmt.Println("goroutines in progress:", stoper.Counter())
+	debug(fmt.Sprint("goroutines in progress:", stoper.Counter()))
 	if !stoper.Stop(time.Millisecond * 1000) {
 		t.Errorf("stoper.Stop() expected true but got false")
 	}
-	fmt.Println("goroutines in progress:", stoper.Counter())
+	debug(fmt.Sprint("goroutines in progress:", stoper.Counter()))
 }

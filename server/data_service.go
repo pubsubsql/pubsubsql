@@ -54,8 +54,13 @@ func (d *dataService) run() {
 	for {
 		select {
 		case item := <-d.requests:
+			if d.stoper.isStoping() {
+				debug("data service exited isStoping")
+				return
+			}
 			d.onSqlRequest(item)
 		case <-d.stoper.GetChan():
+			debug("data service exited stoped")
 			return
 		}
 	}

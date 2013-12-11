@@ -17,6 +17,7 @@
 package pubsubsql
 
 import "testing"
+import "time"
 
 func TestNetworkStartStop(t *testing.T) {
 	n := newNetwork(nil)
@@ -24,4 +25,13 @@ func TestNetworkStartStop(t *testing.T) {
 		t.Error(`network.start("localhost:54321") failed`)
 	}
 	n.stop()
+}
+
+func TestNetworkConnections(t *testing.T) {
+	context := newNetworkContextStub()
+	n := newNetwork(context)
+	n.start("localhost:54321")
+
+	n.stop()
+	context.stoper.Stop(time.Millisecond * 2000)
 }

@@ -753,8 +753,13 @@ func (t *table) run() {
 	for {
 		select {
 		case item := <-t.requests:
+			if t.stoper.isStoping() {
+				debug("table exited isStoping")
+				return
+			}
 			t.onSqlRequest(item.req, item.sender)
 		case <-t.stoper.GetChan():
+			debug("table exited stoped")
 			return
 		}
 	}

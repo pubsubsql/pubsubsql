@@ -78,4 +78,6 @@ func TestDataService(t *testing.T) {
 	dataSrv.accept(sqlHelper(" unsubscribe from stocks where pubsubid = 1 ", sender))
 	res = sender.recv() // first is action delete
 	validateSqlUnsubscribe(t, res, 1)
+
+	stoper.Stop(time.Millisecond * 1000)
 }

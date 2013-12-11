@@ -16,8 +16,6 @@
 
 package pubsubsql
 
-import "fmt"
-
 // pubsub
 type pubSub struct {
 	head *subscription
@@ -62,7 +60,7 @@ func (p *pubSub) count() int {
 
 func (p *pubSub) publish(r response) {
 	f := func(s *subscription) bool {
-		fmt.Println(r)
+		debug(r.String())
 		return true
 	}
 	p.visit(f)

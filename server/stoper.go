@@ -19,10 +19,15 @@ package pubsubsql
 import "sync/atomic"
 import "time"
 
+func debug(str string) {
+	println("debug: " + str)
+}
+
 // Stoper implements shutdown protocol to make sure that all active goroutines exit gracefully.
 type Stoper struct {
 	counter int64
 	channel chan int
+	stoping bool
 }
 
 // Stoper factory.
@@ -30,6 +35,7 @@ func NewStoper() *Stoper {
 	return &Stoper{
 		counter: 0,
 		channel: make(chan int),
+		stoping: false,
 	}
 }
 
@@ -53,6 +59,7 @@ func (s *Stoper) GetChan() chan int {
 // and waits for all go routines to exit until timeouti.
 // Returns false when timed out.
 func (s *Stoper) Stop(timeout time.Duration) bool {
+	s.stoping = true
 	close(s.channel)
 	t := time.Now()
 	for atomic.LoadInt64(&s.counter) > 0 {
@@ -62,6 +69,10 @@ func (s *Stoper) Stop(timeout time.Duration) bool {
 		}
 	}
 	return true
+}
+
+func (s *Stoper) isStoping() bool {
+	return s.stoping
 }
 
 // Counter returns number of of participating goroutines.
