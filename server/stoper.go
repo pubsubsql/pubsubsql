@@ -65,6 +65,10 @@ func (s *Stoper) GetChan() chan int {
 func (s *Stoper) Stop(timeout time.Duration) bool {
 	s.stoping = true
 	close(s.channel)
+	return s.Wait(timeout)
+}
+
+func (s *Stoper) Wait(timeout time.Duration) bool {
 	t := time.Now()
 	for atomic.LoadInt64(&s.counter) > 0 {
 		time.Sleep(time.Millisecond * 10)
@@ -75,7 +79,7 @@ func (s *Stoper) Stop(timeout time.Duration) bool {
 	return true
 }
 
-func (s *Stoper) isStoping() bool {
+func (s *Stoper) IsStoping() bool {
 	return s.stoping
 }
 

@@ -21,15 +21,21 @@ import "time"
 import "net"
 
 func TestNetworkStartStop(t *testing.T) {
-	n := newNetwork(nil)
+	context := newNetworkContextStub()
+	s := context.stoper
+	n := newNetwork(context)
 	if !n.start("localhost:54321") {
 		t.Error(`network.start("localhost:54321") failed`)
 	}
+	// shutdown
+	s.Stop(0)
 	n.stop()
+	s.Wait(time.Millisecond * 1000)
 }
 
 func TestNetworkConnections(t *testing.T) {
 	context := newNetworkContextStub()
+	s := context.stoper
 	n := newNetwork(context)
 	n.start("localhost:54321")
 	c, err := net.Dial("tcp", "localhost:54321")
@@ -40,7 +46,9 @@ func TestNetworkConnections(t *testing.T) {
 	if n.connectionCount() != 1 {
 		t.Error("Expected 1 network connection")
 	}
+	// shutdown
+	s.Stop(0)
 	n.stop()
-	context.stoper.Stop(time.Millisecond * 1000)
+	s.Wait(time.Millisecond * 1000)
 	c.Close()
 }

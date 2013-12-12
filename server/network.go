@@ -62,12 +62,13 @@ type network struct {
 	connections map[uint64]*networkConnection
 	//
 	listener net.Listener
-	stopFlag bool
-	quit     chan int
 	context  *networkContext
 }
 
 func (n *network) addConnection(c *networkConnection) {
+	if n.context.stoper.IsStoping() {
+		return
+	}
 	n.mutex.Lock()
 	if n.connections == nil {
 		n.connections = make(map[uint64]*networkConnection)
@@ -78,7 +79,9 @@ func (n *network) addConnection(c *networkConnection) {
 
 func (n *network) removeConnection(c *networkConnection) {
 	n.mutex.Lock()
-	delete(n.connections, c.getConnectionId())
+	if n.connections != nil {
+		delete(n.connections, c.getConnectionId())
+	}
 	n.mutex.Unlock()
 }
 
@@ -89,11 +92,18 @@ func (n *network) connectionCount() int {
 	return count
 }
 
+func (n *network) closeConnections() {
+	n.mutex.Lock()
+	for _, c := range n.connections {
+		c.close()
+	}
+	n.connections = nil
+	n.mutex.Unlock()
+}
+
 func newNetwork(context *networkContext) *network {
 	return &network{
 		listener: nil,
-		stopFlag: false,
-		quit:     make(chan int),
 		context:  context,
 	}
 }
@@ -108,12 +118,14 @@ func (n *network) start(address string) bool {
 	var connectionId uint64 = 0
 	// accept connections
 	acceptor := func() {
+		s := n.context.stoper
+		s.Enter()
+		defer s.Leave()
 		for {
 			conn, err := n.listener.Accept()
 			// stop was called
-			if n.stopFlag {
+			if s.IsStoping() {
 				debug("stop was called")
-				close(n.quit)
 				return
 			}
 			if err == nil {
@@ -133,11 +145,10 @@ func (n *network) start(address string) bool {
 }
 
 func (n *network) stop() {
-	n.stopFlag = true
 	if n.listener != nil {
 		n.listener.Close()
-		<-n.quit
 	}
+	n.closeConnections()
 }
 
 //
@@ -156,15 +167,17 @@ func newNetworkConnection(conn net.Conn, context *networkContext, connectionId u
 		conn:   conn,
 		stoper: context.stoper,
 		router: context.router,
-		sender: &responseSender{sender: make(chan response, 1000), connectionId: connectionId},
+		sender: newResponseSenderStub(connectionId),
 	}
 }
 
+func (c *networkConnection) closeAndRemove() {
+	c.parent.removeConnection(c)
+	c.close()
+}
+
 func (c *networkConnection) close() {
-	if c.conn != nil {
-		c.parent.removeConnection(c)
-		c.conn.Close()
-	}
+	c.conn.Close()
 }
 
 func (c *networkConnection) getConnectionId() uint64 {
@@ -179,12 +192,10 @@ func (c *networkConnection) run() {
 func readHeader(conn net.Conn, bytes []byte) (uint32, error) {
 	n, err := conn.Read(bytes[0:4])
 	if err != nil {
-		log.Println("Error reading from network connection: ", err.Error())
 		return 0, err
 	}
 	if n < 4 {
 		err = errors.New("Failed to read header.")
-		log.Println("Error reading from network connection: ", err.Error())
 		return 0, err
 	}
 	header := binary.LittleEndian.Uint32(bytes)
@@ -203,7 +214,6 @@ func (c *networkConnection) readData(bytes []byte) error {
 		bytes = bytes[n:]
 		n, err = c.conn.Read(bytes)
 		if err != nil {
-			log.Println("Error reading from network connection: ", err.Error())
 			return err
 		}
 		left = left - n
@@ -211,29 +221,38 @@ func (c *networkConnection) readData(bytes []byte) error {
 	return nil
 }
 
+func (c *networkConnection) shouldStop() bool {
+	return c.sender.quiter.IsQuit() || c.stoper.IsStoping()
+}
+
 func (c *networkConnection) read() {
-	defer c.close()
+	s := c.stoper
+	s.Enter()
+	defer s.Leave()
 	var max uint32 = 2048
 	size := max + 4
 	bytes := make([]byte, size, size)
+	var err error
 	for {
-		if c.sender.quiter.IsQuit() {
-			return
+		err = nil
+		if c.shouldStop() {
+			break
 		}
 		// read header
-		header, err := readHeader(c.conn, bytes)
+		var header uint32
+		header, err = readHeader(c.conn, bytes)
 		if err != nil {
-			return
+			break
 		}
 		if header > max {
-			log.Println("Error reading from network connection: message size exceedes max allowed value: ", header)
-			return
+			err = errors.New("Error reading from network connection: message size exceedes max allowed value of 2048 bytes")
+			break
 		}
 		// read data
 		data := bytes[0:header]
 		err = c.readData(data)
 		if err != nil {
-			return
+			break
 		}
 		// convert message to string
 		message := string(data)
@@ -246,9 +265,15 @@ func (c *networkConnection) read() {
 			}	
 			// 
 		*/
-
 	}
-
+	if !c.shouldStop() {
+		if err != nil {
+			log.Println(err.Error())
+			// notify writer and sender that we are done
+			c.sender.quiter.Quit(quitByNetReader)
+		}
+	}
+	c.closeAndRemove()
 }
 
 func (c *networkConnection) write() {

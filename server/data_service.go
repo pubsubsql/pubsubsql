@@ -49,17 +49,18 @@ func (d *dataService) accept(r *requestItem) {
 
 // runs dataService event loop
 func (d *dataService) run() {
-	d.stoper.Enter()
-	defer d.stoper.Leave()
+	s := d.stoper
+	s.Enter()
+	defer s.Leave()
 	for {
 		select {
 		case item := <-d.requests:
-			if d.stoper.isStoping() {
+			if s.IsStoping() {
 				debug("data service exited isStoping")
 				return
 			}
 			d.onSqlRequest(item)
-		case <-d.stoper.GetChan():
+		case <-s.GetChan():
 			debug("data service exited stoped")
 			return
 		}

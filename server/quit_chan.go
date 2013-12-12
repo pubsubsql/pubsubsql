@@ -28,8 +28,9 @@ type QuitChan struct {
 // factory
 func NewQuitChan() *QuitChan {
 	return &QuitChan{
-		quit:   make(chan int),
-		isquit: false,
+		quit:       make(chan int),
+		isquit:     false,
+		quitCookie: -1,
 	}
 }
 

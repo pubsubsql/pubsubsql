@@ -748,17 +748,18 @@ func (t *table) sqlUnsubscribe(req *sqlUnsubscribeRequest) response {
 
 func (t *table) run() {
 	//
-	t.stoper.Enter()
-	defer t.stoper.Leave()
+	s := t.stoper
+	s.Enter()
+	defer s.Leave()
 	for {
 		select {
 		case item := <-t.requests:
-			if t.stoper.isStoping() {
+			if s.IsStoping() {
 				debug("table exited isStoping")
 				return
 			}
 			t.onSqlRequest(item.req, item.sender)
-		case <-t.stoper.GetChan():
+		case <-s.GetChan():
 			debug("table exited stoped")
 			return
 		}
