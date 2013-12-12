@@ -29,6 +29,37 @@ func (b *networkBuffer) readHeader() {
 } 
 */
 
+type tokensProducerConsumer struct {
+	idx    int
+	tokens []*token
+}
+
+func newTokens() *tokensProducerConsumer {
+	return &tokensProducerConsumer{
+		idx:    0,
+		tokens: make([]*token, 0, 30),
+	}
+}
+
+func reuseTokens(pc *tokensProducerConsumer) {
+	pc.idx = 0
+}
+
+func (c *tokensProducerConsumer) Consume(t *token) {
+	c.tokens = append(c.tokens, t)
+}
+
+func (p *tokensProducerConsumer) Produce() *token {
+	if p.idx >= len(p.tokens) {
+		return &token{
+			typ: tokenTypeEOF,
+		}
+	}
+	t := p.tokens[p.idx]
+	p.idx++
+	return t
+}
+
 // networkContext
 type networkContext struct {
 	stoper *Stoper
@@ -189,81 +220,93 @@ func (c *networkConnection) run() {
 	c.write()
 }
 
-func readHeader(conn net.Conn, bytes []byte) (uint32, error) {
-	n, err := conn.Read(bytes[0:4])
+func (c *networkConnection) shouldStop() bool {
+	return c.sender.quiter.IsQuit() || c.stoper.IsStoping()
+}
+
+type IStoper interface {
+	shouldStop() bool
+}
+
+// message reader
+type netMessageReader struct {
+	conn  net.Conn
+	bytes []byte
+	s     IStoper
+}
+
+func newNetMessageReader(conn net.Conn, s IStoper) *netMessageReader {
+	return &netMessageReader{
+		conn:  conn,
+		bytes: make([]byte, 2048, 2048),
+		s:     s,
+	}
+}
+
+func (r *netMessageReader) shouldStop() bool {
+	return r.s != nil && r.s.shouldStop()
+}
+
+func (r *netMessageReader) readMessage() ([]byte, error) {
+	// header
+	n, err := r.conn.Read(r.bytes[0:4])
 	if err != nil {
-		return 0, err
+		return nil, err
 	}
 	if n < 4 {
 		err = errors.New("Failed to read header.")
-		return 0, err
+		return nil, err
 	}
-	header := binary.LittleEndian.Uint32(bytes)
-	return header, nil
-}
-
-func (c *networkConnection) readData(bytes []byte) error {
+	header := binary.LittleEndian.Uint32(r.bytes)
+	// prepare buffer
+	if len(r.bytes) < int(header) {
+		r.bytes = make([]byte, header, header)
+	}
+	// message
+	bytes := r.bytes[:header]
 	left := len(bytes)
-	n := 0
-	var err error
+	message := bytes
 	for left > 0 {
-		if c.sender.quiter.IsQuit() {
+		if r.shouldStop() {
 			err = errors.New("Read was interupted by quit event.")
-			return err
+			return nil, err
 		}
 		bytes = bytes[n:]
-		n, err = c.conn.Read(bytes)
+		n, err = r.conn.Read(bytes)
 		if err != nil {
-			return err
+			return nil, err
 		}
 		left = left - n
 	}
-	return nil
-}
-
-func (c *networkConnection) shouldStop() bool {
-	return c.sender.quiter.IsQuit() || c.stoper.IsStoping()
+	return message, nil
 }
 
 func (c *networkConnection) read() {
 	s := c.stoper
 	s.Enter()
 	defer s.Leave()
-	var max uint32 = 2048
-	size := max + 4
-	bytes := make([]byte, size, size)
+	reader := newNetMessageReader(c.conn, c)
+	//
 	var err error
 	for {
 		err = nil
 		if c.shouldStop() {
 			break
 		}
-		// read header
-		var header uint32
-		header, err = readHeader(c.conn, bytes)
+		var message []byte
+		message, err = reader.readMessage()
+		debug(string(message))
 		if err != nil {
 			break
 		}
-		if header > max {
-			err = errors.New("Error reading from network connection: message size exceedes max allowed value of 2048 bytes")
-			break
-		}
-		// read data
-		data := bytes[0:header]
-		err = c.readData(data)
-		if err != nil {
-			break
-		}
-		// convert message to string
-		message := string(data)
-		debug(message)
 		/*
 			tokens := newTokens()
 			if !lex(message, tokens) {
-				// scan error
+				debug("scan error")
 				// send error response to the client			
+				continue
 			}	
-			// 
+			parse(tokens)
 		*/
 	}
 	if !c.shouldStop() {

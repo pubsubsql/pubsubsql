@@ -18,37 +18,6 @@ package pubsubsql
 
 import "testing"
 
-type tokensProducerConsumer struct {
-	idx    int
-	tokens []*token
-}
-
-func newTokens() *tokensProducerConsumer {
-	return &tokensProducerConsumer{
-		idx:    0,
-		tokens: make([]*token, 0, 30),
-	}
-}
-
-func reuseTokens(pc *tokensProducerConsumer) {
-	pc.idx = 0
-}
-
-func (c *tokensProducerConsumer) Consume(t *token) {
-	c.tokens = append(c.tokens, t)
-}
-
-func (p *tokensProducerConsumer) Produce() *token {
-	if p.idx >= len(p.tokens) {
-		return &token{
-			typ: tokenTypeEOF,
-		}
-	}
-	t := p.tokens[p.idx]
-	p.idx++
-	return t
-}
-
 func expectedError(t *testing.T, a request) {
 	switch a.(type) {
 	case *errorRequest:
