@@ -31,14 +31,14 @@ func validateBuilder(builder *JSONBuilder, t *testing.T) {
 }
 
 func TestEmptyObject(t *testing.T) {
-	builder := new(JSONBuilder)
+	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	builder.endObject()
 	validateBuilder(builder, t)
 }
 
 func TestObject(t *testing.T) {
-	builder := new(JSONBuilder)
+	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	builder.nameValue("status", "ok")
 	builder.endObject()
@@ -46,7 +46,7 @@ func TestObject(t *testing.T) {
 }
 
 func TestInt(t *testing.T) {
-	builder := new(JSONBuilder)
+	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	builder.nameIntValue("rows", 123456)
 	builder.endObject()
@@ -54,7 +54,7 @@ func TestInt(t *testing.T) {
 }
 
 func TestObject2(t *testing.T) {
-	builder := new(JSONBuilder)
+	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	builder.nameValue("status", "ok")
 	builder.valueSeparator()
@@ -64,7 +64,7 @@ func TestObject2(t *testing.T) {
 }
 
 func TestObject3(t *testing.T) {
-	builder := new(JSONBuilder)
+	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	builder.nameValue("status", "ok")
 	builder.valueSeparator()
@@ -80,7 +80,7 @@ func TestObject3(t *testing.T) {
 }
 
 func TestArray(t *testing.T) {
-	builder := new(JSONBuilder)
+	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	builder.nameValue("status", "ok")
 	builder.valueSeparator()

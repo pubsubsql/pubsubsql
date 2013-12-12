@@ -23,7 +23,7 @@ import "encoding/json"
 
 func validateResponseJSON(t *testing.T, res response) {
 	var v interface{}
-	bytes := getJSONFromNetworkBytes(res.toNetworkReadyJSON())
+	bytes := fromNetworkBytes(res.toNetworkReadyJSON())
 	err := json.Unmarshal(bytes, &v)
 	if err != nil {
 		t.Error("failed to validate JSONBuilder:", err)

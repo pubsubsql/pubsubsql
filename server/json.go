@@ -19,14 +19,21 @@ package pubsubsql
 import "bytes"
 import "unicode/utf8"
 import "strconv"
+import "encoding/binary"
 
 type JSONBuilder struct {
 	bytes.Buffer
-	err bool //
+	err bool
 }
 
 func networkReadyJSONBuilder() *JSONBuilder {
-	return new(JSONBuilder)
+	b := new(JSONBuilder)
+	// first four bytes is network header
+	b.WriteByte(0)
+	b.WriteByte(0)
+	b.WriteByte(0)
+	b.WriteByte(0)
+	return b
 }
 
 // implementation for string function was copied from go source code
@@ -121,19 +128,19 @@ func (j *JSONBuilder) nameIntValue(name string, val int) {
 	j.int(val)
 }
 
-var errorString = `{ "status":"error" "msg":"Failed to build json document due to invalid utf8 string."`
+func (j *JSONBuilder) getNetworkBytes() []byte {
+	bytes := j.Bytes()
+	binary.LittleEndian.PutUint32(bytes, uint32(len(bytes)-4))
+	return bytes
+}
 
 func (j *JSONBuilder) getBytes() []byte {
-	if j.err {
-		return []byte(errorString)
+	return fromNetworkBytes(j.getNetworkBytes())
+}
+
+func fromNetworkBytes(bytes []byte) []byte {
+	if len(bytes) > 4 {
+		return bytes[4:]
 	}
-	return j.Bytes()
-}
-
-func (j *JSONBuilder) getNetworkBytes() []byte {
-	return j.getBytes()
-}
-
-func getJSONFromNetworkBytes(bytes []byte) []byte {
-	return bytes
+	return nil
 }

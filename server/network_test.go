@@ -54,8 +54,6 @@ func TestNetworkConnections(t *testing.T) {
 }
 
 func TestNetworkWriteRead(t *testing.T) {
-	debug(string([]byte(str)))
-
 	context := newNetworkContextStub()
 	s := context.stoper
 	n := newNetwork(context)
@@ -77,7 +75,6 @@ func TestNetworkWriteRead(t *testing.T) {
 	}
 	debug(string(message))
 	//
-	time.Sleep(time.Millisecond * 1000)
 	if n.connectionCount() != 1 {
 		t.Error("Expected 1 network connection")
 	}
