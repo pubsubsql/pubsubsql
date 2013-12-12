@@ -26,10 +26,18 @@ func newRequestRouter(dataSrv *dataService) *requestRouter {
 	return &requestRouter{dataSrv: dataSrv}
 }
 
+func (rt *requestRouter) onError(r *requestItem) {
+	ereq := r.req.(*errorRequest)
+	res := newErrorResponse(ereq.err)	
+	r.sender.send(res)	
+}
+
 func (rt *requestRouter) route(r *requestItem) {
 	switch r.req.getRequestType() {
 	case requestTypeSql:
 		rt.dataSrv.accept(r)
+	case requestTypeError:
+		rt.onError(r)
 	default:
 		panic("unsuported request type")
 	}

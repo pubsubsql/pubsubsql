@@ -24,11 +24,6 @@ import "errors"
 
 //import "encoding/binary"
 
-/*
-func (b *networkBuffer) readHeader() {
-} 
-*/
-
 type tokensProducerConsumer struct {
 	idx    int
 	tokens []*token
@@ -313,6 +308,14 @@ func (r *netMessageReaderWriter) readMessage() ([]byte, error) {
 	return message, nil
 }
 
+func (c *networkConnection) route(req request) {
+	item := &requestItem {
+		req: req,
+		sender: c.sender,
+	}		
+	c.router.route(item)	
+}
+
 func (c *networkConnection) read() {
 	s := c.stoper
 	s.Enter()
@@ -330,9 +333,11 @@ func (c *networkConnection) read() {
 		if err != nil {
 			break
 		}
-		//	
-		res := newErrorResponse(string(message))
-		c.sender.sender <- res
+		// parse and route the message
+		pc := newTokens()
+		lex(string(message), pc)
+		req := parse(pc)
+		c.route(req)
 	}
 	if !c.shouldStop() {
 		if err != nil {

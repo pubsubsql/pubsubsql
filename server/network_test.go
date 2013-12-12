@@ -64,7 +64,7 @@ func TestNetworkWriteRead(t *testing.T) {
 	}
 	//
 	rw := newNetMessageReaderWriter(c, nil)
-	message := []byte("Hello World")
+	message := []byte("key stocks ticker")
 	err = rw.writeHeaderAndMessage(message)
 	if err != nil {
 		t.Error(err)
