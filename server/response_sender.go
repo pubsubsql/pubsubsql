@@ -46,7 +46,7 @@ func (s *responseSender) send(r response) bool {
 			return true
 		}
 		debug("sender IsQuit")
-	case <-s.quiter.Chan():
+	case <-s.quiter.GetChan():
 		debug("sender quit")
 	default:
 		debug("sender queue is full ")

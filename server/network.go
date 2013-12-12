@@ -320,21 +320,19 @@ func (c *networkConnection) read() {
 	reader := newNetMessageReaderWriter(c.conn, c)
 	//
 	var err error
+	var message []byte
 	for {
 		err = nil
 		if c.shouldStop() {
 			break
 		}
-		var message []byte
 		message, err = reader.readMessage()
 		if err != nil {
 			break
 		}
 		//	
-		err = reader.writeHeaderAndMessage(message)
-		if err != nil {
-			break
-		}
+		res := newErrorResponse(string(message))
+		c.sender.sender <- res
 	}
 	if !c.shouldStop() {
 		if err != nil {
@@ -347,5 +345,32 @@ func (c *networkConnection) read() {
 }
 
 func (c *networkConnection) write() {
-
+	s := c.stoper
+	s.Enter()
+	defer s.Leave()
+	writer := newNetMessageReaderWriter(c.conn, c)
+	for {
+		select {
+		case res := <-c.sender.sender:
+			if c.shouldStop() {
+				return
+			}
+			err := writer.writeMessage(res.toNetworkReadyJSON())
+			if err != nil {
+				log.Println(err.Error())
+				// notify reader and sender that we are done
+				c.sender.quiter.Quit(quitByNetWriter)
+				c.closeAndRemove()
+				return
+			}
+		case <-s.GetChan():
+			debug("stop event on write")
+			c.closeAndRemove()
+			return
+		case <-c.sender.quiter.GetChan():
+			debug("stop event on write")
+			c.closeAndRemove()
+			return
+		}
+	}
 }

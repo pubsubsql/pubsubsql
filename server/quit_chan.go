@@ -44,7 +44,7 @@ func (q *QuitChan) Quit(quitCookie int) {
 	q.mutex.Unlock()
 }
 
-func (q *QuitChan) Chan() chan int {
+func (q *QuitChan) GetChan() chan int {
 	return q.quit
 }
 

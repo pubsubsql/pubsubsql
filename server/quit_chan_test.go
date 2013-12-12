@@ -24,7 +24,7 @@ func TestQuitChan(t *testing.T) {
 
 	for i := 0; i < 10; i++ {
 		go func() {
-			<-quit.Chan()
+			<-quit.GetChan()
 			if quit.QuitCookie() != 12345 {
 				t.Error("Invalid quit cookie")
 			}
