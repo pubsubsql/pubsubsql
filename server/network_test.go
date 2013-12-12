@@ -52,3 +52,38 @@ func TestNetworkConnections(t *testing.T) {
 	s.Wait(time.Millisecond * 1000)
 	c.Close()
 }
+
+func TestNetworkWriteRead(t *testing.T) {
+	debug(string([]byte(str)))
+
+	context := newNetworkContextStub()
+	s := context.stoper
+	n := newNetwork(context)
+	n.start("localhost:54321")
+	c, err := net.Dial("tcp", "localhost:54321")
+	if err != nil {
+		t.Error(err)
+	}
+	//
+	rw := newNetMessageReaderWriter(c, nil)
+	message := []byte("Hello World")
+	err = rw.writeHeaderAndMessage(message)
+	if err != nil {
+		t.Error(err)
+	}
+	message, err = rw.readMessage()
+	if err != nil {
+		t.Error(err)
+	}
+	debug(string(message))
+	//
+	time.Sleep(time.Millisecond * 1000)
+	if n.connectionCount() != 1 {
+		t.Error("Expected 1 network connection")
+	}
+	// shutdown
+	s.Stop(0)
+	n.stop()
+	s.Wait(time.Millisecond * 1000)
+	c.Close()
+}

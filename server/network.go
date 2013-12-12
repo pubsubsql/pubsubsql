@@ -229,25 +229,56 @@ type IStoper interface {
 }
 
 // message reader
-type netMessageReader struct {
+type netMessageReaderWriter struct {
 	conn  net.Conn
 	bytes []byte
 	s     IStoper
 }
 
-func newNetMessageReader(conn net.Conn, s IStoper) *netMessageReader {
-	return &netMessageReader{
+func newNetMessageReaderWriter(conn net.Conn, s IStoper) *netMessageReaderWriter {
+	return &netMessageReaderWriter{
 		conn:  conn,
 		bytes: make([]byte, 2048, 2048),
 		s:     s,
 	}
 }
 
-func (r *netMessageReader) shouldStop() bool {
+func (r *netMessageReaderWriter) shouldStop() bool {
 	return r.s != nil && r.s.shouldStop()
 }
 
-func (r *netMessageReader) readMessage() ([]byte, error) {
+func (r *netMessageReaderWriter) writeMessage(bytes []byte) error {
+	l := len(bytes)
+	for {
+		if r.shouldStop() {
+			err := errors.New("Write was interupted by quit event.")
+			return err
+		}
+		n, err := r.conn.Write(bytes)
+		if err != nil {
+			return err
+		}
+		if l == 0 {
+			break
+		}
+		l = l - n
+		bytes = bytes[n:]
+	}
+	return nil
+}
+
+// for testing
+func (r *netMessageReaderWriter) writeHeaderAndMessage(bytes []byte) error {
+	header := make([]byte, 4, 4)
+	binary.LittleEndian.PutUint32(header, uint32(len(bytes)))
+	err := r.writeMessage(header)
+	if err != nil {
+		return err
+	}
+	return r.writeMessage(bytes)
+}
+
+func (r *netMessageReaderWriter) readMessage() ([]byte, error) {
 	// header
 	n, err := r.conn.Read(r.bytes[0:4])
 	if err != nil {
@@ -266,6 +297,7 @@ func (r *netMessageReader) readMessage() ([]byte, error) {
 	bytes := r.bytes[:header]
 	left := len(bytes)
 	message := bytes
+	n = 0
 	for left > 0 {
 		if r.shouldStop() {
 			err = errors.New("Read was interupted by quit event.")
@@ -285,7 +317,7 @@ func (c *networkConnection) read() {
 	s := c.stoper
 	s.Enter()
 	defer s.Leave()
-	reader := newNetMessageReader(c.conn, c)
+	reader := newNetMessageReaderWriter(c.conn, c)
 	//
 	var err error
 	for {
@@ -295,19 +327,14 @@ func (c *networkConnection) read() {
 		}
 		var message []byte
 		message, err = reader.readMessage()
-		debug(string(message))
 		if err != nil {
 			break
 		}
-		/*
-			tokens := newTokens()
-			if !lex(message, tokens) {
-				debug("scan error")
-				// send error response to the client			
-				continue
-			}	
-			parse(tokens)
-		*/
+		//	
+		err = reader.writeHeaderAndMessage(message)
+		if err != nil {
+			break
+		}
 	}
 	if !c.shouldStop() {
 		if err != nil {
