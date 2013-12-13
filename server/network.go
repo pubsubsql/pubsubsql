@@ -197,20 +197,29 @@ func newNetworkConnection(conn net.Conn, context *networkContext, connectionId u
 	}
 }
 
-func (c *networkConnection) closeAndRemove() {
+func (c *networkConnection) remove() {
 	c.parent.removeConnection(c)
-	c.close()
-}
-
-func (c *networkConnection) close() {
-	c.conn.Close()
 }
 
 func (c *networkConnection) getConnectionId() uint64 {
 	return c.sender.connectionId
 }
 
+func (c *networkConnection) watchForQuit() {
+	select {
+		case <-c.sender.quiter.GetChan():
+		case <-c.stoper.GetChan():	
+	}
+	c.conn.Close()
+	c.parent.removeConnection(c)
+}
+
+func (c *networkConnection) close() {
+	c.sender.quiter.Quit(0)
+} 
+
 func (c *networkConnection) run() {
+	go c.watchForQuit()	
 	go c.read()
 	c.write()
 }
@@ -346,7 +355,6 @@ func (c *networkConnection) read() {
 			c.sender.quiter.Quit(quitByNetReader)
 		}
 	}
-	c.closeAndRemove()
 }
 
 func (c *networkConnection) write() {
@@ -362,19 +370,18 @@ func (c *networkConnection) write() {
 			}
 			err := writer.writeMessage(res.toNetworkReadyJSON())
 			if err != nil {
-				log.Println(err.Error())
-				// notify reader and sender that we are done
-				c.sender.quiter.Quit(quitByNetWriter)
-				c.closeAndRemove()
+				if !c.shouldStop() {
+					log.Println(err.Error())
+					// notify reader and sender that we are done
+					c.sender.quiter.Quit(quitByNetWriter)
+				}
 				return
 			}
 		case <-s.GetChan():
 			debug("stop event on write")
-			c.closeAndRemove()
 			return
 		case <-c.sender.quiter.GetChan():
 			debug("stop event on write")
-			c.closeAndRemove()
 			return
 		}
 	}

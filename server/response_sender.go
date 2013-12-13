@@ -16,6 +16,8 @@
 
 package pubsubsql
 
+import "log"
+
 const (
 	quitBySender int = iota
 	quitByNetReader
@@ -33,7 +35,7 @@ type responseSender struct {
 // factory
 func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
-		sender:       make(chan response, 10000),
+		sender:       make(chan response, 10),
 		connectionId: connectionId,
 		quiter:       NewQuitChan(),
 	}
