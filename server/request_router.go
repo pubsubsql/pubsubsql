@@ -28,8 +28,8 @@ func newRequestRouter(dataSrv *dataService) *requestRouter {
 
 func (rt *requestRouter) onError(r *requestItem) {
 	ereq := r.req.(*errorRequest)
-	res := newErrorResponse(ereq.err)	
-	r.sender.send(res)	
+	res := newErrorResponse(ereq.err)
+	r.sender.send(res)
 }
 
 func (rt *requestRouter) route(r *requestItem) {

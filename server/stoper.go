@@ -19,7 +19,7 @@ package pubsubsql
 import "sync/atomic"
 import "time"
 
-var debug_flag bool = true
+var debug_flag bool = false
 
 func debug(str string) {
 	if debug_flag {

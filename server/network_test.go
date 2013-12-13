@@ -62,7 +62,7 @@ func TestNetworkWriteRead(t *testing.T) {
 	if err != nil {
 		t.Error(err)
 	}
-	//
+	// send valid message get result
 	rw := newNetMessageReaderWriter(c, nil)
 	message := []byte("key stocks ticker")
 	err = rw.writeHeaderAndMessage(message)
@@ -74,13 +74,31 @@ func TestNetworkWriteRead(t *testing.T) {
 		t.Error(err)
 	}
 	debug(string(message))
-	//
 	if n.connectionCount() != 1 {
 		t.Error("Expected 1 network connection")
+	}
+	// send invalid message get result
+	message = []byte("bla bla bla")
+	err = rw.writeHeaderAndMessage(message)
+	if err != nil {
+		t.Error(err)
+	}
+	message, err = rw.readMessage()
+	if err != nil {
+		t.Error(err)
+	}
+	debug(string(message))
+	if n.connectionCount() != 1 {
+		t.Error("Expected 1 network connection")
+	}
+	// close connection
+	c.Close()
+	time.Sleep(time.Millisecond * 500)
+	if n.connectionCount() > 0 {
+		t.Error("Expected 0 network connection")
 	}
 	// shutdown
 	s.Stop(0)
 	n.stop()
-	s.Wait(time.Millisecond * 1000)
-	c.Close()
+	s.Wait(time.Millisecond * 500)
 }

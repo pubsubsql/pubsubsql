@@ -309,11 +309,11 @@ func (r *netMessageReaderWriter) readMessage() ([]byte, error) {
 }
 
 func (c *networkConnection) route(req request) {
-	item := &requestItem {
-		req: req,
+	item := &requestItem{
+		req:    req,
 		sender: c.sender,
-	}		
-	c.router.route(item)	
+	}
+	c.router.route(item)
 }
 
 func (c *networkConnection) read() {
