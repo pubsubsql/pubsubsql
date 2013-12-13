@@ -19,6 +19,7 @@ package pubsubsql
 import "testing"
 import "time"
 import "net"
+import "strconv"
 
 func TestNetworkStartStop(t *testing.T) {
 	context := newNetworkContextStub()
@@ -101,7 +102,10 @@ func TestNetworkWriteRead(t *testing.T) {
 	// test pubsub
 	c2 := validateConnect(t, address)
 	validateWriteRead(t, c2, "subscribe * from stocks")
+	// on add
+	validateRead(t, c2)
 	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (ORCL,37,38.45)")
+	// on insert
 	validateRead(t, c2)
 	//
 	if n.connectionCount() != 2 {
@@ -118,6 +122,45 @@ func TestNetworkWriteRead(t *testing.T) {
 	if n.connectionCount() != 0 {
 		t.Error("Expected 0 network connection")
 	}
+	// shutdown
+	s.Stop(0)
+	n.stop()
+	s.Wait(time.Millisecond * 500)
+}
+
+func TestNetworMultiInsert(t *testing.T) {
+	context := newNetworkContextStub()
+	address := "localhost:54321"
+	s := context.stoper
+	n := newNetwork(context)
+	n.start(address)
+	c := validateConnect(t, address)
+
+	// subscribe
+	validateWriteRead(t, c, "key stocks ticker")
+	validateWriteRead(t, c, "subscribe * from stocks")
+
+	// insert bunch of records
+	idblock := 1
+	insertsPerConnection := 10
+	totalConnections := 100
+	for i := 0; i < totalConnections; i++ {
+		idblock += 100000
+		go func(cid int, tickerid int) {
+			c2 := validateConnect(t, address)
+			for j := 0; j < insertsPerConnection; j++ {
+				ticker := strconv.Itoa(tickerid)
+				tickerid++
+				validateWriteRead(t, c2, "insert into stocks (ticker, bid, ask) values ( "+ticker+",10,10)")
+			}
+
+		}(i, idblock)
+	}
+	// read inserted published records 
+	for j := 0; j < (insertsPerConnection * totalConnections); j++ {
+		validateRead(t, c)
+	}
+	c.Close()
 	// shutdown
 	s.Stop(0)
 	n.stop()

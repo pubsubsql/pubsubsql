@@ -33,7 +33,7 @@ type responseSender struct {
 // factory
 func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
-		sender:       make(chan response, 1000),
+		sender:       make(chan response, 10000),
 		connectionId: connectionId,
 		quiter:       NewQuitChan(),
 	}
@@ -49,6 +49,7 @@ func (s *responseSender) send(r response) bool {
 	case <-s.quiter.GetChan():
 		debug("sender quit")
 	default:
+		log.Println("sender queue is full connection: ", s.connectionId)
 		debug("sender queue is full ")
 		// notify client connection that it needs to close due to inability to 
 		// recv responses in a timely manner
