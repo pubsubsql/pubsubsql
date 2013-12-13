@@ -35,7 +35,7 @@ type responseSender struct {
 // factory
 func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
-		sender:       make(chan response, 10),
+		sender:       make(chan response, CHAN_RESPONSE_SENDER_BUFFER_SIZE),
 		connectionId: connectionId,
 		quiter:       NewQuitChan(),
 	}

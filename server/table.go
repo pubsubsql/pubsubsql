@@ -18,12 +18,6 @@ package pubsubsql
 
 import "strconv"
 
-// Default values
-const (
-	tableCOLUMNS int = 10
-	tableRECORDS     = 5000
-)
-
 // this function is purely for testing porposes
 func (t *table) getTagedColumnValuesCount(col string, val string) int {
 	c := t.getColumn(col)
@@ -58,9 +52,9 @@ func newTable(name string) *table {
 	t := &table{
 		name:          name,
 		colMap:        make(map[string]*column),
-		colSlice:      make([]*column, 0, tableCOLUMNS),
-		records:       make([]*record, 0, tableRECORDS),
-		tagedColumns:  make([]*column, 0, tableCOLUMNS),
+		colSlice:      make([]*column, 0, TABLE_COLUMNS_CAPACITY),
+		records:       make([]*record, 0, TABLE_RECORDS_CAPACITY),
+		tagedColumns:  make([]*column, 0, TABLE_COLUMNS_CAPACITY),
 		subscriptions: make(mapSubscriptionByConnection),
 	}
 	t.addColumn("id")
@@ -232,7 +226,7 @@ func (t *table) getRecordsByTag(val string, col *column) []*record {
 	// we need to optimize allocations
 	// perhaps its possible to know in advance how manny records
 	// will be returned
-	records := make([]*record, 0, 100)
+	records := make([]*record, 0, TABLE_GET_RECORDS_BY_TAG_CAPACITY)
 	for tg := col.tagmap.getTag(val); tg != nil; tg = tg.next {
 		records = append(records, t.records[tg.idx])
 		l := len(records)

@@ -19,14 +19,6 @@ package pubsubsql
 import "sync/atomic"
 import "time"
 
-var debug_flag bool = false
-
-func debug(str string) {
-	if debug_flag {
-		println("debug: " + str)
-	}
-}
-
 // Stoper implements shutdown protocol to make sure that all active goroutines exit gracefully.
 type Stoper struct {
 	counter int64
