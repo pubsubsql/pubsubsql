@@ -53,6 +53,20 @@ func TestNetworkConnections(t *testing.T) {
 	c.Close()
 }
 
+func validateWriteRead(t *testing.T, conn net.Conn, message string ) {
+	rw := newNetMessageReaderWriter(conn, nil)
+	bytes := []byte(message)
+	err := rw.writeHeaderAndMessage(bytes)
+	if err != nil {
+		t.Error(err)
+	}
+	bytes, err = rw.readMessage()
+	if err != nil {
+		t.Error(err)
+	}
+	debug(string(bytes))
+}
+
 func TestNetworkWriteRead(t *testing.T) {
 	context := newNetworkContextStub()
 	s := context.stoper
@@ -63,31 +77,12 @@ func TestNetworkWriteRead(t *testing.T) {
 		t.Error(err)
 	}
 	// send valid message get result
-	rw := newNetMessageReaderWriter(c, nil)
-	message := []byte("key stocks ticker")
-	err = rw.writeHeaderAndMessage(message)
-	if err != nil {
-		t.Error(err)
-	}
-	message, err = rw.readMessage()
-	if err != nil {
-		t.Error(err)
-	}
-	debug(string(message))
-	if n.connectionCount() != 1 {
-		t.Error("Expected 1 network connection")
-	}
-	// send invalid message get result
-	message = []byte("bla bla bla")
-	err = rw.writeHeaderAndMessage(message)
-	if err != nil {
-		t.Error(err)
-	}
-	message, err = rw.readMessage()
-	if err != nil {
-		t.Error(err)
-	}
-	debug(string(message))
+	validateWriteRead(t, c, "key stocks ticker")		
+	validateWriteRead(t, c, "bla bla bla")		
+	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (IBM,123,124)")		
+	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (MSFT,37,38.45)")		
+	validateWriteRead(t, c, "select * from stocks")		
+	validateWriteRead(t, c, "key stocks ticker")		
 	if n.connectionCount() != 1 {
 		t.Error("Expected 1 network connection")
 	}
