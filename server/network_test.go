@@ -53,7 +53,7 @@ func TestNetworkConnections(t *testing.T) {
 	c.Close()
 }
 
-func validateWriteRead(t *testing.T, conn net.Conn, message string ) {
+func validateWriteRead(t *testing.T, conn net.Conn, message string) {
 	rw := newNetMessageReaderWriter(conn, nil)
 	bytes := []byte(message)
 	err := rw.writeHeaderAndMessage(bytes)
@@ -67,29 +67,55 @@ func validateWriteRead(t *testing.T, conn net.Conn, message string ) {
 	debug(string(bytes))
 }
 
-func TestNetworkWriteRead(t *testing.T) {
-	context := newNetworkContextStub()
-	s := context.stoper
-	n := newNetwork(context)
-	n.start("localhost:54321")
-	c, err := net.Dial("tcp", "localhost:54321")
+func validateRead(t *testing.T, conn net.Conn) {
+	rw := newNetMessageReaderWriter(conn, nil)
+	bytes, err := rw.readMessage()
 	if err != nil {
 		t.Error(err)
 	}
+	debug(string(bytes))
+}
+
+func validateConnect(t *testing.T, address string) net.Conn {
+	c, err := net.Dial("tcp", address)
+	if err != nil {
+		t.Error(err)
+	}
+	return c
+}
+
+func TestNetworkWriteRead(t *testing.T) {
+	context := newNetworkContextStub()
+	address := "localhost:54321"
+	s := context.stoper
+	n := newNetwork(context)
+	n.start(address)
+	c := validateConnect(t, address)
 	// send valid message get result
-	validateWriteRead(t, c, "key stocks ticker")		
-	validateWriteRead(t, c, "bla bla bla")		
-	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (IBM,123,124)")		
-	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (MSFT,37,38.45)")		
-	validateWriteRead(t, c, "select * from stocks")		
-	validateWriteRead(t, c, "key stocks ticker")		
+	validateWriteRead(t, c, "key stocks ticker")
+	validateWriteRead(t, c, "bla bla bla")
+	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (IBM,123,124)")
+	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (MSFT,37,38.45)")
+	validateWriteRead(t, c, "select * from stocks")
+	validateWriteRead(t, c, "key stocks ticker")
+	// test pubsub
+	c2 := validateConnect(t, address)
+	validateWriteRead(t, c2, "subscribe * from stocks")
+	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (ORCL,37,38.45)")
+	validateRead(t, c2)
+	//
+	if n.connectionCount() != 2 {
+		t.Error("Expected 1 network connection")
+	}
+	// close connections
+	c.Close()
+	time.Sleep(time.Millisecond * 60)
 	if n.connectionCount() != 1 {
 		t.Error("Expected 1 network connection")
 	}
-	// close connection
-	c.Close()
-	time.Sleep(time.Millisecond * 500)
-	if n.connectionCount() > 0 {
+	c2.Close()
+	time.Sleep(time.Millisecond * 60)
+	if n.connectionCount() != 0 {
 		t.Error("Expected 0 network connection")
 	}
 	// shutdown
