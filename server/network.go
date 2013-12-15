@@ -64,7 +64,7 @@ type networkContext struct {
 func newNetworkContextStub() *networkContext {
 	stoper := NewStoper()
 	//
-	datasrv := newDataService(CHAN_TABLE_REQUESTS_BUFFER_SIZE , stoper)
+	datasrv := newDataService(CHAN_TABLE_REQUESTS_BUFFER_SIZE, stoper)
 	go datasrv.run()
 	//
 	router := newRequestRouter(datasrv)
@@ -207,8 +207,8 @@ func (c *networkConnection) getConnectionId() uint64 {
 
 func (c *networkConnection) watchForQuit() {
 	select {
-		case <-c.sender.quiter.GetChan():
-		case <-c.stoper.GetChan():	
+	case <-c.sender.quiter.GetChan():
+	case <-c.stoper.GetChan():
 	}
 	c.conn.Close()
 	c.parent.removeConnection(c)
@@ -216,10 +216,10 @@ func (c *networkConnection) watchForQuit() {
 
 func (c *networkConnection) close() {
 	c.sender.quiter.Quit(0)
-} 
+}
 
 func (c *networkConnection) run() {
-	go c.watchForQuit()	
+	go c.watchForQuit()
 	go c.read()
 	c.write()
 }

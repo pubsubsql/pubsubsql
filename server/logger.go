@@ -16,15 +16,35 @@
 
 package pubsubsql
 
-var LOG_DEBUG bool = true
-var LOG_INFO bool = true
-var LOG_WARN bool = true
-var LOG_ERR bool = true
+import "log"
+import "os"
+import "fmt"
 
-var CHAN_RESPONSE_SENDER_BUFFER_SIZE = 10000
-var CHAN_TABLE_REQUESTS_BUFFER_SIZE = 1000
-var PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY = 10
-var PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY = 10
-var TABLE_COLUMNS_CAPACITY = 10
-var TABLE_RECORDS_CAPACITY = 1000
-var TABLE_GET_RECORDS_BY_TAG_CAPACITY = 20
+var debugLogger = log.New(os.Stderr, "debug: ", log.LstdFlags)
+var infoLogger = log.New(os.Stderr, "", log.LstdFlags)
+var warnLogger = log.New(os.Stderr, "warning: ", log.LstdFlags)
+var errLogger = log.New(os.Stderr, "error: ", log.LstdFlags)
+
+func debug(v ...interface{}) {
+	if LOG_DEBUG {
+		debugLogger.Output(2, fmt.Sprintln(v...))
+	}
+}
+
+func loginfo(v ...interface{}) {
+	if LOG_INFO {
+		infoLogger.Output(2, fmt.Sprintln(v...))
+	}
+}
+
+func logwarn(v ...interface{}) {
+	if LOG_WARN {
+		warnLogger.Output(2, fmt.Sprintln(v...))
+	}
+}
+
+func logerror(v ...interface{}) {
+	if LOG_INFO {
+		infoLogger.Output(2, fmt.Sprintln(v...))
+	}
+}
