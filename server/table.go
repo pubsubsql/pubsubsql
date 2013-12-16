@@ -52,9 +52,9 @@ func newTable(name string) *table {
 	t := &table{
 		name:          name,
 		colMap:        make(map[string]*column),
-		colSlice:      make([]*column, 0, TABLE_COLUMNS_CAPACITY),
-		records:       make([]*record, 0, TABLE_RECORDS_CAPACITY),
-		tagedColumns:  make([]*column, 0, TABLE_COLUMNS_CAPACITY),
+		colSlice:      make([]*column, 0, config.TABLE_COLUMNS_CAPACITY),
+		records:       make([]*record, 0, config.TABLE_RECORDS_CAPACITY),
+		tagedColumns:  make([]*column, 0, config.TABLE_COLUMNS_CAPACITY),
 		subscriptions: make(mapSubscriptionByConnection),
 	}
 	t.addColumn("id")
@@ -226,7 +226,7 @@ func (t *table) getRecordsByTag(val string, col *column) []*record {
 	// we need to optimize allocations
 	// perhaps its possible to know in advance how manny records
 	// will be returned
-	records := make([]*record, 0, TABLE_GET_RECORDS_BY_TAG_CAPACITY)
+	records := make([]*record, 0, config.TABLE_GET_RECORDS_BY_TAG_CAPACITY)
 	for tg := col.tagmap.getTag(val); tg != nil; tg = tg.next {
 		records = append(records, t.records[tg.idx])
 		l := len(records)

@@ -64,7 +64,7 @@ type networkContext struct {
 func newNetworkContextStub() *networkContext {
 	stoper := NewStoper()
 	//
-	datasrv := newDataService(CHAN_TABLE_REQUESTS_BUFFER_SIZE, stoper)
+	datasrv := newDataService(config.CHAN_TABLE_REQUESTS_BUFFER_SIZE, stoper)
 	go datasrv.run()
 	//
 	router := newRequestRouter(datasrv)

@@ -26,25 +26,26 @@ var warnLogger = log.New(os.Stderr, "warning: ", log.LstdFlags)
 var errLogger = log.New(os.Stderr, "error: ", log.LstdFlags)
 
 func debug(v ...interface{}) {
-	if LOG_DEBUG {
+	if config.LOG_DEBUG {
 		debugLogger.Output(2, fmt.Sprintln(v...))
 	}
 }
 
 func loginfo(v ...interface{}) {
-	if LOG_INFO {
+	if config.LOG_INFO {
 		infoLogger.Output(2, fmt.Sprintln(v...))
 	}
 }
 
 func logwarn(v ...interface{}) {
-	if LOG_WARN {
+	if config.LOG_WARN {
 		warnLogger.Output(2, fmt.Sprintln(v...))
 	}
 }
 
 func logerror(v ...interface{}) {
-	if LOG_INFO {
+	if config.LOG_INFO {
 		infoLogger.Output(2, fmt.Sprintln(v...))
 	}
 }
+

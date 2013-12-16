@@ -105,7 +105,7 @@ func (p *parser) parseSqlInsert() request {
 		return p.parseError("expected into")
 	}
 	req := &sqlInsertRequest{
-		colVals: make([]*columnValue, 0, PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY),
+		colVals: make([]*columnValue, 0, config.PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY),
 	}
 	// table name
 	if errreq := p.parseTableName(&req.table); errreq != nil {
@@ -229,7 +229,7 @@ func (p *parser) parseSqlSelect() request {
 // Parses sql update statement and returns sqlUpdateRequest on success.
 func (p *parser) parseSqlUpdate() request {
 	req := &sqlUpdateRequest{
-		colVals: make([]*columnValue, 0, PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY),
+		colVals: make([]*columnValue, 0, config.PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY),
 	}
 	// table name
 	if errreq := p.parseTableName(&req.table); errreq != nil {
