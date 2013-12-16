@@ -21,9 +21,9 @@ import "os"
 import "fmt"
 
 var debugLogger = log.New(os.Stderr, "debug: ", log.LstdFlags)
-var infoLogger = log.New(os.Stderr,  "info: ", log.LstdFlags)
-var warnLogger = log.New(os.Stderr,  "warning: ", log.LstdFlags)
-var errLogger = log.New(os.Stderr,   "error: ", log.LstdFlags)
+var infoLogger = log.New(os.Stderr, "info: ", log.LstdFlags)
+var warnLogger = log.New(os.Stderr, "warning: ", log.LstdFlags)
+var errLogger = log.New(os.Stderr, "error: ", log.LstdFlags)
 
 func debug(v ...interface{}) {
 	if config.LOG_DEBUG {
@@ -48,4 +48,3 @@ func logerror(v ...interface{}) {
 		infoLogger.Output(2, fmt.Sprintln(v...))
 	}
 }
-

@@ -142,7 +142,7 @@ func TestNetworMultiInsert(t *testing.T) {
 
 	// insert bunch of records
 	idblock := 1
-	insertsPerConnection := 10 
+	insertsPerConnection := 10
 	totalConnections := 10
 	for i := 0; i < totalConnections; i++ {
 		idblock += 100000
