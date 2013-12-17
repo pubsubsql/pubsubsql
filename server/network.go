@@ -21,6 +21,7 @@ import "log"
 import "sync"
 import "encoding/binary"
 import "errors"
+import "strconv"
 
 //import "encoding/binary"
 
@@ -101,6 +102,7 @@ func (n *network) addConnection(c *networkConnection) {
 	}
 	n.connections[c.getConnectionId()] = c
 	n.mutex.Unlock()
+	loginfo("new connected client id: ", strconv.FormatUint(c.getConnectionId(), 10))
 }
 
 func (n *network) removeConnection(c *networkConnection) {
@@ -155,7 +157,6 @@ func (n *network) start(address string) bool {
 				return
 			}
 			if err == nil {
-				debug("new network connection")
 				connectionId++
 				c := newNetworkConnection(conn, n.context, connectionId, n)
 				n.addConnection(c)

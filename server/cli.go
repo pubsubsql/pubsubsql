@@ -20,10 +20,8 @@ import "strconv"
 import "bufio"
 import "os"
 import "strings"
-
-/*
+import "net"
 import "time"
-*/
 
 type lineReader struct {
 	reader *bufio.Reader		
@@ -50,43 +48,122 @@ func (l *lineReader) readLine() bool {
 type cli struct {
 	prefix string		
 	quit *QuitChan 
-	input chan string	
+	fromStdin chan string	
+	fromServer chan string	
+	toServer chan string
+	conn net.Conn
 }
 
 func newCli() *cli {
 	return &cli {
 		quit: NewQuitChan(),
-		input: make(chan string),
+		fromStdin: make(chan string),
+		fromServer: make(chan string),
+		toServer: make(chan string),
 	}  
 }
 
 func (c *cli) readInput() {
+	defer c.quit.Quit(0)
 	l := newLineReader("q")
 	for l.readLine() {
 		if len(l.line) > 0 {
-			c.input <- l.line	
+			c.fromStdin <- l.line	
 		}			
 	}
+}
+
+func (c *cli) connect() bool {
+	conn, err := net.Dial("tcp", config.netAddress())
+	if err != nil {
+		println(err)
+		return false
+	}
+	c.conn = conn
+	return true	
+}
+
+func (c *cli) outputError(err string) {
+	println("\nerror: " + err)
+}
+
+func (c *cli) writeMessages() {
+	defer c.quit.Quit(0)
+	writer := newNetMessageReaderWriter(c.conn, nil)
+	var message string
+	ok := true
+	for ok {
+		select {
+		case message, ok = <-c.toServer:
+			if ok {
+				bytes := []byte(message)
+				err := writer.writeHeaderAndMessage(bytes)
+				if err != nil {
+					c.outputError(err.Error())
+					ok = false
+				}
+			}
+		case <-c.quit.GetChan():
+			ok = false	
+		}
+	}	
 	c.quit.Quit(0)
+}
+
+func (c *cli) readMessages() {
+	defer c.quit.Quit(0)
+	reader := newNetMessageReaderWriter(c.conn, nil)
+	ok := true
+	for ok {
+		bytes, err := reader.readMessage()
+		if err != nil {
+			c.outputError(err.Error())
+			break
+		}
+		select {	
+		case c.fromServer <- string(bytes):
+		case <-c.quit.GetChan():
+			ok = false
+		}
+	}
 }
 
 func (c *cli) run() {
 	c.initPrefix()
+	// connect to server
+	if !c.connect() {
+		return
+	}
+	// read user input
 	go c.readInput()
-	
+	go c.readMessages()
+	go c.writeMessages()
+	//
 	cout := bufio.NewWriter(os.Stdout)
-	for {
+	ok := true
+	var serverMessage string
+	var input string
+	for ok {
 		cout.WriteString(c.prefix)	
 		cout.Flush()
+		
 		select {
-		case input := <-c.input:
-			cout.WriteString(input)			
-			cout.WriteString("\n")
-			cout.Flush()
+		case input, ok = <-c.fromStdin:
+			if ok {
+				c.toServer <- input
+			}
+		case serverMessage, ok = <-c.fromServer:
+			if ok {
+				cout.WriteString(serverMessage)			
+				cout.WriteString("\n")
+				cout.Flush()
+			}
 		case <-c.quit.GetChan():
-			return
-		}	
+			ok = false
+		}
 	}
+	c.conn.Close()
+	time.Sleep(time.Millisecond * 100)
 }
 
 func (c *cli) initPrefix() {
