@@ -18,6 +18,7 @@ package pubsubsql
 
 import "flag"
 import "strings"
+import "strconv"
 
 type configuration struct {
 	// logger
@@ -92,6 +93,10 @@ func validCommandsUsageString() string {
 	}
 	str += " ]"
 	return str
+}
+
+func (c *configuration) netAddress() string {
+	return c.IP + ":" + strconv.Itoa(int(c.PORT)) 	
 }
 
 func (c *configuration) setLogLevel(loglevel string) bool {

@@ -14,11 +14,12 @@
  * along with PubSubSQL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-// Package main
 package main
 
-import "fmt"
+import "pubsubsql/server"
 
 func main() {
-	fmt.Println("PubSubSQL")
+	var c pubsubsql.Controller 
+	c.Run()
 }
+

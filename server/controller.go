@@ -50,7 +50,7 @@ func (c *Controller) runAsServer() {
 	c.network = newNetwork(context)
 	c.network.start(config.netAddress())
 	println("started")						
-	//
+	// wait for quit input
 	r := bufio.NewReader(os.Stdin)
 	for {
 		q, err := r.ReadString('\n')
@@ -62,7 +62,7 @@ func (c *Controller) runAsServer() {
 			break
 		}
 	}
-	//
+	// shutdown
 	c.network.stop()
 	c.stoper.Stop(0)
 	c.stoper.Wait(time.Millisecond * 3000)
