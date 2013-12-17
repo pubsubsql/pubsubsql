@@ -16,11 +16,8 @@
 
 package pubsubsql
 
-import "os"
 import "time"
-import "bufio"
-import "strings"
-
+import "os"
 
 type Controller struct {
 	stoper *Stoper	
@@ -33,7 +30,20 @@ func (c *Controller) Run() {
 	}
 	// stoper
 	c.stoper = NewStoper()
-	c.runAsServer()	
+	// commands
+	switch config.COMMAND {
+	case "start":
+		c.runAsServer()	
+	case "connect":
+		c.runAsClient()
+	case "help":
+		println("help")
+	}
+}
+
+func (c *Controller) runAsClient() {
+	client := newCli()
+	client.run()
 }
 
 func (c *Controller) runAsServer() {
@@ -51,16 +61,8 @@ func (c *Controller) runAsServer() {
 	c.network.start(config.netAddress())
 	println("started")						
 	// wait for quit input
-	r := bufio.NewReader(os.Stdin)
-	for {
-		q, err := r.ReadString('\n')
-		q = strings.TrimSpace(q)	
-		if err != nil {
-			println("stdin error")
-		}
-		if q == "q" {
-			break
-		}
+	rd := newLineReader("q")
+	for rd.readLine() {
 	}
 	// shutdown
 	c.network.stop()
