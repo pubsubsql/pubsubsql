@@ -21,7 +21,7 @@ import "time"
 
 func TestDataServiceRunAndStop(t *testing.T) {
 	stoper := NewStoper()
-	dataSrv := newDataService(0, stoper)
+	dataSrv := newDataService(stoper)
 	go dataSrv.run()
 	if !stoper.Stop(3 * time.Second) {
 		t.Errorf("stoper.Stop() expected true but got false")
@@ -40,7 +40,7 @@ func sqlHelper(sql string, sender *responseSender) *requestItem {
 
 func TestDataService(t *testing.T) {
 	stoper := NewStoper()
-	dataSrv := newDataService(0, stoper)
+	dataSrv := newDataService(stoper)
 	go dataSrv.run()
 	sender := newResponseSenderStub(1)
 	// insert

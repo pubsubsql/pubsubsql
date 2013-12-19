@@ -29,7 +29,7 @@ func Test(t *testing.T) {
 }
 
 func testStoper(stoper *Stoper, level int, perLevel int) {
-	stoper.Enter()
+	stoper.Join()
 	defer stoper.Leave()
 	level--
 	if level < 0 {

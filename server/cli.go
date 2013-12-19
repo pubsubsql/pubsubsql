@@ -47,7 +47,7 @@ func (l *lineReader) readLine() bool {
 
 type cli struct {
 	prefix string		
-	quit *QuitChan 
+	stoper *Stoper
 	fromStdin chan string	
 	fromServer chan string	
 	toServer chan string
@@ -56,7 +56,7 @@ type cli struct {
 
 func newCli() *cli {
 	return &cli {
-		quit: NewQuitChan(),
+		stoper: NewStoper(),
 		fromStdin: make(chan string),
 		fromServer: make(chan string),
 		toServer: make(chan string),
@@ -64,7 +64,8 @@ func newCli() *cli {
 }
 
 func (c *cli) readInput() {
-	defer c.quit.Quit(0)
+	// we do not join here because there is no way to return from blocking readLine
+	defer c.stoper.Stop(0)
 	l := newLineReader("q")
 	for l.readLine() {
 		if len(l.line) > 0 {
@@ -88,7 +89,8 @@ func (c *cli) outputError(err string) {
 }
 
 func (c *cli) writeMessages() {
-	defer c.quit.Quit(0)
+	c.stoper.Join()
+	defer c.stoper.Stop(0)
 	writer := newNetMessageReaderWriter(c.conn, nil)
 	var message string
 	ok := true
@@ -103,15 +105,15 @@ func (c *cli) writeMessages() {
 					ok = false
 				}
 			}
-		case <-c.quit.GetChan():
+		case <-c.stoper.GetChan():
 			ok = false	
 		}
 	}	
-	c.quit.Quit(0)
 }
 
 func (c *cli) readMessages() {
-	defer c.quit.Quit(0)
+	c.stoper.Join()
+	defer c.stoper.Stop(0)
 	reader := newNetMessageReaderWriter(c.conn, nil)
 	ok := true
 	for ok {
@@ -122,7 +124,7 @@ func (c *cli) readMessages() {
 		}
 		select {	
 		case c.fromServer <- string(bytes):
-		case <-c.quit.GetChan():
+		case <-c.stoper.GetChan():
 			ok = false
 		}
 	}
@@ -142,15 +144,15 @@ func (c *cli) run() {
 	cout := bufio.NewWriter(os.Stdout)
 	ok := true
 	var serverMessage string
-	var input string
+	var userInput string
 	for ok {
 		cout.WriteString(c.prefix)	
 		cout.Flush()
 		
 		select {
-		case input, ok = <-c.fromStdin:
+		case userInput, ok = <-c.fromStdin:
 			if ok {
-				c.toServer <- input
+				c.toServer <- userInput
 			}
 		case serverMessage, ok = <-c.fromServer:
 			if ok {
@@ -158,12 +160,12 @@ func (c *cli) run() {
 				cout.WriteString("\n")
 				cout.Flush()
 			}
-		case <-c.quit.GetChan():
+		case <-c.stoper.GetChan():
 			ok = false
 		}
 	}
 	c.conn.Close()
-	time.Sleep(time.Millisecond * 100)
+	c.stoper.Wait(time.Millisecond * config.WAIT_MILLISECOND_CLI_SHUTDOWN)	
 }
 
 func (c *cli) initPrefix() {

@@ -16,9 +16,12 @@
 
 package pubsubsql
 
-import "flag"
-import "strings"
-import "strconv"
+import (
+	"flag"
+	"strings"
+	"strconv"
+	"time"
+)
 
 type configuration struct {
 	// logger
@@ -30,11 +33,15 @@ type configuration struct {
 	// resources
 	CHAN_RESPONSE_SENDER_BUFFER_SIZE          int
 	CHAN_TABLE_REQUESTS_BUFFER_SIZE           int
+	CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE     int
 	PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY int
 	PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY int
+	TOKENS_PRODUCER_CAPACITY				  int
 	TABLE_COLUMNS_CAPACITY                    int
 	TABLE_RECORDS_CAPACITY                    int
 	TABLE_GET_RECORDS_BY_TAG_CAPACITY         int
+	WAIT_MILLISECOND_SERVER_SHUTDOWN		  time.Duration
+	WAIT_MILLISECOND_CLI_SHUTDOWN	     	  time.Duration
 
 	// command 
 	COMMAND string
@@ -59,12 +66,15 @@ func defaultConfig() configuration {
 		// resources
 		CHAN_RESPONSE_SENDER_BUFFER_SIZE:          10000,
 		CHAN_TABLE_REQUESTS_BUFFER_SIZE:           1000,
+		CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE:     1000,
 		PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY: 10,
 		PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY: 10,
+		TOKENS_PRODUCER_CAPACITY:				   30,			  	
 		TABLE_COLUMNS_CAPACITY:                    10,
 		TABLE_RECORDS_CAPACITY:                    1000,
 		TABLE_GET_RECORDS_BY_TAG_CAPACITY:         20,
-
+		WAIT_MILLISECOND_SERVER_SHUTDOWN:		   3000,
+		WAIT_MILLISECOND_CLI_SHUTDOWN:			   1000,
 		// command 
 		COMMAND: "start",
 

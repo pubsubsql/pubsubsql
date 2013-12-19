@@ -479,6 +479,35 @@ func TestTableSqlTag(t *testing.T) {
 	validateSqlSelect(t, res, 0, 5)
 }
 
+func TestTableSqlTagBugCreateTagCrash(t *testing.T) {
+	var res response
+	tbl := newTable("stocks")
+	
+	// insert records
+	insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
+	insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (MSFT, 12, 14.5645) ")
+	
+	keyHelper(tbl, "key stocks ticker")
+	//
+	subscribeHelper(tbl, "subscribe * from stocks ")
+	updateHelper(tbl, "update stocks set bid = 45 where ticker = IBM")
+	
+	// create tag on existing records
+	//res = tagHelper(tbl, "tag stocks sector")
+	//validateOkResponse(t, res)
+
+	subscribeHelper(tbl, "subscribe * from stocks where sector = TECH ")
+	updateHelper(tbl, "update stocks set bid = 45 where ticker = ORCL")
+	
+	res = tagHelper(tbl, "tag stocks sector")
+	validateOkResponse(t, res)
+
+	insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (ORCL, 12, 14.5645, TECH) ")
+	subscribeHelper(tbl, "subscribe * from stocks where sector = TECH ")
+	updateHelper(tbl, "update stocks set bid = 45 where ticker = ORCL")
+
+}
+
 // SUBSCRIBE
 
 func subscribeHelper(t *table, sqlSubscribe string) (response, *responseSender) {

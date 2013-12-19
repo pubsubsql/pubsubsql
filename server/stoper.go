@@ -16,14 +16,18 @@
 
 package pubsubsql
 
-import "sync/atomic"
-import "time"
+import (
+	"sync"
+	"sync/atomic"
+	"time"
+)
 
 // Stoper implements shutdown protocol to make sure that all active goroutines exit gracefully.
 type Stoper struct {
 	counter int64
 	channel chan int
-	stoping bool
+	stoped bool
+	mutex   sync.Mutex
 }
 
 // Stoper factory.
@@ -31,51 +35,61 @@ func NewStoper() *Stoper {
 	return &Stoper{
 		counter: 0,
 		channel: make(chan int),
-		stoping: false,
+		stoped: false,
 	}
 }
 
-// Enter starts goroutine participation in shutdown protocol.
-func (s *Stoper) Enter() {
-	atomic.AddInt64(&s.counter, 1)
+// Join starts goroutine participation in shutdown protocol.
+func (this *Stoper) Join() {
+	atomic.AddInt64(&this.counter, 1)
 }
 
 // Leave notifies that participating goroutine gracesfully exited.
 // Should be called with defer symantics.
-func (s *Stoper) Leave() {
-	atomic.AddInt64(&s.counter, -1)
+func (this *Stoper) Leave() {
+	atomic.AddInt64(&this.counter, -1)
 }
 
 // GetChan returns channel to be used in select {} in order to react to Stop event.
-func (s *Stoper) GetChan() chan int {
-	return s.channel
+func (this *Stoper) GetChan() chan int {
+	return this.channel
 }
 
 // Stop notifies all participating goroutines that shutdown protocol is in progress
 // and waits for all go routines to exit until timeouti.
 // Returns false when timed out.
-func (s *Stoper) Stop(timeout time.Duration) bool {
-	s.stoping = true
-	close(s.channel)
-	return s.Wait(timeout)
+func (this *Stoper) Stop(timeout time.Duration) bool {
+	this.stop()
+	return this.Wait(timeout)
 }
 
-func (s *Stoper) Wait(timeout time.Duration) bool {
-	t := time.Now()
-	for atomic.LoadInt64(&s.counter) > 0 {
+// stop helper
+func (this* Stoper) stop() {
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	if !this.stoped {
+		this.stoped = true
+		close(this.channel)
+	}
+}
+
+func (this *Stoper) Wait(timeout time.Duration) bool {
+	now := time.Now()
+	for atomic.LoadInt64(&this.counter) > 0 {
 		time.Sleep(time.Millisecond * 10)
-		if time.Since(t) > timeout {
+		if time.Since(now) > timeout {
 			return false
 		}
 	}
 	return true
 }
 
-func (s *Stoper) IsStoping() bool {
-	return s.stoping
+func (this *Stoper) Stoped() bool {
+	return this.stoped
 }
 
 // Counter returns number of of participating goroutines.
-func (s *Stoper) Counter() int64 {
-	return atomic.LoadInt64(&s.counter)
+func (this *Stoper) Counter() int64 {
+	return atomic.LoadInt64(&this.counter)
 }
+

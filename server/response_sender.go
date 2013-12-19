@@ -16,20 +16,11 @@
 
 package pubsubsql
 
-import "log"
-
-const (
-	quitBySender int = iota
-	quitByNetReader
-	quitByNetWriter
-	quitByNetwork
-)
-
 // responseSender is responsible for channeling reponses to client connection
 type responseSender struct {
 	sender       chan response // channel to publish responses to
 	connectionId uint64
-	quiter       *QuitChan
+	connectionStoper *Stoper 
 }
 
 // factory
@@ -37,25 +28,24 @@ func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
 		sender:       make(chan response, config.CHAN_RESPONSE_SENDER_BUFFER_SIZE),
 		connectionId: connectionId,
-		quiter:       NewQuitChan(),
+		connectionStoper: NewStoper(), 
 	}
 }
 
 func (s *responseSender) send(r response) bool {
 	select {
 	case s.sender <- r:
-		if !s.quiter.IsQuit() {
+		if !s.connectionStoper.Stoped() {
 			return true
 		}
-		debug("sender IsQuit")
-	case <-s.quiter.GetChan():
-		debug("sender quit")
+		debug("sender is stoped")
+	case <-s.connectionStoper.GetChan():
+		debug("connection is stoped")
 	default:
-		log.Println("sender queue is full connection: ", s.connectionId)
-		debug("sender queue is full ")
+		logwarn("sender queue is full connection: ", s.connectionId)
 		// notify client connection that it needs to close due to inability to 
 		// recv responses in a timely manner
-		s.quiter.Quit(quitBySender)
+		s.connectionStoper.Stop(0)
 	}
 	return false
 }
@@ -73,3 +63,4 @@ func (s *responseSender) tryRecv() response {
 func (s *responseSender) recv() response {
 	return <-s.sender
 }
+

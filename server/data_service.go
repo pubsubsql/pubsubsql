@@ -26,58 +26,56 @@ type dataService struct {
 	requests   chan *requestItem
 	stoper     *Stoper
 	tables     map[string]*table
-	bufferSize int
 }
 
 // dataService factory
-func newDataService(bufferSize int, stoper *Stoper) *dataService {
+func newDataService(stoper *Stoper) *dataService {
 	return &dataService{
-		requests:   make(chan *requestItem, bufferSize),
+		requests:   make(chan *requestItem, config.CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE),
 		stoper:     stoper,
 		tables:     make(map[string]*table),
-		bufferSize: bufferSize,
 	}
 }
 
 // accepts the request
-func (d *dataService) accept(r *requestItem) {
+func (this *dataService) accept(item *requestItem) {
 	select {
-	case d.requests <- r:
-	case <-d.stoper.GetChan():
+	case this.requests <- item:
+	case <-this.stoper.GetChan():
 	}
 }
 
 // runs dataService event loop
-func (d *dataService) run() {
-	s := d.stoper
-	s.Enter()
-	defer s.Leave()
+func (this *dataService) run() {
+	this.stoper.Join()
+	defer this.stoper.Leave()
 	for {
 		select {
-		case item := <-d.requests:
-			if s.IsStoping() {
-				debug("data service exited isStoping")
+		case item := <-this.requests:
+			if this.stoper.Stoped() {
+				debug("data service exited due to stop event")
 				return
 			}
-			d.onSqlRequest(item)
-		case <-s.GetChan():
-			debug("data service exited stoped")
+			this.onSqlRequest(item)
+		case <-this.stoper.GetChan():
+			debug("data service exited due to stop event")
 			return
 		}
 	}
 }
 
-func (d *dataService) onSqlRequest(item *requestItem) {
+func (this *dataService) onSqlRequest(item *requestItem) {
 	tableName := item.req.getTableName()
-	tbl := d.tables[tableName]
+	tbl := this.tables[tableName]
 	if tbl == nil {
-		// auto create table and enter table event loop
+		// auto create table and go run table event loop
 		tbl = newTable(tableName)
-		d.tables[tableName] = tbl
-		tbl.stoper = d.stoper
-		tbl.requests = make(chan *requestItem, d.bufferSize)
+		this.tables[tableName] = tbl
+		tbl.stoper = this.stoper
+		tbl.requests = make(chan *requestItem, config.CHAN_TABLE_REQUESTS_BUFFER_SIZE)
 		go tbl.run()
 	}
 	// forward sql request to the table
 	tbl.requests <- item
 }
+

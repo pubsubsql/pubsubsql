@@ -33,12 +33,8 @@ type tokensProducerConsumer struct {
 func newTokens() *tokensProducerConsumer {
 	return &tokensProducerConsumer{
 		idx:    0,
-		tokens: make([]*token, 0, 30),
+		tokens: make([]*token, 0, config.TOKENS_PRODUCER_CAPACITY),
 	}
-}
-
-func reuseTokens(pc *tokensProducerConsumer) {
-	pc.idx = 0
 }
 
 func (c *tokensProducerConsumer) Consume(t *token) {
@@ -65,7 +61,7 @@ type networkContext struct {
 func newNetworkContextStub() *networkContext {
 	stoper := NewStoper()
 	//
-	datasrv := newDataService(config.CHAN_TABLE_REQUESTS_BUFFER_SIZE, stoper)
+	datasrv := newDataService(stoper)
 	go datasrv.run()
 	//
 	router := newRequestRouter(datasrv)
@@ -93,7 +89,7 @@ type network struct {
 }
 
 func (n *network) addConnection(c *networkConnection) {
-	if n.context.stoper.IsStoping() {
+	if n.context.stoper.Stoped() {
 		return
 	}
 	n.mutex.Lock()
@@ -146,13 +142,13 @@ func (n *network) start(address string) bool {
 	var connectionId uint64 = 0
 	// accept connections
 	acceptor := func() {
-		s := n.context.stoper
-		s.Enter()
-		defer s.Leave()
+		stoper := n.context.stoper
+		stoper.Join()
+		defer stoper.Leave()
 		for {
 			conn, err := n.listener.Accept()
 			// stop was called
-			if s.IsStoping() {
+			if stoper.Stoped() {
 				debug("stop was called")
 				return
 			}
@@ -208,7 +204,7 @@ func (c *networkConnection) getConnectionId() uint64 {
 
 func (c *networkConnection) watchForQuit() {
 	select {
-	case <-c.sender.quiter.GetChan():
+	case <-c.sender.connectionStoper.GetChan():
 	case <-c.stoper.GetChan():
 	}
 	c.conn.Close()
@@ -216,7 +212,7 @@ func (c *networkConnection) watchForQuit() {
 }
 
 func (c *networkConnection) close() {
-	c.sender.quiter.Quit(0)
+	c.sender.connectionStoper.Stop(0)
 }
 
 func (c *networkConnection) run() {
@@ -226,7 +222,7 @@ func (c *networkConnection) run() {
 }
 
 func (c *networkConnection) shouldStop() bool {
-	return c.sender.quiter.IsQuit() || c.stoper.IsStoping()
+	return c.sender.connectionStoper.Stoped() || c.stoper.Stoped()
 }
 
 type IStoper interface {
@@ -328,7 +324,7 @@ func (c *networkConnection) route(req request) {
 
 func (c *networkConnection) read() {
 	s := c.stoper
-	s.Enter()
+	s.Join()
 	defer s.Leave()
 	reader := newNetMessageReaderWriter(c.conn, c)
 	//
@@ -353,14 +349,14 @@ func (c *networkConnection) read() {
 		if err != nil {
 			log.Println(err.Error())
 			// notify writer and sender that we are done
-			c.sender.quiter.Quit(quitByNetReader)
+			c.sender.connectionStoper.Stop(0)
 		}
 	}
 }
 
 func (c *networkConnection) write() {
 	s := c.stoper
-	s.Enter()
+	s.Join()
 	defer s.Leave()
 	writer := newNetMessageReaderWriter(c.conn, c)
 	for {
@@ -374,14 +370,14 @@ func (c *networkConnection) write() {
 				if !c.shouldStop() {
 					log.Println(err.Error())
 					// notify reader and sender that we are done
-					c.sender.quiter.Quit(quitByNetWriter)
+					c.sender.connectionStoper.Stop(0)
 				}
 				return
 			}
 		case <-s.GetChan():
 			debug("stop event on write")
 			return
-		case <-c.sender.quiter.GetChan():
+		case <-c.sender.connectionStoper.GetChan():
 			debug("stop event on write")
 			return
 		}

@@ -18,12 +18,14 @@ package pubsubsql
 
 import "sync"
 
-type QuitChan struct {
+type QuitChan1 struct {
 	quit       chan int
 	isquit     bool
 	mutex      sync.Mutex
 	quitCookie int
 }
+
+/*
 
 // factory
 func NewQuitChan() *QuitChan {
@@ -55,3 +57,4 @@ func (q *QuitChan) IsQuit() bool {
 func (q *QuitChan) QuitCookie() int {
 	return q.quitCookie
 }
+*/
