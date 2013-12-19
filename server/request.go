@@ -76,9 +76,9 @@ type sqlFilter struct {
 }
 
 // Adds col = val to sqlFilter.
-func (f *sqlFilter) addFilter(col string, val string) {
-	f.col = col
-	f.val = val
+func (this *sqlFilter) addFilter(col string, val string) {
+	this.col = col
+	this.val = val
 }
 
 // sqlInsertRequest is a request for sql insert statement.
@@ -88,18 +88,18 @@ type sqlInsertRequest struct {
 }
 
 // Adds column to columnValue slice.
-func (a *sqlInsertRequest) addColumn(col string) {
-	a.colVals = append(a.colVals, &columnValue{col: col})
+func (this *sqlInsertRequest) addColumn(col string) {
+	this.colVals = append(this.colVals, &columnValue{col: col})
 }
 
 // Adds column and value to columnValue slice for insert request.
-func (a *sqlInsertRequest) addColVal(col string, val string) {
-	a.colVals = append(a.colVals, &columnValue{col: col, val: val})
+func (this *sqlInsertRequest) addColVal(col string, val string) {
+	this.colVals = append(this.colVals, &columnValue{col: col, val: val})
 }
 
 // Set value at a particular index of columnValue slice.
-func (a *sqlInsertRequest) setValueAt(idx int, val string) {
-	a.colVals[idx].val = val
+func (this *sqlInsertRequest) setValueAt(idx int, val string) {
+	this.colVals[idx].val = val
 }
 
 // sqlSelectRequest is a request for sql select statement.
@@ -116,8 +116,8 @@ type sqlUpdateRequest struct {
 }
 
 // Adds column and value to columnValue slice for udpate request.
-func (a *sqlUpdateRequest) addColVal(col string, val string) {
-	a.colVals = append(a.colVals, &columnValue{col: col, val: val})
+func (this *sqlUpdateRequest) addColVal(col string, val string) {
+	this.colVals = append(this.colVals, &columnValue{col: col, val: val})
 }
 
 // sqlDeleteRequest is a request for sql delete statement.
