@@ -24,9 +24,9 @@ type link struct {
 	tg     *tag
 }
 
-func (l *link) clear() {
-	l.pubsub = nil
-	l.tg = nil
+func (this *link) clear() {
+	this.pubsub = nil
+	this.tg = nil
 }
 
 // record
@@ -36,53 +36,26 @@ type record struct {
 }
 
 // record factory
-func newRecord(columns int, idx int) *record {
-	r := record{
+func newRecord(columns int, id int) *record {
+	rec := record{
 		values: make([]string, columns, columns),
 	}
-	r.setValue(0, strconv.Itoa(idx))
-	return &r
+	rec.setValue(0, strconv.Itoa(id))
+	return &rec
 }
 
-func (r *record) releaseData() {
-	r.values = nil
-	r.links = nil
+func (this *record) free() {
+	this.values = nil
+	this.links = nil
 }
-
-/*
-func (r *record) lock() {
-	r.locked = true
-}
-
-func (r *record) unlock() {
-	r.locked = false
-}
-
-func (r *record) isLocked() bool {
-	return r.locked
-}
-
-func (r *record) clone() *record {
-	lenValues := len(r.values)
-	lenLinks := len(r.links)
-	newRecord := record{
-		locked: false,
-		values: make([]string, lenValues, lenValues),
-		links: make([]link, lenLinks, lenLinks),
-	}
-	copy(newRecord.values, r.values)
-	copy(newRecord.links, r.links)
-	return newRecord
-}
-*/
 
 // Returns record index in a table.
-func (r *record) idx() int {
-	i, err := strconv.Atoi(r.values[0])
+func (r *record) id() int {
+	id, err := strconv.Atoi(r.values[0])
 	if err != nil {
-		return -1
+		panic("record id can not be 0")
 	}
-	return i
+	return id
 }
 
 // Returns record index in a table as string.
@@ -92,28 +65,28 @@ func (r *record) idAsString() string {
 
 // Returns value based on column ordinal.
 // Empty string is returned for invalid ordinal.
-func (r *record) getValue(ordinal int) string {
-	if len(r.values) > ordinal {
-		return r.values[ordinal]
+func (this *record) getValue(ordinal int) string {
+	if len(this.values) > ordinal {
+		return this.values[ordinal]
 	}
 	return ""
 }
 
 // Sets value based on column ordinal.
 // Automatically adjusts the record if ordinal is invalid.
-func (r *record) setValue(ordinal int, val string) {
-	l := len(r.values)
+func (this *record) setValue(ordinal int, val string) {
+	l := len(this.values)
 	if l <= ordinal {
 		delta := ordinal - l + 1
 		temp := make([]string, delta)
-		r.values = append(r.values, temp...)
+		this.values = append(this.values, temp...)
 	}
-	r.values[ordinal] = val
+	this.values[ordinal] = val
 }
 
 // addSubscription adds subscription to the record.
-func (r *record) addSubscription(sub *subscription) {
-	pubsb := &r.links[0].pubsub
+func (this *record) addSubscription(sub *subscription) {
+	pubsb := &this.links[0].pubsub
 	if *pubsb == nil {
 		*pubsb = new(pubsub)
 	}

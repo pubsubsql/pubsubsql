@@ -161,7 +161,7 @@ func (t *table) deleteRecord(rec *record) {
 		t.deleteTag(rec, col)
 	}
 	// delete record
-	t.records[rec.idx()] = nil
+	t.records[rec.id()] = nil
 }
 
 // Looks up record by id.
@@ -461,7 +461,7 @@ func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 	for _, rec := range records {
 		if rec != nil {
 			updated++
-			ra := t.updateRecord(cols[1:], req.colVals, rec, int(rec.idx()))
+			ra := t.updateRecord(cols[1:], req.colVals, rec, int(rec.id()))
 			if hasWhatToRemove(ra) {
 				t.onRemove(ra.removed, rec)
 			}
@@ -492,7 +492,7 @@ func (t *table) sqlDelete(req *sqlDeleteRequest) response {
 			deleted++
 			t.onDelete(rec)
 			t.deleteRecord(rec)
-			rec.releaseData()
+			rec.free()
 		}
 	}
 	return &sqlDeleteResponse{deleted: deleted}
