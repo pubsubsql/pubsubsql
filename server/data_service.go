@@ -38,7 +38,7 @@ func newDataService(stoper *Stoper) *dataService {
 }
 
 // accepts the request
-func (this *dataService) accept(item *requestItem) {
+func (this *dataService) acceptRequest(item *requestItem) {
 	select {
 	case this.requests <- item:
 	case <-this.stoper.GetChan():
