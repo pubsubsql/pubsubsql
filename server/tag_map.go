@@ -26,12 +26,12 @@ type tagMap struct {
 	tags map[string]*tagItem
 }
 
-func (t *tagMap) init() {
-	t.tags = make(map[string]*tagItem)
+func (this *tagMap) init() {
+	this.tags = make(map[string]*tagItem)
 }
 
-func (t *tagMap) getTag(key string) *tag {
-	tagitem := t.tags[key]
+func (this *tagMap) getTag(key string) *tag {
+	tagitem := this.tags[key]
 	if tagitem != nil {
 		return tagitem.head
 	}
@@ -40,18 +40,18 @@ func (t *tagMap) getTag(key string) *tag {
 
 // getAddTagItem returns tagItem by key.
 // Create new tagItem and adds it to map if does not exist.
-func (t *tagMap) getAddTagItem(key string) *tagItem {
-	item := t.tags[key]
+func (this *tagMap) getAddTagItem(key string) *tagItem {
+	item := this.tags[key]
 	if item == nil {
 		item = new(tagItem)
-		t.tags[key] = item
+		this.tags[key] = item
 	}
 	return item
 }
 
 // addTag adds tag and returns added tag and pubsub
-func (t *tagMap) addTag(key string, idx int) (*tag, *pubSub) {
-	item := t.getAddTagItem(key)
+func (this *tagMap) addTag(key string, idx int) (*tag, *pubSub) {
+	item := this.getAddTagItem(key)
 	if item.head == nil {
 		item.head = addTag(nil, idx)
 		return item.head, &item.pubsub
@@ -60,14 +60,14 @@ func (t *tagMap) addTag(key string, idx int) (*tag, *pubSub) {
 }
 
 // addSubscription adds subscription and returns it
-func (t *tagMap) addSubscription(key string, sub *subscription) {
-	item := t.getAddTagItem(key)
+func (this *tagMap) addSubscription(key string, sub *subscription) {
+	item := this.getAddTagItem(key)
 	item.pubsub.add(sub)
 }
 
 // containsTag returns true only if there is a valid head for a given tagItem
-func (t *tagMap) containsTag(key string) bool {
-	item := t.tags[key]
+func (this *tagMap) containsTag(key string) bool {
+	item := this.tags[key]
 	if item != nil && item.head != nil {
 		return true
 	}
@@ -75,9 +75,9 @@ func (t *tagMap) containsTag(key string) bool {
 }
 
 // removeTag removes tagItem only if there are no active subscriptions
-func (t *tagMap) removeTag(key string) {
-	item := t.tags[key]
+func (this *tagMap) removeTag(key string) {
+	item := this.tags[key]
 	if item != nil && item.pubsub.count() == 0 {
-		delete(t.tags, key)
+		delete(this.tags, key)
 	}
 }
