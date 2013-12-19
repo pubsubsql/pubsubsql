@@ -26,7 +26,7 @@ import (
 type Stoper struct {
 	counter int64
 	channel chan int
-	stoped bool
+	stoped  bool
 	mutex   sync.Mutex
 }
 
@@ -35,7 +35,7 @@ func NewStoper() *Stoper {
 	return &Stoper{
 		counter: 0,
 		channel: make(chan int),
-		stoped: false,
+		stoped:  false,
 	}
 }
 
@@ -64,7 +64,7 @@ func (this *Stoper) Stop(timeout time.Duration) bool {
 }
 
 // stop helper
-func (this* Stoper) stop() {
+func (this *Stoper) stop() {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 	if !this.stoped {
@@ -92,4 +92,3 @@ func (this *Stoper) Stoped() bool {
 func (this *Stoper) Counter() int64 {
 	return atomic.LoadInt64(&this.counter)
 }
-

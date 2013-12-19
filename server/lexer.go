@@ -28,10 +28,8 @@ type tokenType uint8
 const (
 	tokenTypeError                   tokenType = iota // error occured
 	tokenTypeEOF                                      // last token
-	tokenTypeCmdHelp                                  // help
 	tokenTypeCmdStatus                                // status
 	tokenTypeCmdStop                                  // stop
-	tokenTypeCmdStart                                 // start
 	tokenTypeSqlTable                                 // table name
 	tokenTypeSqlColumn                                // column name
 	tokenTypeSqlInsert                                // insert
@@ -63,14 +61,10 @@ func (typ tokenType) String() string {
 		return "tokenTypeError"
 	case tokenTypeEOF:
 		return "tokenTypeEOF"
-	case tokenTypeCmdHelp:
-		return "tokenTypeCmdHelp"
 	case tokenTypeCmdStatus:
 		return "tokenTypeCmdStatus"
 	case tokenTypeCmdStop:
 		return "tokenTypeCmdStop"
-	case tokenTypeCmdStart:
-		return "tokenTypeCmdStart"
 	case tokenTypeSqlTable:
 		return "tokenTypeSqlTable"
 	case tokenTypeSqlColumn:
@@ -128,16 +122,43 @@ type token struct {
 }
 
 // String converts token to a string.
-func (t token) String() string {
-	if t.typ == tokenTypeEOF {
+func (this token) String() string {
+	if this.typ == tokenTypeEOF {
 		return "EOF"
 	}
-	return t.val
+	return this.val
 }
 
 // tokenConsumer consumes tokens emited by lexer.
 type tokenConsumer interface {
 	Consume(t *token)
+}
+
+type tokensProducerConsumer struct {
+	idx    int
+	tokens []*token
+}
+
+func newTokens() *tokensProducerConsumer {
+	return &tokensProducerConsumer{
+		idx:    0,
+		tokens: make([]*token, 0, config.TOKENS_PRODUCER_CAPACITY),
+	}
+}
+
+func (this *tokensProducerConsumer) Consume(tok *token) {
+	this.tokens = append(this.tokens, tok)
+}
+
+func (this *tokensProducerConsumer) Produce() *token {
+	if this.idx >= len(this.tokens) {
+		return &token{
+			typ: tokenTypeEOF,
+		}
+	}
+	tok := this.tokens[this.idx]
+	this.idx++
+	return tok
 }
 
 // lexer holds the state of the scanner.
@@ -157,62 +178,62 @@ type stateFn func(*lexer) stateFn
 // Emits an error token and terminates the scan
 // by passing back a nil ponter that will be the next state
 // terminating lexer.run function
-func (l *lexer) errorToken(format string, args ...interface{}) stateFn {
-	l.err = fmt.Sprintf(format, args...)
-	l.tokens.Consume(&token{tokenTypeError, l.err})
+func (this *lexer) errorToken(format string, args ...interface{}) stateFn {
+	this.err = fmt.Sprintf(format, args...)
+	this.tokens.Consume(&token{tokenTypeError, this.err})
 	return nil
 }
 
 // Returns true if scan was a success.
-func (l *lexer) ok() bool {
-	return len(l.err) > 0
+func (this *lexer) ok() bool {
+	return len(this.err) > 0
 }
 
 // Passes a token to the token consumer.
-func (l *lexer) emit(t tokenType) {
-	l.tokens.Consume(&token{t, l.current()})
+func (this *lexer) emit(t tokenType) {
+	this.tokens.Consume(&token{t, this.current()})
 }
 
 // Returns current lexeme string.
-func (l *lexer) current() string {
-	str := l.input[l.start:l.pos]
-	l.start = l.pos
+func (this *lexer) current() string {
+	str := this.input[this.start:this.pos]
+	this.start = this.pos
 	return str
 }
 
 // Returns the next rune in the input.
-func (l *lexer) next() (rune int32) {
-	if l.pos >= len(l.input) {
-		l.width = 0
+func (this *lexer) next() (rune int32) {
+	if this.pos >= len(this.input) {
+		this.width = 0
 		return 0
 	}
-	rune, l.width = utf8.DecodeRuneInString(l.input[l.pos:])
-	l.pos += l.width
+	rune, this.width = utf8.DecodeRuneInString(this.input[this.pos:])
+	this.pos += this.width
 	return rune
 }
 
 // Returns whether end was reached in the input.
-func (l *lexer) end() bool {
-	if l.pos >= len(l.input) {
+func (this *lexer) end() bool {
+	if this.pos >= len(this.input) {
 		return true
 	}
 	return false
 }
 
 // Skips over the pending input before this point.
-func (l *lexer) ignore() {
-	l.start = l.pos
+func (this *lexer) ignore() {
+	this.start = this.pos
 }
 
 // Steps back one rune.
-func (l *lexer) backup() {
-	l.pos -= l.width
+func (this *lexer) backup() {
+	this.pos -= this.width
 }
 
 // Returns but does not consume the next rune in the input.
-func (l *lexer) peek() int32 {
-	rune := l.next()
-	l.backup()
+func (this *lexer) peek() int32 {
+	rune := this.next()
+	this.backup()
 	return rune
 }
 
@@ -223,36 +244,36 @@ func isWhiteSpace(rune int32) bool {
 
 // Reads till first white space character
 // as defined by isWhiteSpace function
-func (l *lexer) scanTillWhiteSpace() {
-	for rune := l.next(); !isWhiteSpace(rune); rune = l.next() {
+func (this *lexer) scanTillWhiteSpace() {
+	for rune := this.next(); !isWhiteSpace(rune); rune = this.next() {
 
 	}
 }
 
 // Skips white space characters in the input.
-func (l *lexer) skipWhiteSpaces() {
-	for rune := l.next(); unicode.IsSpace(rune); rune = l.next() {
+func (this *lexer) skipWhiteSpaces() {
+	for rune := this.next(); unicode.IsSpace(rune); rune = this.next() {
 	}
-	l.backup()
-	l.ignore()
+	this.backup()
+	this.ignore()
 }
 
 // Scans input and matches against the string.
 // Returns true if the expected string was matched.
-func (l *lexer) match(str string, skip int) bool {
+func (this *lexer) match(str string, skip int) bool {
 	done := true
 	for _, rune := range str {
 		if skip > 0 {
 			skip--
 			continue
 		}
-		if rune != l.next() {
+		if rune != this.next() {
 			done = false
 		}
 	}
-	if !isWhiteSpace(l.peek()) {
+	if !isWhiteSpace(this.peek()) {
 		done = false
-		l.scanTillWhiteSpace()
+		this.scanTillWhiteSpace()
 	}
 	return done
 }
@@ -260,13 +281,13 @@ func (l *lexer) match(str string, skip int) bool {
 // Scans input and tries to match the expected string.
 // Returns true if the expected string was matched.
 // Does not advance the input if the string was not matched.
-func (l *lexer) tryMatch(val string) bool {
+func (this *lexer) tryMatch(val string) bool {
 	i := 0
 	for _, rune := range val {
 		i++
-		if rune != l.next() {
+		if rune != this.next() {
 			for ; i > 0; i-- {
-				l.backup()
+				this.backup()
 			}
 			return false
 		}
@@ -276,101 +297,101 @@ func (l *lexer) tryMatch(val string) bool {
 
 // lexMatch matches expected string value emiting the token on success
 // and returning passed state function.
-func (l *lexer) lexMatch(typ tokenType, value string, skip int, fn stateFn) stateFn {
-	if l.match(value, skip) {
-		l.emit(typ)
+func (this *lexer) lexMatch(typ tokenType, value string, skip int, fn stateFn) stateFn {
+	if this.match(value, skip) {
+		this.emit(typ)
 		return fn
 	}
-	return l.errorToken("Unexpected token:" + l.current())
+	return this.errorToken("Unexpected token:" + this.current())
 }
 
 // lexSqlIndentifier scans input for valid sql identifier emiting the token on success
 // and returning passed state function.
-func (l *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
-	l.skipWhiteSpaces()
+func (this *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
+	this.skipWhiteSpaces()
 	// first rune has to be valid unicode letter
-	if !unicode.IsLetter(l.next()) {
-		return l.errorToken("identifier must begin with a letter " + l.current())
+	if !unicode.IsLetter(this.next()) {
+		return this.errorToken("identifier must begin with a letter " + this.current())
 	}
-	for rune := l.next(); unicode.IsLetter(rune) || unicode.IsDigit(rune); rune = l.next() {
+	for rune := this.next(); unicode.IsLetter(rune) || unicode.IsDigit(rune); rune = this.next() {
 
 	}
-	l.backup()
-	l.emit(typ)
+	this.backup()
+	this.emit(typ)
 	return fn
 }
 
 // lexSqlLeftParenthesis scans input for '(' emiting the token on success
 // and returning passed state function.
-func (l *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
-	l.skipWhiteSpaces()
-	if l.next() != '(' {
-		return l.errorToken("expected ( ")
+func (this *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() != '(' {
+		return this.errorToken("expected ( ")
 	}
-	l.emit(tokenTypeSqlLeftParenthesis)
+	this.emit(tokenTypeSqlLeftParenthesis)
 	return fn
 }
 
 // lexSqlValue scans input for valid sql value emiting the token on success
 // and returing passed state function.
-func (l *lexer) lexSqlValue(fn stateFn) stateFn {
-	l.skipWhiteSpaces()
-	if l.end() {
-		return l.errorToken("expected value but go eof")
+func (this *lexer) lexSqlValue(fn stateFn) stateFn {
+	this.skipWhiteSpaces()
+	if this.end() {
+		return this.errorToken("expected value but go eof")
 	}
-	rune := l.next()
+	rune := this.next()
 	typ := tokenTypeSqlValue
-	// real string
+	// quoted string
 	if rune == '\'' {
-		l.ignore()
-		for rune = l.next(); ; rune = l.next() {
+		this.ignore()
+		for rune = this.next(); ; rune = this.next() {
 			if rune == '\'' {
-				if !l.end() {
-					rune = l.next()
+				if !this.end() {
+					rune = this.next()
 					// check for '''
 					if rune == '\'' {
 						typ = tokenTypeSqlValueWithSingleQuote
 					} else {
 						// since we read lookahead after single quote that ends the string
 						// for lookahead
-						l.backup()
+						this.backup()
 						// for single quote which is not part of the value
-						l.backup()
-						l.emit(typ)
+						this.backup()
+						this.emit(typ)
 						// now ignore that single quote
-						l.next()
-						l.ignore()
+						this.next()
+						this.ignore()
 						//
 						return fn
 					}
 				} else {
 					// at the very end
-					l.backup()
-					l.emit(typ)
-					l.next()
+					this.backup()
+					this.emit(typ)
+					this.next()
 					return fn
 				}
 			}
 			if rune == 0 {
-				return l.errorToken("string was not delimited")
+				return this.errorToken("string was not delimited")
 			}
 		}
 		// value
 	} else {
-		for rune = l.next(); !isWhiteSpace(rune) && rune != ',' && rune != ')'; rune = l.next() {
+		for rune = this.next(); !isWhiteSpace(rune) && rune != ',' && rune != ')'; rune = this.next() {
 		}
-		l.backup()
-		l.emit(typ)
+		this.backup()
+		this.emit(typ)
 		return fn
 	}
 	return nil
 }
 
 // Tries to match expected value returns next state function depending on the match.
-func (l *lexer) lexTryMatch(typ tokenType, val string, fnMatch stateFn, fnNoMatch stateFn) stateFn {
-	l.skipWhiteSpaces()
-	if l.tryMatch(val) {
-		l.emit(typ)
+func (this *lexer) lexTryMatch(typ tokenType, val string, fnMatch stateFn, fnNoMatch stateFn) stateFn {
+	this.skipWhiteSpaces()
+	if this.tryMatch(val) {
+		this.emit(typ)
 		return fnMatch
 	}
 	return fnNoMatch
@@ -378,247 +399,244 @@ func (l *lexer) lexTryMatch(typ tokenType, val string, fnMatch stateFn, fnNoMatc
 
 // WHERE sql where clause scan state functions.
 
-func lexSqlWhereColumn(l *lexer) stateFn {
-	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlWhereColumnEqual)
+func lexSqlWhereColumn(this *lexer) stateFn {
+	return this.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlWhereColumnEqual)
 }
 
-func lexSqlWhereColumnEqual(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	if l.next() == '=' {
-		l.emit(tokenTypeSqlEqual)
+func lexSqlWhereColumnEqual(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() == '=' {
+		this.emit(tokenTypeSqlEqual)
 		return lexSqlWhereColumnEqualValue
 	}
-	return l.errorToken("expected = ")
+	return this.errorToken("expected = ")
 }
 
-func lexSqlWhereColumnEqualValue(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	return l.lexSqlValue(lexEof)
+func lexSqlWhereColumnEqualValue(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexSqlValue(lexEof)
 }
 
-func lexEof(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	if l.end() {
+func lexEof(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.end() {
 		return nil
 	}
-	return l.errorToken("unexpected token at the end of statement")
+	return this.errorToken("unexpected token at the end of statement")
 }
+
+// BEGING SQL
 
 // INSERT sql statement scan state functions.
 
-func lexSqlInsertInto(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	return l.lexMatch(tokenTypeSqlInto, "into", 0, lexSqlInsertIntoTable)
+func lexSqlInsertInto(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexMatch(tokenTypeSqlInto, "into", 0, lexSqlInsertIntoTable)
 }
 
-func lexSqlInsertIntoTable(l *lexer) stateFn {
-	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlInsertIntoTableLeftParenthesis)
+func lexSqlInsertIntoTable(this *lexer) stateFn {
+	return this.lexSqlIdentifier(tokenTypeSqlTable, lexSqlInsertIntoTableLeftParenthesis)
 }
 
-func lexSqlInsertIntoTableLeftParenthesis(l *lexer) stateFn {
-	return l.lexSqlLeftParenthesis(lexSqlInsertColumn)
+func lexSqlInsertIntoTableLeftParenthesis(this *lexer) stateFn {
+	return this.lexSqlLeftParenthesis(lexSqlInsertColumn)
 }
 
-func lexSqlInsertColumn(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlInsertColumnCommaOrRightParenthesis)
+func lexSqlInsertColumn(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlInsertColumnCommaOrRightParenthesis)
 }
 
-func lexSqlInsertColumnCommaOrRightParenthesis(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	switch l.next() {
+func lexSqlInsertColumnCommaOrRightParenthesis(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	switch this.next() {
 	case ',':
-		l.emit(tokenTypeSqlComma)
+		this.emit(tokenTypeSqlComma)
 		return lexSqlInsertColumn
 	case ')':
-		l.emit(tokenTypeSqlRightParenthesis)
+		this.emit(tokenTypeSqlRightParenthesis)
 		return lexSqlInsertValues
 	}
-	return l.errorToken("expected , or ) ")
+	return this.errorToken("expected , or ) ")
 }
 
-func lexSqlInsertValues(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	return l.lexMatch(tokenTypeSqlValues, "values", 0, lexSqlInsertValuesLeftParenthesis)
+func lexSqlInsertValues(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexMatch(tokenTypeSqlValues, "values", 0, lexSqlInsertValuesLeftParenthesis)
 }
 
-func lexSqlInsertValuesLeftParenthesis(l *lexer) stateFn {
-	return l.lexSqlLeftParenthesis(lexSqlInsertVal)
+func lexSqlInsertValuesLeftParenthesis(this *lexer) stateFn {
+	return this.lexSqlLeftParenthesis(lexSqlInsertVal)
 }
 
-func lexSqlInsertVal(l *lexer) stateFn {
-	return l.lexSqlValue(lexSqlInsertValueCommaOrRigthParenthesis)
+func lexSqlInsertVal(this *lexer) stateFn {
+	return this.lexSqlValue(lexSqlInsertValueCommaOrRigthParenthesis)
 }
 
-func lexSqlInsertValueCommaOrRigthParenthesis(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	switch l.next() {
+func lexSqlInsertValueCommaOrRigthParenthesis(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	switch this.next() {
 	case ',':
-		l.emit(tokenTypeSqlComma)
+		this.emit(tokenTypeSqlComma)
 		return lexSqlInsertVal
 	case ')':
-		l.emit(tokenTypeSqlRightParenthesis)
+		this.emit(tokenTypeSqlRightParenthesis)
 		// we are done with insert
 		return nil
 	}
-	return l.errorToken("expected , or ) ")
+	return this.errorToken("expected , or ) ")
 }
 
 // SELECT sql statement scan state functions.
 
-func lexSqlSelectStar(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	if l.next() == '*' {
-		l.emit(tokenTypeSqlStar)
+func lexSqlSelectStar(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() == '*' {
+		this.emit(tokenTypeSqlStar)
 		return lexSqlFrom
 	}
-	return l.errorToken("expected columns or *")
+	return this.errorToken("expected columns or *")
 }
 
 // UPDATE sql statement scan state functions.
 
-func lexSqlUpdateTable(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlUpdateTableSet)
+func lexSqlUpdateTable(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexSqlIdentifier(tokenTypeSqlTable, lexSqlUpdateTableSet)
 }
 
-func lexSqlUpdateTableSet(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	return l.lexMatch(tokenTypeSqlSet, "set", 0, lexSqlColumn)
+func lexSqlUpdateTableSet(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexMatch(tokenTypeSqlSet, "set", 0, lexSqlColumn)
 }
 
-func lexSqlColumn(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	if l.end() {
+func lexSqlColumn(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.end() {
 		return nil
 	}
-	return l.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlColumnEqual)
+	return this.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlColumnEqual)
 }
 
-func lexSqlColumnEqual(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	if l.next() == '=' {
-		l.emit(tokenTypeSqlEqual)
+func lexSqlColumnEqual(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() == '=' {
+		this.emit(tokenTypeSqlEqual)
 		return lexSqlColumnEqualValue
 	}
-	return l.errorToken("expecgted = ")
+	return this.errorToken("expecgted = ")
 }
 
-func lexSqlColumnEqualValue(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	return l.lexSqlValue(lexSqlCommaOrWhere)
+func lexSqlColumnEqualValue(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexSqlValue(lexSqlCommaOrWhere)
 }
 
-func lexSqlCommaOrWhere(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	if l.next() == ',' {
-		l.emit(tokenTypeSqlComma)
+func lexSqlCommaOrWhere(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() == ',' {
+		this.emit(tokenTypeSqlComma)
 		return lexSqlColumn
 	}
-	l.backup()
+	this.backup()
 	return lexSqlWhere
 }
 
 // DELETE sql statement scan state functions.
 
-func lexSqlFrom(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	return l.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlFromTable)
+func lexSqlFrom(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexMatch(tokenTypeSqlFrom, "from", 0, lexSqlFromTable)
 }
 
-func lexSqlFromTable(l *lexer) stateFn {
-	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlWhere)
+func lexSqlFromTable(this *lexer) stateFn {
+	return this.lexSqlIdentifier(tokenTypeSqlTable, lexSqlWhere)
 }
 
-func lexSqlWhere(l *lexer) stateFn {
-	return l.lexTryMatch(tokenTypeSqlWhere, "where", lexSqlWhereColumn, nil)
+func lexSqlWhere(this *lexer) stateFn {
+	return this.lexTryMatch(tokenTypeSqlWhere, "where", lexSqlWhereColumn, nil)
 }
 
 // KEY and TAG sql statement scan state functions.
 
-func lexSqlKeyTable(l *lexer) stateFn {
-	return l.lexSqlIdentifier(tokenTypeSqlTable, lexSqlKeyColumn)
+func lexSqlKeyTable(this *lexer) stateFn {
+	return this.lexSqlIdentifier(tokenTypeSqlTable, lexSqlKeyColumn)
 }
 
-func lexSqlKeyColumn(l *lexer) stateFn {
-	return l.lexSqlIdentifier(tokenTypeSqlColumn, nil)
+func lexSqlKeyColumn(this *lexer) stateFn {
+	return this.lexSqlIdentifier(tokenTypeSqlColumn, nil)
 }
 
 // UNSUBSCRIBE
 
-func lexSqlUnsubscribeFrom(l *lexer) stateFn {
-	return lexSqlFrom(l)
+func lexSqlUnsubscribeFrom(this *lexer) stateFn {
+	return lexSqlFrom(this)
 }
 
 // END SQL
 
 // Helper function to process status stop start commands.
-func lexCommandST(l *lexer) stateFn {
-	switch l.next() {
+func lexCommandST(this *lexer) stateFn {
+	switch this.next() {
 	case 'a':
-		if l.next() == 'r' {
-			return l.lexMatch(tokenTypeCmdStart, "start", 4, nil)
-		}
-		return l.lexMatch(tokenTypeCmdStatus, "status", 4, nil)
-	default:
-		return l.lexMatch(tokenTypeCmdStop, "stop", 3, nil)
+		return this.lexMatch(tokenTypeCmdStatus, "status", 3, nil)
+	case 'o':
+		return this.lexMatch(tokenTypeCmdStop, "stop", 3, nil)
 	}
-	return l.errorToken("Invalid command:" + l.current())
+	return this.errorToken("Invalid command:" + this.current())
 }
 
 // Helper function to process select subscribe status stop start commands.
-func lexCommandS(l *lexer) stateFn {
-	switch l.next() {
+func lexCommandS(this *lexer) stateFn {
+	switch this.next() {
 	case 'e':
-		return l.lexMatch(tokenTypeSqlSelect, "select", 2, lexSqlSelectStar)
+		return this.lexMatch(tokenTypeSqlSelect, "select", 2, lexSqlSelectStar)
 	case 'u':
-		return l.lexMatch(tokenTypeSqlSubscribe, "subscribe", 2, lexSqlSelectStar)
+		return this.lexMatch(tokenTypeSqlSubscribe, "subscribe", 2, lexSqlSelectStar)
 	case 't':
-		return lexCommandST(l)
+		return lexCommandST(this)
 	}
-	return l.errorToken("Invalid command:" + l.current())
+	return this.errorToken("Invalid command:" + this.current())
 }
 
 // Initial state function.
-func lexCommand(l *lexer) stateFn {
-	l.skipWhiteSpaces()
-	switch l.next() {
+func lexCommand(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	switch this.next() {
 	case 'u': // update unsubscribe
-		if l.next() == 'p' {
-			return l.lexMatch(tokenTypeSqlUpdate, "update", 2, lexSqlUpdateTable)
+		if this.next() == 'p' {
+			return this.lexMatch(tokenTypeSqlUpdate, "update", 2, lexSqlUpdateTable)
 		}
-		return l.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 2, lexSqlUnsubscribeFrom)
+		return this.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 2, lexSqlUnsubscribeFrom)
 	case 's': // select subscribe status stop start
-		return lexCommandS(l)
+		return lexCommandS(this)
 	case 'i': // insert
-		return l.lexMatch(tokenTypeSqlInsert, "insert", 1, lexSqlInsertInto)
+		return this.lexMatch(tokenTypeSqlInsert, "insert", 1, lexSqlInsertInto)
 	case 'd': // delete
-		return l.lexMatch(tokenTypeSqlDelete, "delete", 1, lexSqlFrom)
-	case 'h': // help
-		return l.lexMatch(tokenTypeCmdHelp, "help", 1, nil)
+		return this.lexMatch(tokenTypeSqlDelete, "delete", 1, lexSqlFrom)
 	case 'k': // key
-		return l.lexMatch(tokenTypeSqlKey, "key", 1, lexSqlKeyTable)
+		return this.lexMatch(tokenTypeSqlKey, "key", 1, lexSqlKeyTable)
 	case 't': // tag
-		return l.lexMatch(tokenTypeSqlTag, "tag", 1, lexSqlKeyTable)
+		return this.lexMatch(tokenTypeSqlTag, "tag", 1, lexSqlKeyTable)
 	}
-	return l.errorToken("Invalid command:" + l.current())
+	return this.errorToken("Invalid command:" + this.current())
 }
 
-// Scans the input by executing state functon until.
+// Scans the input by executing state functon untithis.
 // the state is nil
-func (l *lexer) run() {
+func (this *lexer) run() {
 	for state := lexCommand; state != nil; {
-		state = state(l)
+		state = state(this)
 	}
-	l.emit(tokenTypeEOF)
+	this.emit(tokenTypeEOF)
 }
 
 // Scans the input by running lexer.
 func lex(input string, tokens tokenConsumer) bool {
-	l := &lexer{
+	lexer := &lexer{
 		input:  input,
 		tokens: tokens,
 	}
-	l.run()
-	return l.ok()
+	lexer.run()
+	return lexer.ok()
 }

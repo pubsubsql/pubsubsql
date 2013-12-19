@@ -25,33 +25,6 @@ import "strconv"
 
 //import "encoding/binary"
 
-type tokensProducerConsumer struct {
-	idx    int
-	tokens []*token
-}
-
-func newTokens() *tokensProducerConsumer {
-	return &tokensProducerConsumer{
-		idx:    0,
-		tokens: make([]*token, 0, config.TOKENS_PRODUCER_CAPACITY),
-	}
-}
-
-func (c *tokensProducerConsumer) Consume(t *token) {
-	c.tokens = append(c.tokens, t)
-}
-
-func (p *tokensProducerConsumer) Produce() *token {
-	if p.idx >= len(p.tokens) {
-		return &token{
-			typ: tokenTypeEOF,
-		}
-	}
-	t := p.tokens[p.idx]
-	p.idx++
-	return t
-}
-
 // networkContext
 type networkContext struct {
 	stoper *Stoper

@@ -20,8 +20,8 @@ import "time"
 import "os"
 
 type Controller struct {
-	stoper *Stoper	
-	network *network	
+	stoper  *Stoper
+	network *network
 }
 
 func (this *Controller) Run() {
@@ -33,7 +33,7 @@ func (this *Controller) Run() {
 	// this.mmands
 	switch config.COMMAND {
 	case "start":
-		this.runAsServer()	
+		this.runAsServer()
 	case "connect":
 		this.runAsClient()
 	case "help":
@@ -59,7 +59,7 @@ func (this *Controller) runAsServer() {
 	// network	
 	this.network = newNetwork(context)
 	this.network.start(config.netAddress())
-	println("started")						
+	println("started")
 	// wait for quit input
 	rd := newLineReader("q")
 	for rd.readLine() {
@@ -68,6 +68,5 @@ func (this *Controller) runAsServer() {
 	this.network.stop()
 	this.stoper.Stop(0)
 	this.stoper.Wait(time.Millisecond * 3000)
-	println("stoped")	
+	println("stoped")
 }
-

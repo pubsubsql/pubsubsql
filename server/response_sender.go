@@ -18,17 +18,17 @@ package pubsubsql
 
 // responseSender is responsible for channeling reponses to client connection
 type responseSender struct {
-	sender       chan response // channel to publish responses to
-	connectionId uint64
-	connectionStoper *Stoper 
+	sender           chan response // channel to publish responses to
+	connectionId     uint64
+	connectionStoper *Stoper
 }
 
 // factory
 func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
-		sender:       make(chan response, config.CHAN_RESPONSE_SENDER_BUFFER_SIZE),
-		connectionId: connectionId,
-		connectionStoper: NewStoper(), 
+		sender:           make(chan response, config.CHAN_RESPONSE_SENDER_BUFFER_SIZE),
+		connectionId:     connectionId,
+		connectionStoper: NewStoper(),
 	}
 }
 
@@ -63,4 +63,3 @@ func (s *responseSender) tryRecv() response {
 func (s *responseSender) recv() response {
 	return <-s.sender
 }
-

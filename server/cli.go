@@ -24,21 +24,21 @@ import "net"
 import "time"
 
 type lineReader struct {
-	reader *bufio.Reader		
-	quit string
-	line string
+	reader *bufio.Reader
+	quit   string
+	line   string
 }
 
 func newLineReader(quit string) *lineReader {
-	return &lineReader {
+	return &lineReader{
 		reader: bufio.NewReader(os.Stdin),
-		quit: quit,
+		quit:   quit,
 	}
 }
 
 func (l *lineReader) readLine() bool {
 	line, err := l.reader.ReadString('\n')
-	l.line = strings.TrimSpace(line)	
+	l.line = strings.TrimSpace(line)
 	if err != nil {
 		return false
 	}
@@ -46,21 +46,21 @@ func (l *lineReader) readLine() bool {
 }
 
 type cli struct {
-	prefix string		
-	stoper *Stoper
-	fromStdin chan string	
-	fromServer chan string	
-	toServer chan string
-	conn net.Conn
+	prefix     string
+	stoper     *Stoper
+	fromStdin  chan string
+	fromServer chan string
+	toServer   chan string
+	conn       net.Conn
 }
 
 func newCli() *cli {
-	return &cli {
-		stoper: NewStoper(),
-		fromStdin: make(chan string),
+	return &cli{
+		stoper:     NewStoper(),
+		fromStdin:  make(chan string),
 		fromServer: make(chan string),
-		toServer: make(chan string),
-	}  
+		toServer:   make(chan string),
+	}
 }
 
 func (c *cli) readInput() {
@@ -69,8 +69,8 @@ func (c *cli) readInput() {
 	l := newLineReader("q")
 	for l.readLine() {
 		if len(l.line) > 0 {
-			c.fromStdin <- l.line	
-		}			
+			c.fromStdin <- l.line
+		}
 	}
 }
 
@@ -81,7 +81,7 @@ func (c *cli) connect() bool {
 		return false
 	}
 	c.conn = conn
-	return true	
+	return true
 }
 
 func (c *cli) outputError(err string) {
@@ -106,9 +106,9 @@ func (c *cli) writeMessages() {
 				}
 			}
 		case <-c.stoper.GetChan():
-			ok = false	
+			ok = false
 		}
-	}	
+	}
 }
 
 func (c *cli) readMessages() {
@@ -122,7 +122,7 @@ func (c *cli) readMessages() {
 			c.outputError(err.Error())
 			break
 		}
-		select {	
+		select {
 		case c.fromServer <- string(bytes):
 		case <-c.stoper.GetChan():
 			ok = false
@@ -146,9 +146,9 @@ func (c *cli) run() {
 	var serverMessage string
 	var userInput string
 	for ok {
-		cout.WriteString(c.prefix)	
+		cout.WriteString(c.prefix)
 		cout.Flush()
-		
+
 		select {
 		case userInput, ok = <-c.fromStdin:
 			if ok {
@@ -156,7 +156,7 @@ func (c *cli) run() {
 			}
 		case serverMessage, ok = <-c.fromServer:
 			if ok {
-				cout.WriteString(serverMessage)			
+				cout.WriteString(serverMessage)
 				cout.WriteString("\n")
 				cout.Flush()
 			}
@@ -165,7 +165,7 @@ func (c *cli) run() {
 		}
 	}
 	c.conn.Close()
-	c.stoper.Wait(time.Millisecond * config.WAIT_MILLISECOND_CLI_SHUTDOWN)	
+	c.stoper.Wait(time.Millisecond * config.WAIT_MILLISECOND_CLI_SHUTDOWN)
 }
 
 func (c *cli) initPrefix() {
@@ -178,4 +178,3 @@ func (c *cli) initPrefix() {
 	}
 	c.prefix += ">"
 }
-

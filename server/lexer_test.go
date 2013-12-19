@@ -294,28 +294,6 @@ func TestSqlTagStatement(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
-// HELP
-func TestHelpCommand(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan *token)}
-	go lex(" help       ", &consumer)
-	expected := []token{
-		{tokenTypeCmdHelp, "help"},
-		{tokenTypeEOF, ""}}
-
-	validateTokens(t, expected, consumer.channel)
-}
-
-// START
-func TestStartCommand(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan *token)}
-	go lex("start", &consumer)
-	expected := []token{
-		{tokenTypeCmdStart, "start"},
-		{tokenTypeEOF, ""}}
-
-	validateTokens(t, expected, consumer.channel)
-}
-
 // STOP
 func TestStopCommand(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}

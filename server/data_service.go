@@ -23,17 +23,17 @@ type requestItem struct {
 
 // dataService prer-processes sqlRequests and channels them to approptiate tables for further proccessging
 type dataService struct {
-	requests   chan *requestItem
-	stoper     *Stoper
-	tables     map[string]*table
+	requests chan *requestItem
+	stoper   *Stoper
+	tables   map[string]*table
 }
 
 // dataService factory
 func newDataService(stoper *Stoper) *dataService {
 	return &dataService{
-		requests:   make(chan *requestItem, config.CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE),
-		stoper:     stoper,
-		tables:     make(map[string]*table),
+		requests: make(chan *requestItem, config.CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE),
+		stoper:   stoper,
+		tables:   make(map[string]*table),
 	}
 }
 
@@ -78,4 +78,3 @@ func (this *dataService) onSqlRequest(item *requestItem) {
 	// forward sql request to the table
 	tbl.requests <- item
 }
-
