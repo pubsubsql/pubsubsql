@@ -16,32 +16,34 @@
 
 package pubsubsql
 
-import "bytes"
-import "unicode/utf8"
-import "strconv"
-import "encoding/binary"
+import (
+	"bytes"
+	"encoding/binary"
+	"strconv"
+	"unicode/utf8"
+)
 
 type JSONBuilder struct {
 	bytes.Buffer
 	err bool
 }
 
+var headerSize = 4
+var emptyHeader = make([]byte, headerSize, headerSize)
+
 func networkReadyJSONBuilder() *JSONBuilder {
-	b := new(JSONBuilder)
+	builder := new(JSONBuilder)
 	// first four bytes is network header
-	b.WriteByte(0)
-	b.WriteByte(0)
-	b.WriteByte(0)
-	b.WriteByte(0)
-	return b
+	builder.Write(emptyHeader)
+	return builder
 }
 
 // implementation for string function was copied from go source code
 var hex = "0123456789abcdef"
 
-func (j *JSONBuilder) string(s string) int {
-	len0 := j.Len()
-	j.WriteByte('"')
+func (this *JSONBuilder) string(s string) int {
+	len0 := this.Len()
+	this.WriteByte('"')
 	start := 0
 	for i := 0; i < len(s); {
 		if b := s[i]; b < utf8.RuneSelf {
@@ -50,26 +52,26 @@ func (j *JSONBuilder) string(s string) int {
 				continue
 			}
 			if start < i {
-				j.WriteString(s[start:i])
+				this.WriteString(s[start:i])
 			}
 			switch b {
 			case '\\', '"':
-				j.WriteByte('\\')
-				j.WriteByte(b)
+				this.WriteByte('\\')
+				this.WriteByte(b)
 			case '\n':
-				j.WriteByte('\\')
-				j.WriteByte('n')
+				this.WriteByte('\\')
+				this.WriteByte('n')
 			case '\r':
-				j.WriteByte('\\')
-				j.WriteByte('r')
+				this.WriteByte('\\')
+				this.WriteByte('r')
 			default:
 				// This encodes bytes < 0x20 except for \n and \r, 
 				// as well as < and >. The latter are escaped because they
 				// can lead to security holes when user-controlled strings 
 				// are rendered into JSON and served to some browsers.
-				j.WriteString(`\u00`)
-				j.WriteByte(hex[b>>4])
-				j.WriteByte(hex[b&0xF])
+				this.WriteString(`\u00`)
+				this.WriteByte(hex[b>>4])
+				this.WriteByte(hex[b&0xF])
 			}
 			i++
 			start = i
@@ -77,70 +79,70 @@ func (j *JSONBuilder) string(s string) int {
 		}
 		c, size := utf8.DecodeRuneInString(s[i:])
 		if c == utf8.RuneError && size == 1 {
-			j.err = true
+			this.err = true
 		}
 		i += size
 	}
 	if start < len(s) {
-		j.WriteString(s[start:])
+		this.WriteString(s[start:])
 	}
-	j.WriteByte('"')
-	return j.Len() - len0
+	this.WriteByte('"')
+	return this.Len() - len0
 }
 
-func (j *JSONBuilder) int(i int) {
-	j.WriteString(strconv.Itoa(i))
+func (this *JSONBuilder) int(i int) {
+	this.WriteString(strconv.Itoa(i))
 }
 
-func (j *JSONBuilder) beginArray() {
-	j.WriteByte('[')
+func (this *JSONBuilder) beginArray() {
+	this.WriteByte('[')
 }
 
-func (j *JSONBuilder) beginObject() {
-	j.WriteByte('{')
+func (this *JSONBuilder) beginObject() {
+	this.WriteByte('{')
 }
 
-func (j *JSONBuilder) endArray() {
-	j.WriteByte(']')
+func (this *JSONBuilder) endArray() {
+	this.WriteByte(']')
 }
 
-func (j *JSONBuilder) endObject() {
-	j.WriteByte('}')
+func (this *JSONBuilder) endObject() {
+	this.WriteByte('}')
 }
 
-func (j *JSONBuilder) nameSeparator() {
-	j.WriteByte(':')
+func (this *JSONBuilder) nameSeparator() {
+	this.WriteByte(':')
 }
 
-func (j *JSONBuilder) valueSeparator() {
-	j.WriteByte(',')
+func (this *JSONBuilder) valueSeparator() {
+	this.WriteByte(',')
 }
 
-func (j *JSONBuilder) nameValue(name string, value string) {
-	j.string(name)
-	j.nameSeparator()
-	j.string(value)
+func (this *JSONBuilder) nameValue(name string, value string) {
+	this.string(name)
+	this.nameSeparator()
+	this.string(value)
 }
 
-func (j *JSONBuilder) nameIntValue(name string, val int) {
-	j.string(name)
-	j.nameSeparator()
-	j.int(val)
+func (this *JSONBuilder) nameIntValue(name string, val int) {
+	this.string(name)
+	this.nameSeparator()
+	this.int(val)
 }
 
-func (j *JSONBuilder) getNetworkBytes() []byte {
-	bytes := j.Bytes()
-	binary.LittleEndian.PutUint32(bytes, uint32(len(bytes)-4))
+func (this *JSONBuilder) getNetworkBytes() []byte {
+	bytes := this.Bytes()
+	binary.LittleEndian.PutUint32(bytes, uint32(len(bytes)-headerSize))
 	return bytes
 }
 
-func (j *JSONBuilder) getBytes() []byte {
-	return fromNetworkBytes(j.getNetworkBytes())
+func (this *JSONBuilder) getBytes() []byte {
+	return fromNetworkBytes(this.getNetworkBytes())
 }
 
 func fromNetworkBytes(bytes []byte) []byte {
-	if len(bytes) > 4 {
-		return bytes[4:]
+	if len(bytes) > headerSize {
+		return bytes[headerSize:]
 	}
 	return nil
 }
