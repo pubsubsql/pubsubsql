@@ -16,12 +16,15 @@
 
 package pubsubsql
 
-import "strconv"
-import "bufio"
-import "os"
-import "strings"
-import "net"
-import "time"
+import (
+	"bufio"
+	"fmt"
+	"net"
+	"os"
+	"strconv"
+	"strings"
+	"time"
+)
 
 type lineReader struct {
 	reader *bufio.Reader
@@ -63,118 +66,118 @@ func newCli() *cli {
 	}
 }
 
-func (c *cli) readInput() {
-	// we do not join here because there is no way to return from blocking readLine
-	defer c.stoper.Stop(0)
-	l := newLineReader("q")
-	for l.readLine() {
-		if len(l.line) > 0 {
-			c.fromStdin <- l.line
+func (this *cli) readInput() {
+	// we do not join the stoper because there is no way to return from blocking readLine
+	defer this.stoper.Stop(0)
+	cin := newLineReader("q")
+	for cin.readLine() {
+		if len(cin.line) > 0 {
+			this.fromStdin <- cin.line
 		}
 	}
 }
 
-func (c *cli) connect() bool {
+func (this *cli) connect() bool {
 	conn, err := net.Dial("tcp", config.netAddress())
 	if err != nil {
-		println(err)
+		this.outputError(err)
 		return false
 	}
-	c.conn = conn
+	this.conn = conn
 	return true
 }
 
-func (c *cli) outputError(err string) {
-	println("\nerror: " + err)
+func (this *cli) outputError(err error) {
+	fmt.Println("error: ", err)
 }
 
-func (c *cli) writeMessages() {
-	c.stoper.Join()
-	defer c.stoper.Stop(0)
-	writer := newNetMessageReaderWriter(c.conn, nil)
+func (this *cli) writeMessages() {
+	this.stoper.Join()
+	defer this.stoper.Stop(0)
+	writer := newNetMessageReaderWriter(this.conn, nil)
 	var message string
 	ok := true
 	for ok {
 		select {
-		case message, ok = <-c.toServer:
+		case message, ok = <-this.toServer:
 			if ok {
 				bytes := []byte(message)
 				err := writer.writeHeaderAndMessage(bytes)
 				if err != nil {
-					c.outputError(err.Error())
+					this.outputError(err)
 					ok = false
 				}
 			}
-		case <-c.stoper.GetChan():
+		case <-this.stoper.GetChan():
 			ok = false
 		}
 	}
 }
 
-func (c *cli) readMessages() {
-	c.stoper.Join()
-	defer c.stoper.Stop(0)
-	reader := newNetMessageReaderWriter(c.conn, nil)
+func (this *cli) readMessages() {
+	this.stoper.Join()
+	defer this.stoper.Stop(0)
+	reader := newNetMessageReaderWriter(this.conn, nil)
 	ok := true
 	for ok {
 		bytes, err := reader.readMessage()
 		if err != nil {
-			c.outputError(err.Error())
+			this.outputError(err)
 			break
 		}
 		select {
-		case c.fromServer <- string(bytes):
-		case <-c.stoper.GetChan():
+		case this.fromServer <- string(bytes):
+		case <-this.stoper.GetChan():
 			ok = false
 		}
 	}
 }
 
-func (c *cli) run() {
-	c.initPrefix()
+func (this *cli) run() {
+	this.initPrefix()
 	// connect to server
-	if !c.connect() {
+	if !this.connect() {
 		return
 	}
 	// read user input
-	go c.readInput()
-	go c.readMessages()
-	go c.writeMessages()
+	go this.readInput()
+	go this.readMessages()
+	go this.writeMessages()
 	//
 	cout := bufio.NewWriter(os.Stdout)
 	ok := true
 	var serverMessage string
 	var userInput string
 	for ok {
-		cout.WriteString(c.prefix)
+		cout.WriteString(this.prefix)
 		cout.Flush()
 
 		select {
-		case userInput, ok = <-c.fromStdin:
+		case userInput, ok = <-this.fromStdin:
 			if ok {
-				c.toServer <- userInput
+				this.toServer <- userInput
 			}
-		case serverMessage, ok = <-c.fromServer:
+		case serverMessage, ok = <-this.fromServer:
 			if ok {
 				cout.WriteString(serverMessage)
 				cout.WriteString("\n")
 				cout.Flush()
 			}
-		case <-c.stoper.GetChan():
+		case <-this.stoper.GetChan():
 			ok = false
 		}
 	}
-	c.conn.Close()
-	c.stoper.Wait(time.Millisecond * config.WAIT_MILLISECOND_CLI_SHUTDOWN)
+	this.conn.Close()
+	this.stoper.Wait(time.Millisecond * config.WAIT_MILLISECOND_CLI_SHUTDOWN)
 }
 
-func (c *cli) initPrefix() {
+func (this *cli) initPrefix() {
 	def := defaultConfig()
-	c.prefix = "pubsubsql"
+	this.prefix = "pubsubsql"
 	if def.IP != config.IP {
-		c.prefix += " " + config.netAddress()
+		this.prefix += " " + config.netAddress()
 	} else if def.PORT != config.PORT {
-		c.prefix += ":" + strconv.Itoa(int(config.PORT))
+		this.prefix += ":" + strconv.Itoa(int(config.PORT))
 	}
-	c.prefix += ">"
+	this.prefix += ">"
 }
