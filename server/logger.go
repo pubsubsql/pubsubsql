@@ -16,9 +16,11 @@
 
 package pubsubsql
 
-import "log"
-import "os"
-import "fmt"
+import (
+	"fmt"
+	"log"
+	"os"
+)
 
 var debugLogger = log.New(os.Stderr, "debug: ", log.LstdFlags)
 var infoLogger = log.New(os.Stderr, "info: ", log.LstdFlags)
