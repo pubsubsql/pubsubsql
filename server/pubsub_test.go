@@ -19,7 +19,7 @@ package pubsubsql
 import "testing"
 
 func TestPubSubVisitor(t *testing.T) {
-	var pubsub pubSub
+	var pubsub pubsub
 	//
 	if pubsub.hasSubscriptions() {
 		t.Errorf("should have no subscriptions")

@@ -55,20 +55,20 @@ func newErrorResponse(msg string) *errorResponse {
 	return &errorResponse{msg: msg}
 }
 
-func (r *errorResponse) getResponsStatus() responseStatusType {
+func (this *errorResponse) getResponsStatus() responseStatusType {
 	return responseStatusErr
 }
 
-func (r *errorResponse) String() string {
-	return `{"status":"err" "msg":"` + r.msg + `"}`
+func (this *errorResponse) String() string {
+	return `{"status":"err" "msg":"` + this.msg + `"}`
 }
 
-func (r *errorResponse) toNetworkReadyJSON() []byte {
+func (this *errorResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	builder.nameValue("status", "err")
 	builder.valueSeparator()
-	builder.nameValue("msg", r.msg)
+	builder.nameValue("msg", this.msg)
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
@@ -82,15 +82,15 @@ func newOkResponse() *okResponse {
 	return &okResponse{}
 }
 
-func (r *okResponse) getResponsStatus() responseStatusType {
+func (this *okResponse) getResponsStatus() responseStatusType {
 	return responseStatusOk
 }
 
-func (r *okResponse) String() string {
+func (this *okResponse) String() string {
 	return `{"status":"ok"}`
 }
 
-func (r *okResponse) toNetworkReadyJSON() []byte {
+func (this *okResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
@@ -104,22 +104,22 @@ type sqlInsertResponse struct {
 	id string
 }
 
-func (r *sqlInsertResponse) getResponsStatus() responseStatusType {
+func (this *sqlInsertResponse) getResponsStatus() responseStatusType {
 	return responseStatusOk
 }
 
-func (r *sqlInsertResponse) String() string {
-	return `{"response":"insert" "status":"ok" "id":"` + r.id + `"}`
+func (this *sqlInsertResponse) String() string {
+	return `{"response":"insert" "status":"ok" "id":"` + this.id + `"}`
 }
 
-func (r *sqlInsertResponse) toNetworkReadyJSON() []byte {
+func (this *sqlInsertResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "insert")
 	builder.valueSeparator()
-	id(builder, r.id)
+	id(builder, this.id)
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
@@ -143,43 +143,43 @@ func row(builder *JSONBuilder, columns []*column, rec *record) {
 	builder.endObject()
 }
 
-func (r *sqlSelectResponse) data(builder *JSONBuilder) {
-	builder.nameIntValue("rows", len(r.records))
+func (this *sqlSelectResponse) data(builder *JSONBuilder) {
+	builder.nameIntValue("rows", len(this.records))
 	builder.valueSeparator()
 	builder.string("data")
 	builder.nameSeparator()
 	builder.beginArray()
-	for recIndex, rec := range r.records {
+	for recIndex, rec := range this.records {
 		// another row
 		if recIndex != 0 {
 			builder.valueSeparator()
 		}
-		row(builder, r.columns, rec)
+		row(builder, this.columns, rec)
 	}
 	builder.endArray()
 }
 
-func (r *sqlSelectResponse) toNetworkReadyJSON() []byte {
+func (this *sqlSelectResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "select")
 	builder.valueSeparator()
-	r.data(builder)
+	this.data(builder)
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
 
-func (r *sqlSelectResponse) copyRecordData(source *record) {
-	l := len(r.columns)
+func (this *sqlSelectResponse) copyRecordData(source *record) {
+	l := len(this.columns)
 	dest := &record{
 		values: make([]string, l, l),
 	}
-	for idx, col := range r.columns {
+	for idx, col := range this.columns {
 		dest.setValue(idx, source.getValue(col.ordinal))
 	}
-	addRecordToSlice(&r.records, dest)
+	addRecordToSlice(&this.records, dest)
 }
 
 // sqlDeleteResponse
@@ -188,14 +188,14 @@ type sqlDeleteResponse struct {
 	deleted int
 }
 
-func (r *sqlDeleteResponse) toNetworkReadyJSON() []byte {
+func (this *sqlDeleteResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "delete")
 	builder.valueSeparator()
-	builder.nameIntValue("rows", r.deleted)
+	builder.nameIntValue("rows", this.deleted)
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
@@ -206,14 +206,14 @@ type sqlUpdateResponse struct {
 	updated int
 }
 
-func (r *sqlUpdateResponse) toNetworkReadyJSON() []byte {
+func (this *sqlUpdateResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "update")
 	builder.valueSeparator()
-	builder.nameIntValue("rows", r.updated)
+	builder.nameIntValue("rows", this.updated)
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
@@ -224,14 +224,14 @@ type sqlSubscribeResponse struct {
 	pubsubid uint64
 }
 
-func (r *sqlSubscribeResponse) toNetworkReadyJSON() []byte {
+func (this *sqlSubscribeResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "subscribe")
 	builder.valueSeparator()
-	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
@@ -248,16 +248,16 @@ type sqlActionDataResponse struct {
 	pubsubid uint64
 }
 
-func (r *sqlActionDataResponse) toNetworkReadyJSONHelper(act string) []byte {
+func (this *sqlActionDataResponse) toNetworkReadyJSONHelper(act string) []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, act)
 	builder.valueSeparator()
-	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
 	builder.valueSeparator()
-	r.data(builder)
+	this.data(builder)
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
@@ -267,8 +267,8 @@ type sqlActionAddResponse struct {
 	sqlActionDataResponse
 }
 
-func (r *sqlActionAddResponse) toNetworkReadyJSON() []byte {
-	return r.toNetworkReadyJSONHelper("add")
+func (this *sqlActionAddResponse) toNetworkReadyJSON() []byte {
+	return this.toNetworkReadyJSONHelper("add")
 }
 
 // sqlActionInsertResponse
@@ -276,8 +276,8 @@ type sqlActionInsertResponse struct {
 	sqlActionDataResponse
 }
 
-func (r *sqlActionInsertResponse) toNetworkReadyJSON() []byte {
-	return r.toNetworkReadyJSONHelper("insert")
+func (this *sqlActionInsertResponse) toNetworkReadyJSON() []byte {
+	return this.toNetworkReadyJSONHelper("insert")
 }
 
 // sqlActonDeleteResponse
@@ -287,16 +287,16 @@ type sqlActionDeleteResponse struct {
 	pubsubid uint64
 }
 
-func (r *sqlActionDeleteResponse) toNetworkReadyJSON() []byte {
+func (this *sqlActionDeleteResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "delete")
 	builder.valueSeparator()
-	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
 	builder.valueSeparator()
-	builder.nameValue("id", r.id)
+	builder.nameValue("id", this.id)
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
@@ -308,16 +308,16 @@ type sqlActionRemoveResponse struct {
 	pubsubid uint64
 }
 
-func (r *sqlActionRemoveResponse) toNetworkReadyJSON() []byte {
+func (this *sqlActionRemoveResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "remove")
 	builder.valueSeparator()
-	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
 	builder.valueSeparator()
-	builder.nameValue("id", r.id)
+	builder.nameValue("id", this.id)
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
@@ -330,20 +330,20 @@ type sqlActionUpdateResponse struct {
 	rec      *record
 }
 
-func (r *sqlActionUpdateResponse) toNetworkReadyJSON() []byte {
+func (this *sqlActionUpdateResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "update")
 	builder.valueSeparator()
-	builder.nameValue("pubsubid", strconv.FormatUint(r.pubsubid, 10))
+	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
 	builder.valueSeparator()
 
 	builder.string("data")
 	builder.nameSeparator()
 	builder.beginArray()
-	row(builder, r.cols, r.rec)
+	row(builder, this.cols, this.rec)
 	builder.endArray()
 
 	builder.endObject()
@@ -372,14 +372,14 @@ type sqlUnsubscribeResponse struct {
 	unsubscribed int
 }
 
-func (r *sqlUnsubscribeResponse) toNetworkReadyJSON() []byte {
+func (this *sqlUnsubscribeResponse) toNetworkReadyJSON() []byte {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "unsubscribe")
 	builder.valueSeparator()
-	builder.nameIntValue("subscriptions", r.unsubscribed)
+	builder.nameIntValue("subscriptions", this.unsubscribed)
 	builder.endObject()
 	return builder.getNetworkBytes()
 }
