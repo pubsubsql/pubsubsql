@@ -33,10 +33,10 @@ func ASSERT_FALSE(t *testing.T, value bool, message string) {
 
 func TestConfigCommand(t *testing.T) {
 	// connect
-	args := []string{"connect"}
+	args := []string{"cli"}
 	c := new(configuration)
 	ASSERT_TRUE(t, c.processCommandLine(args), "processCommandLine")
-	ASSERT_TRUE(t, c.COMMAND == "connect", "command connect")
+	ASSERT_TRUE(t, c.COMMAND == "cli", "command cli")
 	// help
 	args = []string{"help"}
 	c = new(configuration)
@@ -113,13 +113,6 @@ func TestConfigNetwork(t *testing.T) {
 	ASSERT_TRUE(t, c.processCommandLine(args), "processCommandLine")
 	ASSERT_TRUE(t, c.IP == ip, "ip")
 	ASSERT_TRUE(t, int(c.PORT) == port, "port")
-}
-
-func TestConfigCLI(t *testing.T) {
-	args := []string{"--cli=false"}
-	c := defaultConfig()
-	ASSERT_TRUE(t, c.processCommandLine(args), "processCommandLine")
-	ASSERT_FALSE(t, c.CLI, "cli")
 }
 
 func TestConfigInvalid(t *testing.T) {
