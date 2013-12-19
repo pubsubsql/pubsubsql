@@ -32,34 +32,34 @@ func newResponseSenderStub(connectionId uint64) *responseSender {
 	}
 }
 
-func (s *responseSender) send(r response) bool {
+func (this *responseSender) send(res response) bool {
 	select {
-	case s.sender <- r:
-		if !s.connectionStoper.Stoped() {
+	case this.sender <- res:
+		if !this.connectionStoper.Stoped() {
 			return true
 		}
 		debug("sender is stoped")
-	case <-s.connectionStoper.GetChan():
-		debug("connection is stoped")
+	case <-this.connectionStoper.GetChan():
+		debug("connection is closed")
 	default:
-		logwarn("sender queue is full connection: ", s.connectionId)
+		logwarn("sender queue is full connection: ", this.connectionId)
 		// notify client connection that it needs to close due to inability to 
-		// recv responses in a timely manner
-		s.connectionStoper.Stop(0)
+		// send responses in a timely manner
+		this.connectionStoper.Stop(0)
 	}
 	return false
 }
 
-func (s *responseSender) tryRecv() response {
+func (this *responseSender) tryRecv() response {
 	select {
-	case r := <-s.sender:
-		return r
+	case res := <-this.sender:
+		return res
 	default:
 		return nil
 	}
 	return nil
 }
 
-func (s *responseSender) recv() response {
-	return <-s.sender
+func (this *responseSender) recv() response {
+	return <-this.sender
 }
