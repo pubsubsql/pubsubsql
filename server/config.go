@@ -18,12 +18,14 @@ package pubsubsql
 
 import (
 	"flag"
-	"strings"
+	"fmt"
 	"strconv"
+	"strings"
 	"time"
 )
 
 type configuration struct {
+
 	// logger
 	LOG_DEBUG bool
 	LOG_INFO  bool
@@ -36,12 +38,12 @@ type configuration struct {
 	CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE     int
 	PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY int
 	PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY int
-	TOKENS_PRODUCER_CAPACITY				  int
+	TOKENS_PRODUCER_CAPACITY                  int
 	TABLE_COLUMNS_CAPACITY                    int
 	TABLE_RECORDS_CAPACITY                    int
 	TABLE_GET_RECORDS_BY_TAG_CAPACITY         int
-	WAIT_MILLISECOND_SERVER_SHUTDOWN		  time.Duration
-	WAIT_MILLISECOND_CLI_SHUTDOWN	     	  time.Duration
+	WAIT_MILLISECOND_SERVER_SHUTDOWN          time.Duration
+	WAIT_MILLISECOND_CLI_SHUTDOWN             time.Duration
 
 	// command 
 	COMMAND string
@@ -57,6 +59,7 @@ type configuration struct {
 
 func defaultConfig() configuration {
 	return configuration{
+
 		// logger
 		LOG_DEBUG: false,
 		LOG_INFO:  true,
@@ -69,31 +72,28 @@ func defaultConfig() configuration {
 		CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE:     1000,
 		PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY: 10,
 		PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY: 10,
-		TOKENS_PRODUCER_CAPACITY:				   30,			  	
+		TOKENS_PRODUCER_CAPACITY:                  30,
 		TABLE_COLUMNS_CAPACITY:                    10,
 		TABLE_RECORDS_CAPACITY:                    1000,
 		TABLE_GET_RECORDS_BY_TAG_CAPACITY:         20,
-		WAIT_MILLISECOND_SERVER_SHUTDOWN:		   3000,
-		WAIT_MILLISECOND_CLI_SHUTDOWN:			   1000,
+		WAIT_MILLISECOND_SERVER_SHUTDOWN:          3000,
+		WAIT_MILLISECOND_CLI_SHUTDOWN:             1000,
+
 		// command 
 		COMMAND: "start",
 
 		// network
 		IP:   "127.0.0.1",
 		PORT: 7777,
-
-		// run mode 
-		CLI:    true,
-		SERVER: true,
 	}
 }
 
 var config = defaultConfig()
 
 var validCommands = map[string]string{
-	"start":   "",
-	"connect": "",
-	"help":    "",
+	"start": "",
+	"cli":   "",
+	"help":  "",
 }
 
 func validCommandsUsageString() string {
@@ -105,26 +105,26 @@ func validCommandsUsageString() string {
 	return str
 }
 
-func (c *configuration) netAddress() string {
-	return c.IP + ":" + strconv.Itoa(int(c.PORT)) 	
+func (this *configuration) netAddress() string {
+	return this.IP + ":" + strconv.Itoa(int(this.PORT))
 }
 
-func (c *configuration) setLogLevel(loglevel string) bool {
-	c.LOG_DEBUG = false
-	c.LOG_INFO = false
-	c.LOG_WARN = false
-	c.LOG_ERROR = false
-	levels := strings.Split(loglevel, ",")
-	for _, s := range levels {
+func (this *configuration) setLogLevel(loglevel string) bool {
+	this.LOG_DEBUG = false
+	this.LOG_INFO = false
+	this.LOG_WARN = false
+	this.LOG_ERROR = false
+	logLevels := strings.Split(loglevel, ",")
+	for _, s := range logLevels {
 		switch s {
 		case "debug":
-			c.LOG_DEBUG = true
+			this.LOG_DEBUG = true
 		case "info":
-			c.LOG_INFO = true
+			this.LOG_INFO = true
 		case "warn":
-			c.LOG_WARN = true
+			this.LOG_WARN = true
 		case "error":
-			c.LOG_ERROR = true
+			this.LOG_ERROR = true
 		default:
 			return false
 		}
@@ -132,51 +132,49 @@ func (c *configuration) setLogLevel(loglevel string) bool {
 	return true
 }
 
-func (c *configuration) processCommandLine(args []string) bool {
-	fset := flag.NewFlagSet("pubsubsql", flag.ContinueOnError)
+func (this *configuration) processCommandLine(args []string) bool {
+
 	// set up flags
+	flags := flag.NewFlagSet("pubsubsql", flag.ContinueOnError)
 	var loglevel string
-	fset.StringVar(&loglevel, "loglevel", "info", `logging level "debug,info,warn,error"`)
-	fset.StringVar(&c.IP, "ip", config.IP, "ip address")
-	fset.UintVar(&c.PORT, "port", config.PORT, "port number")
-	fset.BoolVar(&c.CLI, "cli", config.CLI, "true indicates that server runs in interactive mode")
+	flags.StringVar(&loglevel, "loglevel", "info", `logging level "debug,info,warn,error"`)
+	flags.StringVar(&this.IP, "ip", config.IP, "ip address")
+	flags.UintVar(&this.PORT, "port", config.PORT, "port number")
 
 	// set command 
 	if len(args) > 0 {
 		first := args[0]
 		if first[0] != '-' {
+			// slide up args
 			if len(args) > 1 {
 				args = args[1:]
 			} else {
 				args = nil
 			}
-			c.COMMAND = first
+			this.COMMAND = first
 		}
 	}
-	if _, contains := validCommands[c.COMMAND]; !contains {
-		println("invalid command ", c.COMMAND, "\nvalid commands ", validCommandsUsageString())
+	if _, contains := validCommands[this.COMMAND]; !contains {
+		fmt.Println("invalid command ", this.COMMAND, "\nvalid commands ", validCommandsUsageString())
 		return false
 	}
 
 	// parse options
-	if len(args) > 0 {
-		err := fset.Parse(args)
-		if err != nil {
-			return false
-		}
-	}
-
-	// log level
-	// set loglevel
-	if !c.setLogLevel(loglevel) {
-		println("invalid --loglevel \"" + loglevel + "\"\n" + fset.Lookup("loglevel").Usage)
+	if len(args) > 0 && flags.Parse(args) != nil {
 		return false
 	}
 
-	if fset.NArg() > 0 {
-		println("invalid command line arrguments")
-		println("Usage of pubsubsql: ")
-		fset.PrintDefaults()
+	// set loglevel
+	if !this.setLogLevel(loglevel) {
+		fmt.Println("invalid --loglevel \"" + loglevel + "\"\n" + flags.Lookup("loglevel").Usage)
+		return false
+	}
+
+	// check if there is extra stuff
+	if flags.NArg() > 0 {
+		fmt.Println("invalid command line arrguments")
+		fmt.Println("Usage of pubsubsql: ")
+		flags.PrintDefaults()
 		return false
 	}
 
