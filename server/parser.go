@@ -29,7 +29,7 @@ type parser struct {
 }
 
 // Indicates that error happened during parse phase and returns errorRequest
-func (p *parser) parseError(s string) *errorRequest {
+func (this *parser) parseError(s string) *errorRequest {
 	e := errorRequest{
 		err: s,
 	}
@@ -38,83 +38,83 @@ func (p *parser) parseError(s string) *errorRequest {
 
 // Helper functions
 
-func (p *parser) parseSqlEqualVal(colval *columnValue, t *token) request {
+func (this *parser) parseSqlEqualVal(colval *columnValue, tok *token) request {
 	//col
-	if t == nil {
-		t = p.tokens.Produce()
+	if tok == nil {
+		tok = this.tokens.Produce()
 	}
-	if t.typ != tokenTypeSqlColumn {
-		return p.parseError("expected.col name")
+	if tok.typ != tokenTypeSqlColumn {
+		return this.parseError("expected.col name")
 	}
-	colval.col = t.val
+	colval.col = tok.val
 	// =
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlEqual {
-		return p.parseError("expected = sign")
+	tok = this.tokens.Produce()
+	if tok.typ != tokenTypeSqlEqual {
+		return this.parseError("expected = sign")
 	}
 	// value
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlValue {
-		return p.parseError("expected valid value")
+	tok = this.tokens.Produce()
+	if tok.typ != tokenTypeSqlValue {
+		return this.parseError("expected valid value")
 	}
-	colval.val = t.val
+	colval.val = tok.val
 	return nil
 }
 
-func (p *parser) parseTableName(table *string) request {
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlTable {
-		return p.parseError("expected table name")
+func (this *parser) parseTableName(table *string) request {
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeSqlTable {
+		return this.parseError("expected table name")
 	}
-	*table = t.val
+	*table = tok.val
 	return nil
 }
 
-func (p *parser) parseColumnName(column *string) request {
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlColumn {
-		return p.parseError("expected column name")
+func (this *parser) parseColumnName(column *string) request {
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeSqlColumn {
+		return this.parseError("expected column name")
 	}
-	*column = t.val
+	*column = tok.val
 	return nil
 }
 
-func (p *parser) parseEOF(req request) request {
-	t := p.tokens.Produce()
-	if t.typ == tokenTypeEOF {
+func (this *parser) parseEOF(req request) request {
+	tok := this.tokens.Produce()
+	if tok.typ == tokenTypeEOF {
 		return req
 	}
-	return p.parseError("expected EOF")
+	return this.parseError("expected EOF")
 }
 
-func (p *parser) parseSqlWhere(filter *sqlFilter, t *token) request {
+func (this *parser) parseSqlWhere(filter *sqlFilter, tok *token) request {
 	//must be where
-	if t != nil && t.typ != tokenTypeSqlWhere {
-		return p.parseError("expected where clause")
+	if tok != nil && tok.typ != tokenTypeSqlWhere {
+		return this.parseError("expected where clause")
 	}
-	return p.parseSqlEqualVal(&(filter.columnValue), nil)
+	return this.parseSqlEqualVal(&(filter.columnValue), nil)
 }
 
 // INSERT sql statement
 
 // Parses sql insert statement and returns sqlInsertRequest on success.
-func (p *parser) parseSqlInsert() request {
+func (this *parser) parseSqlInsert() request {
 	// into
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlInto {
-		return p.parseError("expected into")
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeSqlInto {
+		return this.parseError("expected into")
 	}
 	req := &sqlInsertRequest{
 		colVals: make([]*columnValue, 0, config.PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY),
 	}
 	// table name
-	if errreq := p.parseTableName(&req.table); errreq != nil {
+	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq
 	}
 	// (
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlLeftParenthesis {
-		return p.parseError("expected ( ")
+	tok = this.tokens.Produce()
+	if tok.typ != tokenTypeSqlLeftParenthesis {
+		return this.parseError("expected ( ")
 	}
 	// columns
 	columns := 0
@@ -122,7 +122,7 @@ func (p *parser) parseSqlInsert() request {
 	var errreq request
 	var str string
 	for expectedType == tokenTypeSqlColumn {
-		errreq, expectedType, str = p.parseSqlInsertColumn()
+		errreq, expectedType, str = this.parseSqlInsertColumn()
 		if errreq != nil {
 			return errreq
 		}
@@ -130,20 +130,20 @@ func (p *parser) parseSqlInsert() request {
 		columns++
 	}
 	// values
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlValues {
-		return p.parseError("expected values keyword")
+	tok = this.tokens.Produce()
+	if tok.typ != tokenTypeSqlValues {
+		return this.parseError("expected values keyword")
 	}
 	// (
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlLeftParenthesis {
-		return p.parseError("expected values ( ")
+	tok = this.tokens.Produce()
+	if tok.typ != tokenTypeSqlLeftParenthesis {
+		return this.parseError("expected values ( ")
 	}
 	//
 	expectedType = tokenTypeSqlValue
 	values := 0
 	for expectedType == tokenTypeSqlValue {
-		errreq, expectedType, str = p.parseSqlInsertValue()
+		errreq, expectedType, str = this.parseSqlInsertValue()
 		if errreq != nil {
 			return errreq
 		}
@@ -154,70 +154,70 @@ func (p *parser) parseSqlInsert() request {
 	}
 	if columns != values {
 		s := fmt.Sprintf("number of columns:%d and values:%d do not match", columns, values)
-		return p.parseError(s)
+		return this.parseError(s)
 	}
 	// done
 	return req
 }
 
-func (p *parser) parseSqlInsertColumn() (request, tokenType, string) {
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlColumn {
-		return p.parseError("expected column name"), tokenTypeError, ""
+func (this *parser) parseSqlInsertColumn() (request, tokenType, string) {
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeSqlColumn {
+		return this.parseError("expected column name"), tokenTypeError, ""
 	}
-	str := t.val
-	t = p.tokens.Produce()
-	if t.typ == tokenTypeSqlComma {
+	str := tok.val
+	tok = this.tokens.Produce()
+	if tok.typ == tokenTypeSqlComma {
 		return nil, tokenTypeSqlColumn, str
 	}
-	if t.typ == tokenTypeSqlRightParenthesis {
+	if tok.typ == tokenTypeSqlRightParenthesis {
 		return nil, tokenTypeSqlValues, str
 	}
-	return p.parseError("expected , or ) "), tokenTypeError, ""
+	return this.parseError("expected , or ) "), tokenTypeError, ""
 }
 
-func (p *parser) parseSqlInsertValue() (request, tokenType, string) {
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlValue {
-		return p.parseError("expected value"), tokenTypeError, ""
+func (this *parser) parseSqlInsertValue() (request, tokenType, string) {
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeSqlValue {
+		return this.parseError("expected value"), tokenTypeError, ""
 	}
-	str := t.val
-	t = p.tokens.Produce()
-	if t.typ == tokenTypeSqlComma {
+	str := tok.val
+	tok = this.tokens.Produce()
+	if tok.typ == tokenTypeSqlComma {
 		return nil, tokenTypeSqlValue, str
 	}
-	if t.typ == tokenTypeSqlRightParenthesis {
+	if tok.typ == tokenTypeSqlRightParenthesis {
 		return nil, tokenTypeEOF, str
 	}
-	return p.parseError("expected , or ) "), tokenTypeError, ""
+	return this.parseError("expected , or ) "), tokenTypeError, ""
 }
 
 // SELECT sql statement
 
 // Parses sql select statement and returns sqlSelectRequest on success.
-func (p *parser) parseSqlSelect() request {
+func (this *parser) parseSqlSelect() request {
 	// *
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlStar {
-		return p.parseError("expected * symbol")
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeSqlStar {
+		return this.parseError("expected * symbol")
 	}
 	// from
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlFrom {
-		return p.parseError("expected from")
+	tok = this.tokens.Produce()
+	if tok.typ != tokenTypeSqlFrom {
+		return this.parseError("expected from")
 	}
 	req := new(sqlSelectRequest)
 	// table name
-	if errreq := p.parseTableName(&req.table); errreq != nil {
+	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq
 	}
 	// possible eof
-	t = p.tokens.Produce()
-	if t.typ == tokenTypeEOF {
+	tok = this.tokens.Produce()
+	if tok.typ == tokenTypeEOF {
 		return req
 	}
 	// where
-	if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+	if errreq := this.parseSqlWhere(&(req.filter), tok); errreq != nil {
 		return errreq
 	}
 	// we are good
@@ -227,37 +227,37 @@ func (p *parser) parseSqlSelect() request {
 // UPDATE sql statement
 
 // Parses sql update statement and returns sqlUpdateRequest on success.
-func (p *parser) parseSqlUpdate() request {
+func (this *parser) parseSqlUpdate() request {
 	req := &sqlUpdateRequest{
 		colVals: make([]*columnValue, 0, config.PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY),
 	}
 	// table name
-	if errreq := p.parseTableName(&req.table); errreq != nil {
+	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq
 	}
 	// set
-	t := p.tokens.Produce()
-	if t.typ == tokenTypeSqlSet {
-		return p.parseSqlUpdateColVals(req)
+	tok := this.tokens.Produce()
+	if tok.typ == tokenTypeSqlSet {
+		return this.parseSqlUpdateColVals(req)
 	}
-	return p.parseError("expected set keyword")
+	return this.parseError("expected set keyword")
 }
 
-func (p *parser) parseSqlUpdateColVals(req *sqlUpdateRequest) request {
+func (this *parser) parseSqlUpdateColVals(req *sqlUpdateRequest) request {
 	count := 0
 loop:
-	for t := p.tokens.Produce(); ; t = p.tokens.Produce() {
-		switch t.typ {
+	for tok := this.tokens.Produce(); ; tok = this.tokens.Produce() {
+		switch tok.typ {
 		case tokenTypeSqlColumn:
 			colval := new(columnValue)
 			req.colVals = append(req.colVals, colval)
-			if errreq := p.parseSqlEqualVal(colval, t); errreq != nil {
+			if errreq := this.parseSqlEqualVal(colval, tok); errreq != nil {
 				return errreq
 			}
 			count++
 
 		case tokenTypeSqlWhere:
-			if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+			if errreq := this.parseSqlWhere(&(req.filter), tok); errreq != nil {
 				return errreq
 			}
 			// we must be at the end
@@ -270,11 +270,11 @@ loop:
 			continue
 
 		default:
-			return p.parseError("expected.col or where keyword")
+			return this.parseError("expected.col or where keyword")
 		}
 	}
 	if count == 0 {
-		return p.parseError("expected at least on.col value pair")
+		return this.parseError("expected at least on.col value pair")
 	}
 	return req
 }
@@ -282,24 +282,24 @@ loop:
 // DELETE sql statement
 
 // Parses sql delete statement and returns sqlDeleteRequest on success.
-func (p *parser) parseSqlDelete() request {
+func (this *parser) parseSqlDelete() request {
 	// from
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlFrom {
-		return p.parseError("expected from")
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeSqlFrom {
+		return this.parseError("expected from")
 	}
 	req := new(sqlDeleteRequest)
 	// table name
-	if errreq := p.parseTableName(&req.table); errreq != nil {
+	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq
 	}
 	// possible eof
-	t = p.tokens.Produce()
-	if t.typ == tokenTypeEOF {
+	tok = this.tokens.Produce()
+	if tok.typ == tokenTypeEOF {
 		return req
 	}
 	// than it must be where
-	if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+	if errreq := this.parseSqlWhere(&(req.filter), tok); errreq != nil {
 		return errreq
 	}
 	// we are good
@@ -309,61 +309,60 @@ func (p *parser) parseSqlDelete() request {
 // KEY sql statement
 
 // Parses sql key statement and returns sqlKeyRequest on success.
-func (p *parser) parseSqlKey() request {
+func (this *parser) parseSqlKey() request {
 	req := new(sqlKeyRequest)
 	// table name
-	if errreq := p.parseTableName(&req.table); errreq != nil {
+	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq
 	}
 	// column name
-	if errreq := p.parseColumnName(&req.column); errreq != nil {
+	if errreq := this.parseColumnName(&req.column); errreq != nil {
 		return errreq
 	}
-	return p.parseEOF(req)
+	return this.parseEOF(req)
 }
 
 // TAG sql statement
 
 // Parses sql tag statement and returns sqlRequest on success.
-func (p *parser) parseSqlTag() request {
+func (this *parser) parseSqlTag() request {
 	req := new(sqlTagRequest)
 	// table name
-	if errreq := p.parseTableName(&req.table); errreq != nil {
+	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq
 	}
 	// column name
-	if errreq := p.parseColumnName(&req.column); errreq != nil {
+	if errreq := this.parseColumnName(&req.column); errreq != nil {
 		return errreq
 	}
-	return p.parseEOF(req)
+	return this.parseEOF(req)
 }
 
 // SUBSCRIBE sql statement
 
 // Parses sql subscribe statement and returns sqlSubscribeRequest on success.
-func (p *parser) parseSqlSubscribe() request {
-	// *
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlStar {
-		return p.parseError("expected * symbol")
+func (this *parser) parseSqlSubscribe() request {
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeSqlStar {
+		return this.parseError("expected * symbol")
 	}
 	// from
-	t = p.tokens.Produce()
-	if t.typ != tokenTypeSqlFrom {
-		return p.parseError("expected from")
+	tok = this.tokens.Produce()
+	if tok.typ != tokenTypeSqlFrom {
+		return this.parseError("expected from")
 	}
 	req := new(sqlSubscribeRequest)
 	// table name
-	if errreq := p.parseTableName(&req.table); errreq != nil {
+	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq
 	}
 	// possible eof
-	t = p.tokens.Produce()
-	if t.typ == tokenTypeEOF {
+	tok = this.tokens.Produce()
+	if tok.typ == tokenTypeEOF {
 		return req
 	}
 	// where
-	if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+	if errreq := this.parseSqlWhere(&(req.filter), tok); errreq != nil {
 		return errreq
 	}
 	// we are good
@@ -373,24 +372,24 @@ func (p *parser) parseSqlSubscribe() request {
 // UNSUBSCRIBE sql statement
 
 // Parses sql unsubscribe statement and returns sqlUnsubscribeRequest on success.
-func (p *parser) parseSqlUnsubscribe() request {
+func (this *parser) parseSqlUnsubscribe() request {
 	// from
-	t := p.tokens.Produce()
-	if t.typ != tokenTypeSqlFrom {
-		return p.parseError("expected from")
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeSqlFrom {
+		return this.parseError("expected from")
 	}
 	req := new(sqlUnsubscribeRequest)
 	// table name
-	if errreq := p.parseTableName(&req.table); errreq != nil {
+	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq
 	}
 	// possible eof
-	t = p.tokens.Produce()
-	if t.typ == tokenTypeEOF {
+	tok = this.tokens.Produce()
+	if tok.typ == tokenTypeEOF {
 		return req
 	}
 	// than it must be where
-	if errreq := p.parseSqlWhere(&(req.filter), t); errreq != nil {
+	if errreq := this.parseSqlWhere(&(req.filter), tok); errreq != nil {
 		return errreq
 	}
 	// we are good
@@ -398,42 +397,41 @@ func (p *parser) parseSqlUnsubscribe() request {
 }
 
 // Runs the parser.
-func (p *parser) run() request {
-	t := p.tokens.Produce()
-	switch t.typ {
+func (this *parser) run() request {
+	tok := this.tokens.Produce()
+	switch tok.typ {
 	case tokenTypeSqlInsert:
-		return p.parseSqlInsert()
+		return this.parseSqlInsert()
 
 	case tokenTypeSqlSelect:
-		return p.parseSqlSelect()
+		return this.parseSqlSelect()
 
 	case tokenTypeSqlUpdate:
-		return p.parseSqlUpdate()
+		return this.parseSqlUpdate()
 
 	case tokenTypeSqlDelete:
-		return p.parseSqlDelete()
+		return this.parseSqlDelete()
 
 	case tokenTypeSqlSubscribe:
-		return p.parseSqlSubscribe()
+		return this.parseSqlSubscribe()
 
 	case tokenTypeSqlUnsubscribe:
-		return p.parseSqlUnsubscribe()
+		return this.parseSqlUnsubscribe()
 
 	case tokenTypeSqlKey:
-		return p.parseSqlKey()
+		return this.parseSqlKey()
 
 	case tokenTypeSqlTag:
-		return p.parseSqlTag()
+		return this.parseSqlTag()
 
 	}
-
-	return p.parseError("invalid request")
+	return this.parseError("invalid request")
 }
 
 // Parses tokens and returns an request.
 func parse(tokens tokenProducer) request {
-	p := &parser{
+	parser := &parser{
 		tokens: tokens,
 	}
-	return p.run()
+	return parser.run()
 }
