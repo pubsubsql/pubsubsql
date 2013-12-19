@@ -16,8 +16,10 @@
 
 package pubsubsql
 
-import "time"
-import "os"
+import (
+	"os"
+	"time"
+)
 
 type Controller struct {
 	stoper  *Stoper
@@ -30,14 +32,16 @@ func (this *Controller) Run() {
 	}
 	// stoper
 	this.stoper = NewStoper()
-	// this.mmands
+	// process commands 
 	switch config.COMMAND {
 	case "start":
 		this.runAsServer()
-	case "connect":
+	case "cli":
 		this.runAsClient()
 	case "help":
 		println("help")
+	case "status":
+		println("status")
 	}
 }
 
@@ -47,26 +51,26 @@ func (this *Controller) runAsClient() {
 }
 
 func (this *Controller) runAsServer() {
-	// dataservithis.
+	// data service
 	datasrv := newDataService(this.stoper)
 	go datasrv.run()
 	// router 
 	router := newRequestRouter(datasrv)
-	// network 
+	// network context
 	context := new(networkContext)
 	context.stoper = this.stoper
 	context.router = router
 	// network	
 	this.network = newNetwork(context)
 	this.network.start(config.netAddress())
-	println("started")
+	info("started")
 	// wait for quit input
-	rd := newLineReader("q")
-	for rd.readLine() {
+	cin := newLineReader("q")
+	for cin.readLine() {
 	}
 	// shutdown
 	this.network.stop()
 	this.stoper.Stop(0)
 	this.stoper.Wait(time.Millisecond * 3000)
-	println("stoped")
+	info("stoped")
 }

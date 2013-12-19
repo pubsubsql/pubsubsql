@@ -50,3 +50,7 @@ func logerror(v ...interface{}) {
 		infoLogger.Output(2, fmt.Sprintln(v...))
 	}
 }
+
+func info(v ...interface{}) {
+	infoLogger.Output(2, fmt.Sprintln(v...))
+}
