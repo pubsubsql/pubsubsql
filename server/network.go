@@ -16,14 +16,13 @@
 
 package pubsubsql
 
-import "net"
-import "log"
-import "sync"
-import "encoding/binary"
-import "errors"
-import "strconv"
-
-//import "encoding/binary"
+import (
+	"encoding/binary"
+	"errors"
+	"net"
+	"strconv"
+	"sync"
+)
 
 // networkContext
 type networkContext struct {
@@ -47,7 +46,6 @@ func newNetworkContextStub() *networkContext {
 }
 
 // network
-
 type networkConnectionContainer interface {
 	removeConnection(*networkConnection)
 }
@@ -56,46 +54,45 @@ type network struct {
 	networkConnectionContainer
 	mutex       sync.Mutex
 	connections map[uint64]*networkConnection
-	//
-	listener net.Listener
-	context  *networkContext
+	listener    net.Listener
+	context     *networkContext
 }
 
-func (n *network) addConnection(c *networkConnection) {
-	if n.context.stoper.Stoped() {
+func (this *network) addConnection(netconn *networkConnection) {
+	if this.context.stoper.Stoped() {
 		return
 	}
-	n.mutex.Lock()
-	if n.connections == nil {
-		n.connections = make(map[uint64]*networkConnection)
+	this.mutex.Lock()
+	if this.connections == nil {
+		this.connections = make(map[uint64]*networkConnection)
 	}
-	n.connections[c.getConnectionId()] = c
-	n.mutex.Unlock()
-	loginfo("new connected client id: ", strconv.FormatUint(c.getConnectionId(), 10))
+	this.connections[netconn.getConnectionId()] = netconn
+	this.mutex.Unlock()
+	loginfo("New connected client id: ", strconv.FormatUint(netconn.getConnectionId(), 10))
 }
 
-func (n *network) removeConnection(c *networkConnection) {
-	n.mutex.Lock()
-	if n.connections != nil {
-		delete(n.connections, c.getConnectionId())
+func (this *network) removeConnection(netconn *networkConnection) {
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	if this.connections != nil {
+		delete(this.connections, netconn.getConnectionId())
 	}
-	n.mutex.Unlock()
 }
 
-func (n *network) connectionCount() int {
-	n.mutex.Lock()
-	count := len(n.connections)
-	n.mutex.Unlock()
+func (this *network) connectionCount() int {
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	count := len(this.connections)
 	return count
 }
 
-func (n *network) closeConnections() {
-	n.mutex.Lock()
-	for _, c := range n.connections {
+func (this *network) closeConnections() {
+	this.mutex.Lock()
+	defer this.mutex.Unlock()
+	for _, c := range this.connections {
 		c.close()
 	}
-	n.connections = nil
-	n.mutex.Unlock()
+	this.connections = nil
 }
 
 func newNetwork(context *networkContext) *network {
@@ -105,46 +102,44 @@ func newNetwork(context *networkContext) *network {
 	}
 }
 
-func (n *network) start(address string) bool {
+func (this *network) start(address string) bool {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		log.Println("Error listening to incoming connections ", err.Error())
+		logerror("Failed to listen to incoming connections ", err.Error())
 		return false
 	}
-	n.listener = listener
+	this.listener = listener
 	var connectionId uint64 = 0
 	// accept connections
 	acceptor := func() {
-		stoper := n.context.stoper
+		stoper := this.context.stoper
 		stoper.Join()
 		defer stoper.Leave()
 		for {
-			conn, err := n.listener.Accept()
+			conn, err := this.listener.Accept()
 			// stop was called
 			if stoper.Stoped() {
-				debug("stop was called")
 				return
 			}
 			if err == nil {
 				connectionId++
-				c := newNetworkConnection(conn, n.context, connectionId, n)
-				n.addConnection(c)
-				go c.run()
+				netconn := newNetworkConnection(conn, this.context, connectionId, this)
+				this.addConnection(netconn)
+				go netconn.run()
 			} else {
-				log.Println("Error accepting client connection", err.Error())
+				logerror("Error accepting client connection", err.Error())
 			}
 		}
 	}
 	go acceptor()
-	//	
 	return true
 }
 
-func (n *network) stop() {
-	if n.listener != nil {
-		n.listener.Close()
+func (this *network) stop() {
+	if this.listener != nil {
+		this.listener.Close()
 	}
-	n.closeConnections()
+	this.closeConnections()
 }
 
 //
@@ -167,122 +162,121 @@ func newNetworkConnection(conn net.Conn, context *networkContext, connectionId u
 	}
 }
 
-func (c *networkConnection) remove() {
-	c.parent.removeConnection(c)
+func (this *networkConnection) remove() {
+	this.parent.removeConnection(this)
 }
 
-func (c *networkConnection) getConnectionId() uint64 {
-	return c.sender.connectionId
+func (this *networkConnection) getConnectionId() uint64 {
+	return this.sender.connectionId
 }
 
-func (c *networkConnection) watchForQuit() {
+func (this *networkConnection) watchForQuit() {
 	select {
-	case <-c.sender.connectionStoper.GetChan():
-	case <-c.stoper.GetChan():
+	case <-this.sender.connectionStoper.GetChan():
+	case <-this.stoper.GetChan():
 	}
-	c.conn.Close()
-	c.parent.removeConnection(c)
+	this.conn.Close()
+	this.parent.removeConnection(this)
 }
 
-func (c *networkConnection) close() {
-	c.sender.connectionStoper.Stop(0)
+func (this *networkConnection) close() {
+	this.sender.connectionStoper.Stop(0)
 }
 
-func (c *networkConnection) run() {
-	go c.watchForQuit()
-	go c.read()
-	c.write()
+func (this *networkConnection) run() {
+	go this.watchForQuit()
+	go this.read()
+	this.write()
 }
 
-func (c *networkConnection) shouldStop() bool {
-	return c.sender.connectionStoper.Stoped() || c.stoper.Stoped()
-}
-
-type IStoper interface {
-	shouldStop() bool
+func (this *networkConnection) Stoped() bool {
+	// connection can be stoped becuase of global shutdown sequence
+	// or response sender is full
+	// or socket error
+	return this.sender.connectionStoper.Stoped() || this.stoper.Stoped()
 }
 
 // message reader
 type netMessageReaderWriter struct {
-	conn  net.Conn
-	bytes []byte
-	s     IStoper
+	conn   net.Conn
+	bytes  []byte
+	stoper IStoper
 }
 
-func newNetMessageReaderWriter(conn net.Conn, s IStoper) *netMessageReaderWriter {
+func newNetMessageReaderWriter(conn net.Conn, stoper IStoper) *netMessageReaderWriter {
 	return &netMessageReaderWriter{
-		conn:  conn,
-		bytes: make([]byte, 2048, 2048),
-		s:     s,
+		conn:   conn,
+		bytes:  make([]byte, 2048, 2048),
+		stoper: stoper,
 	}
 }
 
-func (r *netMessageReaderWriter) shouldStop() bool {
-	return r.s != nil && r.s.shouldStop()
+func (this *netMessageReaderWriter) Stoped() bool {
+	return this.stoper != nil && this.stoper.Stoped()
 }
 
-func (r *netMessageReaderWriter) writeMessage(bytes []byte) error {
-	l := len(bytes)
+func (this *netMessageReaderWriter) writeMessage(bytes []byte) error {
+	leftToWrite := len(bytes)
 	for {
-		if r.shouldStop() {
+		if this.Stoped() {
 			err := errors.New("Write was interupted by quit event.")
 			return err
 		}
-		n, err := r.conn.Write(bytes)
+		written, err := this.conn.Write(bytes)
 		if err != nil {
 			return err
 		}
-		if l == 0 {
+		leftToWrite -= written
+		if leftToWrite == 0 {
 			break
 		}
-		l = l - n
-		bytes = bytes[n:]
+		bytes = bytes[written:]
 	}
 	return nil
 }
 
-// for testing
-func (r *netMessageReaderWriter) writeHeaderAndMessage(bytes []byte) error {
-	header := make([]byte, 4, 4)
+// for cli
+func (this *netMessageReaderWriter) writeHeaderAndMessage(bytes []byte) error {
+	header := make([]byte, HEADER_SIZE, HEADER_SIZE)
 	binary.LittleEndian.PutUint32(header, uint32(len(bytes)))
-	err := r.writeMessage(header)
+	err := this.writeMessage(header)
 	if err != nil {
 		return err
 	}
-	return r.writeMessage(bytes)
+	return this.writeMessage(bytes)
 }
 
-func (r *netMessageReaderWriter) readMessage() ([]byte, error) {
+func (this *netMessageReaderWriter) readMessage() ([]byte, error) {
 	// header
-	n, err := r.conn.Read(r.bytes[0:4])
+	read, err := this.conn.Read(this.bytes[0:4])
 	if err != nil {
 		return nil, err
 	}
-	if n < 4 {
+	if read < HEADER_SIZE {
 		err = errors.New("Failed to read header.")
 		return nil, err
 	}
-	header := binary.LittleEndian.Uint32(r.bytes)
+	header := binary.LittleEndian.Uint32(this.bytes)
 	// prepare buffer
-	if len(r.bytes) < int(header) {
-		r.bytes = make([]byte, header, header)
+	if len(this.bytes) < int(header) {
+		this.bytes = make([]byte, header, header)
 	}
 	// message
-	bytes := r.bytes[:header]
+	bytes := this.bytes[:header]
 	left := len(bytes)
 	message := bytes
-	n = 0
+	read = 0
 	for left > 0 {
-		if r.shouldStop() {
+		if this.Stoped() {
 			err = errors.New("Read was interupted by quit event.")
 			return nil, err
 		}
-		bytes = bytes[n:]
-		n, err = r.conn.Read(bytes)
+		bytes = bytes[read:]
+		read, err = this.conn.Read(bytes)
 		if err != nil {
 			return nil, err
 		}
-		left = left - n
+		left -= read
 	}
 	return message, nil
 }
@@ -295,17 +289,16 @@ func (c *networkConnection) route(req request) {
 	c.router.route(item)
 }
 
-func (c *networkConnection) read() {
-	s := c.stoper
-	s.Join()
-	defer s.Leave()
-	reader := newNetMessageReaderWriter(c.conn, c)
+func (this *networkConnection) read() {
+	this.stoper.Join()
+	defer this.stoper.Leave()
+	reader := newNetMessageReaderWriter(this.conn, this)
 	//
 	var err error
 	var message []byte
 	for {
 		err = nil
-		if c.shouldStop() {
+		if this.Stoped() {
 			break
 		}
 		message, err = reader.readMessage()
@@ -313,45 +306,44 @@ func (c *networkConnection) read() {
 			break
 		}
 		// parse and route the message
-		pc := newTokens()
-		lex(string(message), pc)
-		req := parse(pc)
-		c.route(req)
+		tokens := newTokens()
+		lex(string(message), tokens)
+		req := parse(tokens)
+		this.route(req)
 	}
-	if !c.shouldStop() {
+	if !this.Stoped() {
 		if err != nil {
-			log.Println(err.Error())
+			logerror("Failed to read from client connection: ", this.sender.connectionId)
+			logerror(err.Error())
 			// notify writer and sender that we are done
-			c.sender.connectionStoper.Stop(0)
+			this.sender.connectionStoper.Stop(0)
 		}
 	}
 }
 
-func (c *networkConnection) write() {
-	s := c.stoper
-	s.Join()
-	defer s.Leave()
-	writer := newNetMessageReaderWriter(c.conn, c)
+func (this *networkConnection) write() {
+	this.stoper.Join()
+	defer this.stoper.Leave()
+	writer := newNetMessageReaderWriter(this.conn, this)
 	for {
 		select {
-		case res := <-c.sender.sender:
-			if c.shouldStop() {
+		case res := <-this.sender.sender:
+			if this.Stoped() {
 				return
 			}
 			err := writer.writeMessage(res.toNetworkReadyJSON())
 			if err != nil {
-				if !c.shouldStop() {
-					log.Println(err.Error())
+				if !this.Stoped() {
+					logerror("Failed to write to client connection: ", this.sender.connectionId)
+					logerror(err.Error())
 					// notify reader and sender that we are done
-					c.sender.connectionStoper.Stop(0)
+					this.sender.connectionStoper.Stop(0)
 				}
 				return
 			}
-		case <-s.GetChan():
-			debug("stop event on write")
+		case <-this.stoper.GetChan():
 			return
-		case <-c.sender.connectionStoper.GetChan():
-			debug("stop event on write")
+		case <-this.sender.connectionStoper.GetChan():
 			return
 		}
 	}

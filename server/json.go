@@ -28,8 +28,8 @@ type JSONBuilder struct {
 	err bool
 }
 
-var headerSize = 4
-var emptyHeader = make([]byte, headerSize, headerSize)
+var HEADER_SIZE = 4
+var emptyHeader = make([]byte, HEADER_SIZE, HEADER_SIZE)
 
 func networkReadyJSONBuilder() *JSONBuilder {
 	builder := new(JSONBuilder)
@@ -132,7 +132,7 @@ func (this *JSONBuilder) nameIntValue(name string, val int) {
 
 func (this *JSONBuilder) getNetworkBytes() []byte {
 	bytes := this.Bytes()
-	binary.LittleEndian.PutUint32(bytes, uint32(len(bytes)-headerSize))
+	binary.LittleEndian.PutUint32(bytes, uint32(len(bytes)-HEADER_SIZE))
 	return bytes
 }
 
@@ -141,8 +141,8 @@ func (this *JSONBuilder) getBytes() []byte {
 }
 
 func fromNetworkBytes(bytes []byte) []byte {
-	if len(bytes) > headerSize {
-		return bytes[headerSize:]
+	if len(bytes) > HEADER_SIZE {
+		return bytes[HEADER_SIZE:]
 	}
 	return nil
 }

@@ -22,8 +22,13 @@ import (
 	"time"
 )
 
+type IStoper interface {
+	Stoped() bool
+}
+
 // Stoper implements shutdown protocol to make sure that all active goroutines exit gracefully.
 type Stoper struct {
+	IStoper
 	counter int64
 	channel chan int
 	stoped  bool
