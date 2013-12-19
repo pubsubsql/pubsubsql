@@ -18,7 +18,7 @@ package pubsubsql
 
 type columnType int8
 
-// Default values
+// column types 
 const (
 	columnTypeNormal columnType = iota // non indexed column
 	columnTypeId                       // id column
@@ -50,26 +50,26 @@ func newColumn(name string, ordinal int) *column {
 	return col
 }
 
-func (c *column) isKey() bool {
-	return c.typ == columnTypeKey
+func (this *column) isKey() bool {
+	return this.typ == columnTypeKey
 }
 
-func (c *column) isTag() bool {
-	return c.typ == columnTypeTag
+func (this *column) isTag() bool {
+	return this.typ == columnTypeTag
 }
 
-func (c *column) isIndexed() bool {
-	return c.typ != columnTypeNormal
+func (this *column) isIndexed() bool {
+	return this.typ != columnTypeNormal
 }
 
 // Makes column to be tags container.
-func (c *column) makeTags(tagIndex int) {
-	c.typ = columnTypeTag
-	c.tagmap.init()
-	c.tagIndex = tagIndex
+func (this *column) makeTags(tagIndex int) {
+	this.typ = columnTypeTag
+	this.tagmap.init()
+	this.tagIndex = tagIndex
 }
 
 // Determines if value is present for a given key
-func (c *column) keyContainsValue(k string) bool {
-	return c.tagmap.containsTag(k)
+func (this *column) keyContainsValue(key string) bool {
+	return this.tagmap.containsTag(key)
 }
