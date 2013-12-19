@@ -311,13 +311,11 @@ func (this *networkConnection) read() {
 		req := parse(tokens)
 		this.route(req)
 	}
-	if !this.Stoped() {
-		if err != nil {
-			logerror("Failed to read from client connection: ", this.sender.connectionId)
-			logerror(err.Error())
-			// notify writer and sender that we are done
-			this.sender.connectionStoper.Stop(0)
-		}
+	if err != nil && !this.Stoped() {
+		logerror("Failed to read from client connection: ", this.sender.connectionId)
+		logerror(err.Error())
+		// notify writer and sender that we are done
+		this.sender.connectionStoper.Stop(0)
 	}
 }
 
@@ -342,8 +340,10 @@ func (this *networkConnection) write() {
 				return
 			}
 		case <-this.stoper.GetChan():
+			debug("on write stop")
 			return
 		case <-this.sender.connectionStoper.GetChan():
+			debug("on write connection stop")
 			return
 		}
 	}

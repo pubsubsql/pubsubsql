@@ -79,7 +79,7 @@ func (this *cli) readInput() {
 
 func (this *cli) connect() bool {
 	conn, err := net.Dial("tcp", config.netAddress())
-	if err != nil {
+	if err != nil  {
 		this.outputError(err)
 		return false
 	}
@@ -88,13 +88,15 @@ func (this *cli) connect() bool {
 }
 
 func (this *cli) outputError(err error) {
-	fmt.Println("error: ", err)
+	if !this.stoper.Stoped() {
+		fmt.Println("error: ", err)
+	}
 }
 
 func (this *cli) writeMessages() {
 	this.stoper.Join()
 	defer this.stoper.Stop(0)
-	writer := newNetMessageReaderWriter(this.conn, nil)
+	writer := newNetMessageReaderWriter(this.conn, this.stoper)
 	var message string
 	ok := true
 	for ok {
@@ -117,7 +119,7 @@ func (this *cli) writeMessages() {
 func (this *cli) readMessages() {
 	this.stoper.Join()
 	defer this.stoper.Stop(0)
-	reader := newNetMessageReaderWriter(this.conn, nil)
+	reader := newNetMessageReaderWriter(this.conn, this.stoper)
 	ok := true
 	for ok {
 		bytes, err := reader.readMessage()
