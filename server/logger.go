@@ -47,7 +47,7 @@ func logwarn(v ...interface{}) {
 
 func logerror(v ...interface{}) {
 	if config.LOG_ERROR {
-		infoLogger.Output(2, fmt.Sprintln(v...))
+		errLogger.Output(2, fmt.Sprintln(v...))
 	}
 }
 
