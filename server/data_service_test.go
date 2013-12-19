@@ -44,38 +44,38 @@ func TestDataService(t *testing.T) {
 	go dataSrv.run()
 	sender := newResponseSenderStub(1)
 	// insert
-	dataSrv.accept(sqlHelper("insert into stocks (ticker, bid, ask, sector) values (IBM, 123, 124, TECH) ", sender))
+	dataSrv.acceptRequest(sqlHelper("insert into stocks (ticker, bid, ask, sector) values (IBM, 123, 124, TECH) ", sender))
 	res := sender.recv()
 	validateSqlInsertResponseId(t, res, "0")
 	// select
-	dataSrv.accept(sqlHelper(" select * from stocks ", sender))
+	dataSrv.acceptRequest(sqlHelper(" select * from stocks ", sender))
 	res = sender.recv()
 	validateSqlSelect(t, res, 1, 5)
 	// key 
-	dataSrv.accept(sqlHelper(" key stocks ticker ", sender))
+	dataSrv.acceptRequest(sqlHelper(" key stocks ticker ", sender))
 	res = sender.recv()
 	validateOkResponse(t, res)
 	// tag 
-	dataSrv.accept(sqlHelper(" tag stocks sector ", sender))
+	dataSrv.acceptRequest(sqlHelper(" tag stocks sector ", sender))
 	res = sender.recv()
 	validateOkResponse(t, res)
 	// subscribe	
-	dataSrv.accept(sqlHelper(" subscribe * from stocks sector = TECH ", sender))
+	dataSrv.acceptRequest(sqlHelper(" subscribe * from stocks sector = TECH ", sender))
 	res = sender.recv()
 	validateSqlSubscribeResponse(t, res)
 	res = sender.recv() // action add
 	// update
-	dataSrv.accept(sqlHelper(" update stocks set bid = 140 where ticker = IBM ", sender))
+	dataSrv.acceptRequest(sqlHelper(" update stocks set bid = 140 where ticker = IBM ", sender))
 	res = sender.recv() // first is action update
 	res = sender.recv()
 	validateSqlUpdate(t, res, 1)
 	// delete
-	dataSrv.accept(sqlHelper(" delete from stocks where ticker = IBM ", sender))
+	dataSrv.acceptRequest(sqlHelper(" delete from stocks where ticker = IBM ", sender))
 	res = sender.recv() // first is action delete
 	res = sender.recv()
 	validateSqlDelete(t, res, 1)
 	// unsubscribe
-	dataSrv.accept(sqlHelper(" unsubscribe from stocks where pubsubid = 1 ", sender))
+	dataSrv.acceptRequest(sqlHelper(" unsubscribe from stocks where pubsubid = 1 ", sender))
 	res = sender.recv() // first is action delete
 	validateSqlUnsubscribe(t, res, 1)
 

@@ -17,28 +17,28 @@
 package pubsubsql
 
 // pubsub
-type pubSub struct {
+type pubsub struct {
 	head *subscription
 }
 
-func (p *pubSub) hasSubscriptions() bool {
-	return p.head != nil
+func (this *pubsub) hasSubscriptions() bool {
+	return this.head != nil
 }
 
-func (p *pubSub) add(s *subscription) {
-	s.next = p.head
-	p.head = s
+func (this *pubsub) add(sub *subscription) {
+	sub.next = this.head
+	this.head = sub
 }
 
-type pubsubVisitor func(s *subscription) bool
+type pubsubVisitor func(sub *subscription) bool
 
-func (p *pubSub) visit(v pubsubVisitor) {
-	prev := p.head
-	for sub := p.head; sub != nil; sub = sub.next {
-		if !sub.active() || !v(sub) {
-			if sub == p.head {
-				p.head = sub.next
-				prev = p.head
+func (this *pubsub) visit(visitor pubsubVisitor) {
+	prev := this.head
+	for sub := this.head; sub != nil; sub = sub.next {
+		if !sub.active() || !visitor(sub) {
+			if sub == this.head {
+				this.head = sub.next
+				prev = this.head
 			} else {
 				prev.next = sub.next
 			}
@@ -48,22 +48,22 @@ func (p *pubSub) visit(v pubsubVisitor) {
 	}
 }
 
-func (p *pubSub) count() int {
+func (this *pubsub) count() int {
 	i := 0
-	f := func(s *subscription) bool {
+	visitor := func(sub *subscription) bool {
 		i++
 		return true
 	}
-	p.visit(f)
+	this.visit(visitor)
 	return i
 }
 
-func (p *pubSub) publish(r response) {
-	f := func(s *subscription) bool {
-		debug(r.String())
+func (this *pubsub) publishTest(res response) {
+	visitor := func(sub *subscription) bool {
+		debug(res.String())
 		return true
 	}
-	p.visit(f)
+	this.visit(visitor)
 }
 
 // subscription represents individual client subscription
@@ -83,13 +83,13 @@ func newSubscription(sender *responseSender, id uint64) *subscription {
 }
 
 //
-func (s *subscription) active() bool {
-	return s.sender != nil
+func (this *subscription) active() bool {
+	return this.sender != nil
 }
 
 //
-func (s *subscription) deactivate() {
-	s.sender = nil
+func (this *subscription) deactivate() {
+	this.sender = nil
 }
 
 //
@@ -101,38 +101,38 @@ func newMapSubscriptions() mapSubscriptionByConnection {
 	return make(mapSubscriptionByConnection)
 }
 
-func (m mapSubscriptionByConnection) getOrAdd(connectionId uint64) mapSubscriptionById {
-	temp := m[connectionId]
-	if temp == nil {
-		temp = make(mapSubscriptionById)
-		m[connectionId] = temp
+func (this *mapSubscriptionByConnection) getOrAdd(connectionId uint64) mapSubscriptionById {
+	mapsub := (*this)[connectionId]
+	if mapsub == nil {
+		mapsub = make(mapSubscriptionById)
+		(*this)[connectionId] = mapsub
 	}
-	return temp
+	return mapsub
 }
 
-func (m *mapSubscriptionByConnection) add(connectionId uint64, sub *subscription) {
-	s := m.getOrAdd(connectionId)
-	s[sub.id] = sub
+func (this *mapSubscriptionByConnection) add(connectionId uint64, sub *subscription) {
+	mapsub := this.getOrAdd(connectionId)
+	mapsub[sub.id] = sub
 }
 
-func (m *mapSubscriptionByConnection) deactivate(connectionId uint64, pubsubid uint64) bool {
-	s := m.getOrAdd(connectionId)
-	sub := s[pubsubid]
+func (this *mapSubscriptionByConnection) deactivate(connectionId uint64, pubsubid uint64) bool {
+	mapsub := this.getOrAdd(connectionId)
+	sub := mapsub[pubsubid]
 	if sub == nil {
 		return false
 	}
 	sub.deactivate()
-	delete(s, pubsubid)
+	delete(mapsub, pubsubid)
 	return true
 }
 
-func (m *mapSubscriptionByConnection) deactivateAll(connectionId uint64) int {
-	s := m.getOrAdd(connectionId)
+func (this *mapSubscriptionByConnection) deactivateAll(connectionId uint64) int {
+	mapsub := this.getOrAdd(connectionId)
 	count := 0
-	for _, sub := range s {
+	for _, sub := range mapsub {
 		sub.deactivate()
 		count++
 	}
-	delete(*m, connectionId)
+	delete(*this, connectionId)
 	return count
 }

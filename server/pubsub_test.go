@@ -48,7 +48,7 @@ func TestPubSubVisitor(t *testing.T) {
 	}
 	//
 
-	pubsub.publish(newOkResponse())
+	pubsub.publishTest(newOkResponse())
 
 	//
 	sub3.deactivate()

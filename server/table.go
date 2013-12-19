@@ -38,7 +38,7 @@ type table struct {
 	colSlice     []*column
 	records      []*record
 	tagedColumns []*column
-	pubsub       pubSub
+	pubsub       pubsub
 	//
 	subscriptions mapSubscriptionByConnection
 	subid         uint64
@@ -255,14 +255,14 @@ func (t *table) bindRecord(cols []*column, colVals []*columnValue, rec *record, 
 }
 
 type pubsubRA struct {
-	removed []*pubSub
-	added   map[*pubSub]int
+	removed []*pubsub
+	added   map[*pubsub]int
 }
 
 func newPubsubRA() *pubsubRA {
 	return &pubsubRA{
-		removed: make([]*pubSub, 0, 3),
-		added:   make(map[*pubSub]int),
+		removed: make([]*pubsub, 0, 3),
+		added:   make(map[*pubsub]int),
 	}
 }
 
@@ -281,13 +281,13 @@ func hasWhatToAdd(ra *pubsubRA) bool {
 	return ra != nil && len(ra.added) > 0
 }
 
-func (ra *pubsubRA) toBeRemoved(pubsub *pubSub) {
+func (ra *pubsubRA) toBeRemoved(pubsub *pubsub) {
 	if pubsub != nil {
 		ra.removed = append(ra.removed, pubsub)
 	}
 }
 
-func (ra *pubsubRA) toBeAdded(pubsub *pubSub) {
+func (ra *pubsubRA) toBeAdded(pubsub *pubsub) {
 	if pubsub != nil {
 		ra.added[pubsub] = 1
 	}
@@ -328,12 +328,12 @@ func (t *table) updateRecord(cols []*column, colVals []*columnValue, rec *record
 // TAGS helper functions
 
 // Add value to non unique indexed column.
-func addValueToTags(col *column, val string, idx int) (*tag, *pubSub) {
+func addValueToTags(col *column, val string, idx int) (*tag, *pubsub) {
 	return col.tagmap.addTag(val, idx)
 }
 
 // Binds tag, pubsub and record.
-func (t *table) tagValue(col *column, idx int, rec *record) *pubSub {
+func (t *table) tagValue(col *column, idx int, rec *record) *pubsub {
 	val := rec.getValue(col.ordinal)
 	tg, pubsub := addValueToTags(col, val, idx)
 	lnk := link{
@@ -349,7 +349,7 @@ func (t *table) tagValue(col *column, idx int, rec *record) *pubSub {
 }
 
 // Deletes tag value for a particular record
-func (t *table) deleteTag(rec *record, col *column) *pubSub {
+func (t *table) deleteTag(rec *record, col *column) *pubsub {
 	lnk := &rec.links[col.tagIndex]
 	if lnk.tg != nil {
 		switch removeTag(lnk.tg) {
@@ -465,7 +465,7 @@ func (t *table) sqlUpdate(req *sqlUpdateRequest) response {
 			if hasWhatToRemove(ra) {
 				t.onRemove(ra.removed, rec)
 			}
-			var added *map[*pubSub]int
+			var added *map[*pubsub]int
 			if hasWhatToAdd(ra) {
 				added = &ra.added
 				t.onAdd(ra.added, rec)
@@ -669,7 +669,7 @@ func (t *table) onDelete(rec *record) {
 	t.visitSubscriptions(rec, publishActionDelete)
 }
 
-func (t *table) onRemove(pubsubs []*pubSub, rec *record) {
+func (t *table) onRemove(pubsubs []*pubsub, rec *record) {
 	f := func(sub *subscription) bool {
 		r := &sqlActionRemoveResponse{
 			id:       rec.idAsString(),
@@ -683,7 +683,7 @@ func (t *table) onRemove(pubsubs []*pubSub, rec *record) {
 	}
 }
 
-func (t *table) onAdd(added map[*pubSub]int, rec *record) {
+func (t *table) onAdd(added map[*pubsub]int, rec *record) {
 	f := func(sub *subscription) bool {
 		r := new(sqlActionAddResponse)
 		r.pubsubid = sub.id
@@ -695,7 +695,7 @@ func (t *table) onAdd(added map[*pubSub]int, rec *record) {
 	}
 }
 
-func (t *table) onUpdate(cols []*column, rec *record, added *map[*pubSub]int) {
+func (t *table) onUpdate(cols []*column, rec *record, added *map[*pubsub]int) {
 	f := func(sub *subscription) bool {
 		r := newSqlActionUpdateResponse(sub.id, cols, rec)
 		return sub.sender.send(r)

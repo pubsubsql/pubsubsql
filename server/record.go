@@ -20,7 +20,7 @@ import "strconv"
 
 // link
 type link struct {
-	pubsub *pubSub
+	pubsub *pubsub
 	tg     *tag
 }
 
@@ -113,9 +113,9 @@ func (r *record) setValue(ordinal int, val string) {
 
 // addSubscription adds subscription to the record.
 func (r *record) addSubscription(sub *subscription) {
-	pubsub := &r.links[0].pubsub
-	if *pubsub == nil {
-		*pubsub = new(pubSub)
+	pubsb := &r.links[0].pubsub
+	if *pubsb == nil {
+		*pubsb = new(pubsub)
 	}
-	pubsub.add(sub)
+	pubsb.add(sub)
 }

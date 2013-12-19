@@ -19,7 +19,7 @@ package pubsubsql
 // tagItem is a holder for tags and pubsub
 type tagItem struct {
 	head   *tag
-	pubsub pubSub
+	pubsub pubsub
 }
 
 type tagMap struct {
@@ -50,7 +50,7 @@ func (this *tagMap) getAddTagItem(key string) *tagItem {
 }
 
 // addTag adds tag and returns added tag and pubsub
-func (this *tagMap) addTag(key string, idx int) (*tag, *pubSub) {
+func (this *tagMap) addTag(key string, idx int) (*tag, *pubsub) {
 	item := this.getAddTagItem(key)
 	if item.head == nil {
 		item.head = addTag(nil, idx)
