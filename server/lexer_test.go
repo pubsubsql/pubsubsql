@@ -93,6 +93,39 @@ func BenchmarkUpdate4(b *testing.B) {
 
 // END BENCHMARKS
 
+// STATUS
+func TestStatusCommand(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("status", &consumer)
+	expected := []token{
+		{tokenTypeCmdStatus, "status"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+// STOP
+func TestStopCommand(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("stop", &consumer)
+	expected := []token{
+		{tokenTypeCmdStop, "stop"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+// CLOSE
+func TestCloseCommand(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("close", &consumer)
+	expected := []token{
+		{tokenTypeCmdClose, "close"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
 // INSERT
 func TestSqlInsertStatement(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
@@ -289,40 +322,6 @@ func TestSqlTagStatement(t *testing.T) {
 		{tokenTypeSqlTag, "tag"},
 		{tokenTypeSqlTable, "stocks"},
 		{tokenTypeSqlColumn, "sector"},
-		{tokenTypeEOF, ""}}
-
-	validateTokens(t, expected, consumer.channel)
-}
-
-// STOP
-func TestStopCommand(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan *token)}
-	go lex("stop", &consumer)
-	expected := []token{
-		{tokenTypeCmdStop, "stop"},
-		{tokenTypeEOF, ""}}
-
-	validateTokens(t, expected, consumer.channel)
-}
-
-// STATUS
-func TestStatusCommand(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan *token)}
-	go lex("status", &consumer)
-	expected := []token{
-		{tokenTypeCmdStatus, "status"},
-		{tokenTypeEOF, ""}}
-
-	validateTokens(t, expected, consumer.channel)
-}
-
-// CLOSE
-
-func TestCloseCommand(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan *token)}
-	go lex("close", &consumer)
-	expected := []token{
-		{tokenTypeCmdClose, "close"},
 		{tokenTypeEOF, ""}}
 
 	validateTokens(t, expected, consumer.channel)

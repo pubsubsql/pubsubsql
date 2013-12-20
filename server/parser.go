@@ -95,6 +95,36 @@ func (this *parser) parseSqlWhere(filter *sqlFilter, tok *token) request {
 	return this.parseSqlEqualVal(&(filter.columnValue), nil)
 }
 
+// STATUS cmd
+func (this *parser) parseCmdStatus() request {
+	// into
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeEOF {
+		return this.parseError("unexpected extra token")
+	}
+	return new(cmdStatusRequest)
+}
+
+// STOP cmd
+func (this *parser) parseCmdStop() request {
+	// into
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeEOF {
+		return this.parseError("unexpected extra token")
+	}
+	return new(cmdStopRequest)
+}
+
+// CLOSE cmd
+func (this *parser) parseCmdClose() request {
+	// into
+	tok := this.tokens.Produce()
+	if tok.typ != tokenTypeEOF {
+		return this.parseError("unexpected extra token")
+	}
+	return new(cmdCloseRequest)
+}
+
 // INSERT sql statement
 
 // Parses sql insert statement and returns sqlInsertRequest on success.
@@ -402,28 +432,26 @@ func (this *parser) run() request {
 	switch tok.typ {
 	case tokenTypeSqlInsert:
 		return this.parseSqlInsert()
-
 	case tokenTypeSqlSelect:
 		return this.parseSqlSelect()
-
 	case tokenTypeSqlUpdate:
 		return this.parseSqlUpdate()
-
 	case tokenTypeSqlDelete:
 		return this.parseSqlDelete()
-
 	case tokenTypeSqlSubscribe:
 		return this.parseSqlSubscribe()
-
 	case tokenTypeSqlUnsubscribe:
 		return this.parseSqlUnsubscribe()
-
 	case tokenTypeSqlKey:
 		return this.parseSqlKey()
-
 	case tokenTypeSqlTag:
 		return this.parseSqlTag()
-
+	case tokenTypeCmdStatus:
+		return this.parseCmdStatus()
+	case tokenTypeCmdStop:
+		return this.parseCmdStop()
+	case tokenTypeCmdClose:
+		return this.parseCmdClose()
 	}
 	return this.parseError("invalid request")
 }

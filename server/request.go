@@ -72,7 +72,7 @@ type cmdStopRequest struct {
 	cmdRequest
 }
 
-type cmdDisconnectRequest struct {
+type cmdCloseRequest struct {
 	cmdRequest
 }
 

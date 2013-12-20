@@ -28,6 +28,69 @@ func expectedError(t *testing.T, a request) {
 
 }
 
+// STATUS
+func validateStatus(t *testing.T, req request) {
+	switch req.(type) {
+	case *errorRequest:
+		e := req.(*errorRequest)
+		t.Errorf("parse error: " + e.err)
+
+	case *cmdStatusRequest:
+
+	default:
+		t.Errorf("parse error: invalid request type expected sqlStatusRequest")
+	}
+}
+
+func TestParseCmdStatus(t *testing.T) {
+	pc := newTokens()
+	lex(" status ", pc)
+	req := parse(pc)
+	validateStatus(t, req)
+}
+
+// STOP
+func validateStop(t *testing.T, req request) {
+	switch req.(type) {
+	case *errorRequest:
+		e := req.(*errorRequest)
+		t.Errorf("parse error: " + e.err)
+
+	case *cmdStopRequest:
+
+	default:
+		t.Errorf("parse error: invalid request type expected sqlStopRequest")
+	}
+}
+
+func TestParseCmdStop(t *testing.T) {
+	pc := newTokens()
+	lex(" stop ", pc)
+	req := parse(pc)
+	validateStop(t, req)
+}
+
+// CLOSE
+func validateClose(t *testing.T, req request) {
+	switch req.(type) {
+	case *errorRequest:
+		e := req.(*errorRequest)
+		t.Errorf("parse error: " + e.err)
+
+	case *cmdCloseRequest:
+
+	default:
+		t.Errorf("parse error: invalid request type expected sqlCloseRequest")
+	}
+}
+
+func TestParseCmdClose(t *testing.T) {
+	pc := newTokens()
+	lex(" close ", pc)
+	req := parse(pc)
+	validateClose(t, req)
+}
+
 // INSERT
 func validateInsert(t *testing.T, a request, y *sqlInsertRequest) {
 	switch a.(type) {
