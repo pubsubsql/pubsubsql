@@ -68,13 +68,14 @@ func newCli() *cli {
 
 func (this *cli) readInput() {
 	// we do not join the stoper because there is no way to return from blocking readLine
-	defer this.stoper.Stop(0)
 	cin := newLineReader("q")
 	for cin.readLine() {
 		if len(cin.line) > 0 {
 			this.fromStdin <- cin.line
 		}
 	}
+	this.stoper.Stop(0)
+	debug("done readInput")
 }
 
 func (this *cli) connect() bool {
@@ -95,8 +96,8 @@ func (this *cli) outputError(err error) {
 
 func (this *cli) writeMessages() {
 	this.stoper.Join()
-	defer this.stoper.Stop(0)
-	writer := newNetMessageReaderWriter(this.conn, this.stoper)
+	defer this.stoper.Leave()
+	writer := newNetMessageReaderWriter(this.conn, nil)
 	var message string
 	ok := true
 	for ok {
@@ -114,12 +115,14 @@ func (this *cli) writeMessages() {
 			ok = false
 		}
 	}
+	this.stoper.Stop(0)
+	debug("done writeMessages")
 }
 
 func (this *cli) readMessages() {
 	this.stoper.Join()
-	defer this.stoper.Stop(0)
-	reader := newNetMessageReaderWriter(this.conn, this.stoper)
+	defer this.stoper.Leave()
+	reader := newNetMessageReaderWriter(this.conn, nil)
 	ok := true
 	for ok {
 		bytes, err := reader.readMessage()
@@ -133,6 +136,8 @@ func (this *cli) readMessages() {
 			ok = false
 		}
 	}
+	this.stoper.Stop(0)
+	debug("done readMessages")
 }
 
 func (this *cli) run() {
@@ -171,6 +176,7 @@ func (this *cli) run() {
 	}
 	this.conn.Close()
 	this.stoper.Wait(time.Millisecond * config.WAIT_MILLISECOND_CLI_SHUTDOWN)
+	debug("cli done")
 }
 
 func (this *cli) initPrefix() {

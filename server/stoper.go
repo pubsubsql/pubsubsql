@@ -79,6 +79,9 @@ func (this *Stoper) stop() {
 }
 
 func (this *Stoper) Wait(timeout time.Duration) bool {
+	if timeout == 0 {
+		return atomic.LoadInt64(&this.counter) == 0
+	}
 	now := time.Now()
 	for atomic.LoadInt64(&this.counter) > 0 {
 		time.Sleep(time.Millisecond * 10)

@@ -248,7 +248,7 @@ func (this *netMessageReaderWriter) writeHeaderAndMessage(bytes []byte) error {
 
 func (this *netMessageReaderWriter) readMessage() ([]byte, error) {
 	// header
-	read, err := this.conn.Read(this.bytes[0:4])
+	read, err := this.conn.Read(this.bytes[0:HEADER_SIZE])
 	if err != nil {
 		return nil, err
 	}
