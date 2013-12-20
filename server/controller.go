@@ -22,8 +22,9 @@ import (
 )
 
 type Controller struct {
-	stoper  *Stoper
-	network *network
+	network  *network
+	requests chan *requestItem
+	stoper   *Stoper
 }
 
 func (this *Controller) Run() {
@@ -51,11 +52,14 @@ func (this *Controller) runAsClient() {
 }
 
 func (this *Controller) runAsServer() {
+	// requests
+	this.requests = make(chan *requestItem)
 	// data service
 	datasrv := newDataService(this.stoper)
 	go datasrv.run()
 	// router 
 	router := newRequestRouter(datasrv)
+	router.controllerRequests = this.requests
 	// network context
 	context := new(networkContext)
 	context.stoper = this.stoper
@@ -64,13 +68,40 @@ func (this *Controller) runAsServer() {
 	this.network = newNetwork(context)
 	this.network.start(config.netAddress())
 	info("started")
-	// wait for quit input
-	cin := newLineReader("q")
-	for cin.readLine() {
+	// watch for quit input
+	go this.readInput()
+	// wait for command or stop event
+	ok := true
+	for ok {
+		select {
+		case <-this.stoper.GetChan():
+			ok = false
+		case item := <-this.requests:
+			this.onCommandRequest(item)
+		}
 	}
 	// shutdown
 	this.network.stop()
 	this.stoper.Stop(0)
-	this.stoper.Wait(time.Millisecond * 3000)
+	this.stoper.Wait(time.Millisecond * config.WAIT_MILLISECOND_SERVER_SHUTDOWN)
 	info("stoped")
+}
+
+func (this *Controller) onCommandRequest(item *requestItem) {
+	switch item.req.(type) {
+	case *cmdStatusRequest:
+		loginfo("client connection:", item.sender.connectionId, " status request ")
+
+	case *cmdStopRequest:
+		loginfo("controller stop request")
+	}
+}
+
+func (this *Controller) readInput() {
+	// we do not join the stoper because there is no way to return from blocking readLine
+	cin := newLineReader("q")
+	for cin.readLine() {
+	}
+	this.stoper.Stop(0)
+	debug("controller done readInput")
 }

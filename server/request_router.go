@@ -18,7 +18,8 @@ package pubsubsql
 
 // requestRouter routs request to appropriate service for processing
 type requestRouter struct {
-	dataSrv *dataService
+	dataSrv            *dataService
+	controllerRequests chan *requestItem
 }
 
 // requestRouter factory
@@ -36,9 +37,26 @@ func (this *requestRouter) route(item *requestItem) {
 	switch item.req.getRequestType() {
 	case requestTypeSql:
 		this.dataSrv.acceptRequest(item)
+	case requestTypeCmd:
+		this.onCmd(item)
 	case requestTypeError:
 		this.onError(item)
 	default:
 		panic("unsuported request type")
+	}
+}
+
+func (this *requestRouter) onCmd(item *requestItem) {
+	switch item.req.(type) {
+	case *cmdCloseRequest:
+		loginfo("close request")
+	default:
+		this.onControllerCmd(item)
+	}
+}
+
+func (this *requestRouter) onControllerCmd(item *requestItem) {
+	if this.controllerRequests != nil {
+		this.controllerRequests <- item
 	}
 }
