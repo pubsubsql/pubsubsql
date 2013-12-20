@@ -98,6 +98,21 @@ func (this *okResponse) toNetworkReadyJSON() []byte {
 	return builder.getNetworkBytes()
 }
 
+// cmdStatusResponse
+type cmdStatusResponse struct {
+	response
+	connections int
+}
+
+func (this *cmdStatusResponse) toNetworkReadyJSON() []byte {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.nameIntValue("connections", this.connections)
+	builder.endObject()
+	return builder.getNetworkBytes()
+}
+
 // sqlInsertResponse is a response for sql insert statement
 type sqlInsertResponse struct {
 	response

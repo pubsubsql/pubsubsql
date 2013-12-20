@@ -80,7 +80,7 @@ func (this *cli) readInput() {
 
 func (this *cli) connect() bool {
 	conn, err := net.Dial("tcp", config.netAddress())
-	if err != nil  {
+	if err != nil {
 		this.outputError(err)
 		return false
 	}
