@@ -315,3 +315,15 @@ func TestStatusCommand(t *testing.T) {
 
 	validateTokens(t, expected, consumer.channel)
 }
+
+// CLOSE
+
+func TestCloseCommand(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("close", &consumer)
+	expected := []token{
+		{tokenTypeCmdClose, "close"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}

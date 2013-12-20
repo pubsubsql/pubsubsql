@@ -30,6 +30,7 @@ const (
 	tokenTypeEOF                                      // last token
 	tokenTypeCmdStatus                                // status
 	tokenTypeCmdStop                                  // stop
+	tokenTypeCmdClose                                 // close
 	tokenTypeSqlTable                                 // table name
 	tokenTypeSqlColumn                                // column name
 	tokenTypeSqlInsert                                // insert
@@ -65,6 +66,8 @@ func (typ tokenType) String() string {
 		return "tokenTypeCmdStatus"
 	case tokenTypeCmdStop:
 		return "tokenTypeCmdStop"
+	case tokenTypeCmdClose:
+		return "tokenTypeCmdClose"
 	case tokenTypeSqlTable:
 		return "tokenTypeSqlTable"
 	case tokenTypeSqlColumn:
@@ -618,6 +621,8 @@ func lexCommand(this *lexer) stateFn {
 		return this.lexMatch(tokenTypeSqlKey, "key", 1, lexSqlKeyTable)
 	case 't': // tag
 		return this.lexMatch(tokenTypeSqlTag, "tag", 1, lexSqlKeyTable)
+	case 'c': // close
+		return this.lexMatch(tokenTypeCmdClose, "close", 1, nil)
 	}
 	return this.errorToken("Invalid command:" + this.current())
 }

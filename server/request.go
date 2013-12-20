@@ -64,6 +64,18 @@ func (act cmdRequest) getRequestType() requestType {
 	return requestTypeCmd
 }
 
+type cmdStatusRequest struct {
+	cmdRequest
+}
+
+type cmdStopRequest struct {
+	cmdRequest
+}
+
+type cmdDisconnectRequest struct {
+	cmdRequest
+}
+
 // columnValue is a pair of column and value
 type columnValue struct {
 	col string
