@@ -42,7 +42,7 @@ func (this *responseSender) send(res response) bool {
 	case <-this.connectionStoper.GetChan():
 		debug("connection is closed")
 	default:
-		logwarn("sender queue is full connection: ", this.connectionId)
+		logerror("sender queue is full connection: ", this.connectionId)
 		// notify client connection that it needs to close due to inability to 
 		// send responses in a timely manner
 		this.connectionStoper.Stop(0)

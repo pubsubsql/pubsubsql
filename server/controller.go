@@ -91,7 +91,8 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 	switch item.req.(type) {
 	case *cmdStatusRequest:
 		loginfo("client connection:", item.sender.connectionId, "requested server status ")
-
+		res := &cmdStatusResponse{connections: this.network.connectionCount()}
+		item.sender.send(res)
 	case *cmdStopRequest:
 		loginfo("client connection:", item.sender.connectionId, "requested to stop the server ")
 		this.stoper.Stop(0)
