@@ -19,6 +19,7 @@ package pubsubsql
 import (
 	"os"
 	"time"
+	"fmt"
 )
 
 type Controller struct {
@@ -40,10 +41,17 @@ func (this *Controller) Run() {
 	case "cli":
 		this.runAsClient()
 	case "help":
-		println("help")
-	case "status":
-		println("status")
+		this.helpCommand()
 	}
+}
+
+func (this *Controller) helpCommand() {
+	fmt.Println("")
+	fmt.Println("commands:")
+	fmt.Println(validCommandsUsageString())
+	fmt.Println("")
+	fmt.Println("options:")
+	config.flags.PrintDefaults()
 }
 
 func (this *Controller) runAsClient() {
