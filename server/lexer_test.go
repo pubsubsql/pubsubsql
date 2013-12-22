@@ -245,6 +245,24 @@ func TestSqlSubscribeStatement2(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
+func TestSqlSubscribeStatement3(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex(" subscribe skip	* 	 from stocks where ticker = 'MSFT'", &consumer)
+	expected := []token{
+		{tokenTypeSqlSubscribe, "subscribe"},
+		{tokenTypeSqlSkip, "skip"},
+		{tokenTypeSqlStar, "*"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlWhere, "where"},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "MSFT"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
 // UNSUBSCRIBE
 func TestSqlUnrsubscribeStatement1(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}

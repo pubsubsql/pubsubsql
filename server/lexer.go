@@ -42,6 +42,7 @@ const (
 	tokenTypeSqlSelect                                // select
 	tokenTypeSqlSubscribe                             // subscribe
 	tokenTypeSqlUnsubscribe                           // unsubscribe
+	tokenTypeSqlSkip				  // skip
 	tokenTypeSqlWhere                                 // where
 	tokenTypeSqlValues                                // values
 	tokenTypeSqlStar                                  // *
@@ -88,6 +89,8 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlSelect"
 	case tokenTypeSqlSubscribe:
 		return "tokenTypeSqlSubscribe"
+	case tokenTypeSqlSkip:
+		return "tokenTypeSqlSkip"
 	case tokenTypeSqlUnsubscribe:
 		return "tokenTypeSqlUnsubscribe"
 	case tokenTypeSqlWhere:
@@ -570,6 +573,22 @@ func lexSqlKeyColumn(this *lexer) stateFn {
 	return this.lexSqlIdentifier(tokenTypeSqlColumn, nil)
 }
 
+// SUBSCRIBE
+
+func lexSqlSubscribeSkip(this *lexer) stateFn {
+	return this.lexMatch(tokenTypeSqlSkip, "skip", 0, lexSqlSelectStar)
+}
+
+func lexSqlSubscribe(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() == '*' {
+		this.backup()
+		return lexSqlSelectStar
+	}
+	this.backup()
+	return lexSqlSubscribeSkip(this)
+}
+
 // UNSUBSCRIBE
 
 func lexSqlUnsubscribeFrom(this *lexer) stateFn {
@@ -595,7 +614,7 @@ func lexCommandS(this *lexer) stateFn {
 	case 'e':
 		return this.lexMatch(tokenTypeSqlSelect, "select", 2, lexSqlSelectStar)
 	case 'u':
-		return this.lexMatch(tokenTypeSqlSubscribe, "subscribe", 2, lexSqlSelectStar)
+		return this.lexMatch(tokenTypeSqlSubscribe, "subscribe", 2, lexSqlSubscribe)
 	case 't':
 		return lexCommandST(this)
 	}
