@@ -90,15 +90,17 @@ func (this *Controller) runAsServer() {
 func (this *Controller) onCommandRequest(item *requestItem) {
 	switch item.req.(type) {
 	case *cmdStatusRequest:
-		loginfo("client connection:", item.sender.connectionId, " status request ")
+		loginfo("client connection:", item.sender.connectionId, "requested server status ")
 
 	case *cmdStopRequest:
-		loginfo("controller stop request")
+		loginfo("client connection:", item.sender.connectionId, "requested to stop the server ")
+		this.stoper.Stop(0)
 	}
 }
 
 func (this *Controller) readInput() {
 	// we do not join the stoper because there is no way to return from blocking readLine
+	// closing Stdin does not do anything
 	cin := newLineReader("q")
 	for cin.readLine() {
 	}

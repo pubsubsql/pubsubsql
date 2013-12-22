@@ -68,7 +68,7 @@ func (this *network) addConnection(netconn *networkConnection) {
 	}
 	this.connections[netconn.getConnectionId()] = netconn
 	this.mutex.Unlock()
-	loginfo("New connected client id: ", strconv.FormatUint(netconn.getConnectionId(), 10))
+	loginfo("new client connection id:", strconv.FormatUint(netconn.getConnectionId(), 10))
 }
 
 func (this *network) removeConnection(netconn *networkConnection) {
@@ -127,7 +127,7 @@ func (this *network) start(address string) bool {
 				this.addConnection(netconn)
 				go netconn.run()
 			} else {
-				logerror("Error accepting client connection", err.Error())
+				logerror("failed to accept client connection", err.Error())
 			}
 		}
 	}
@@ -312,7 +312,7 @@ func (this *networkConnection) read() {
 		this.route(req)
 	}
 	if err != nil && !this.Stoped() {
-		logerror("Failed to read from client connection: ", this.sender.connectionId)
+		logerror("failed to read from client connection: ", this.sender.connectionId)
 		logerror(err.Error())
 		// notify writer and sender that we are done
 		this.sender.connectionStoper.Stop(0)
@@ -332,7 +332,7 @@ func (this *networkConnection) write() {
 			err := writer.writeMessage(res.toNetworkReadyJSON())
 			if err != nil {
 				if !this.Stoped() {
-					logerror("Failed to write to client connection: ", this.sender.connectionId)
+					logerror("failed to write to client connection: ", this.sender.connectionId)
 					logerror(err.Error())
 					// notify reader and sender that we are done
 					this.sender.connectionStoper.Stop(0)

@@ -49,20 +49,22 @@ func (l *lineReader) readLine() bool {
 }
 
 type cli struct {
-	prefix     string
-	stoper     *Stoper
-	fromStdin  chan string
-	fromServer chan string
-	toServer   chan string
-	conn       net.Conn
+	prefix        string
+	stoper        *Stoper
+	fromStdin     chan string
+	fromServer    chan string
+	toServer      chan string
+	conn          net.Conn
+	serverStoping bool
 }
 
 func newCli() *cli {
 	return &cli{
-		stoper:     NewStoper(),
-		fromStdin:  make(chan string),
-		fromServer: make(chan string),
-		toServer:   make(chan string),
+		stoper:        NewStoper(),
+		fromStdin:     make(chan string),
+		fromServer:    make(chan string),
+		toServer:      make(chan string),
+		serverStoping: false,
 	}
 }
 
@@ -127,7 +129,9 @@ func (this *cli) readMessages() {
 	for ok {
 		bytes, err := reader.readMessage()
 		if err != nil {
-			this.outputError(err)
+			if !this.serverStoping {
+				this.outputError(err)
+			}
 			break
 		}
 		select {
@@ -162,6 +166,11 @@ func (this *cli) run() {
 		select {
 		case userInput, ok = <-this.fromStdin:
 			if ok {
+				if userInput == "stop" {
+					// indicate that errors should be ignored when 
+					// reading from net connection
+					this.serverStoping = true
+				}
 				this.toServer <- userInput
 			}
 		case serverMessage, ok = <-this.fromServer:
