@@ -565,44 +565,54 @@ func (this *table) newSubscription(sender *responseSender) *subscription {
 	return sub
 }
 
-func (this *table) subscribeToTable(sender *responseSender) (*subscription, []*record) {
+func (this *table) subscribeToTable(sender *responseSender, skip bool) (*subscription, []*record) {
 	sub := this.newSubscription(sender)
 	this.pubsub.add(sub)
 	sender.send(newSubscribeResponse(sub))
-	return sub, this.records
+	var records []*record
+	if !skip {
+		records = this.records 
+	}
+	return sub, records
 }
 
-func (this *table) subscribeToKeyOrTag(col *column, val string, sender *responseSender) (*subscription, []*record) {
+func (this *table) subscribeToKeyOrTag(col *column, val string, sender *responseSender, skip bool) (*subscription, []*record) {
 	sub := this.newSubscription(sender)
-	records := this.getRecordsByTag(val, col)
+	var records []*record
+	if !skip {
+		records = this.getRecordsByTag(val, col)
+	}
 	col.tagmap.getAddTagItem(val).pubsub.add(sub)
 	sender.send(newSubscribeResponse(sub))
 	return sub, records
 }
 
-func (this *table) subscribeToId(id string, sender *responseSender) (*subscription, []*record) {
+func (this *table) subscribeToId(id string, sender *responseSender, skip bool) (*subscription, []*record) {
 	records := this.getRecordById(id)
 	if len(records) > 0 {
 		sub := this.newSubscription(sender)
 		records[0].addSubscription(sub)
 		sender.send(newSubscribeResponse(sub))
+		if skip {
+			records = nil
+		}
 		return sub, records
 	}
 	sender.send(newErrorResponse("id: " + id + " does not exist"))
 	return nil, nil
 }
 
-func (this *table) subscribe(col *column, val string, sender *responseSender) (*subscription, []*record) {
+func (this *table) subscribe(col *column, val string, sender *responseSender, skip bool) (*subscription, []*record) {
 	if col == nil {
-		return this.subscribeToTable(sender)
+		return this.subscribeToTable(sender, skip)
 	}
 	switch col.typ {
 	case columnTypeKey:
-		return this.subscribeToKeyOrTag(col, val, sender)
+		return this.subscribeToKeyOrTag(col, val, sender, skip)
 	case columnTypeTag:
-		return this.subscribeToKeyOrTag(col, val, sender)
+		return this.subscribeToKeyOrTag(col, val, sender, skip)
 	case columnTypeId:
-		return this.subscribeToId(val, sender)
+		return this.subscribeToId(val, sender, skip)
 	}
 	sender.send(newErrorResponse("Unexpected logical error"))
 	return nil, nil
@@ -618,7 +628,7 @@ func (this *table) sqlSubscribe(req *sqlSubscribeRequest) {
 		return
 	}
 	// subscribe
-	sub, records := this.subscribe(col, req.filter.val, req.sender)
+	sub, records := this.subscribe(col, req.filter.val, req.sender, req.skip)
 	if sub != nil && len(records) > 0 {
 		// publish initial action add
 		this.publishActionAdd(sub, records)

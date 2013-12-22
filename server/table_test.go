@@ -586,18 +586,44 @@ func TestTableSqlSubscribe1(t *testing.T) {
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks ")
 	sub := validateSqlSubscribeResponse(t, res)
 	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
+
+	//skip	
+	res, sender = subscribeHelper(tbl, "subscribe skip * from stocks ")
+	sub = validateSqlSubscribeResponse(t, res)
+	validateNoResponse(t, sender)
+
 	// subscribe to existing key
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = IBM")
 	sub = validateSqlSubscribeResponse(t, res)
 	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
+
+	//skip
+	res, sender = subscribeHelper(tbl, "subscribe skip * from stocks where ticker = IBM")
+	sub = validateSqlSubscribeResponse(t, res)
+	validateNoResponse(t, sender)
+
 	// subscribe to existing tag
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where sector = TECH")
 	sub = validateSqlSubscribeResponse(t, res)
 	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
+
+	//skip
+	res, sender = subscribeHelper(tbl, "subscribe skip * from stocks where sector = TECH")
+	sub = validateSqlSubscribeResponse(t, res)
+	validateNoResponse(t, sender)
+
+
 	// subscribe to id
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 0")
 	sub = validateSqlSubscribeResponse(t, res)
 	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
+
+	//skip	
+	res, sender = subscribeHelper(tbl, "subscribe skip * from stocks where id = 0")
+	sub = validateSqlSubscribeResponse(t, res)
+	validateNoResponse(t, sender)
+
+
 	// subscribe to non existing valid key
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")
 	validateSqlSubscribeResponse(t, res)
