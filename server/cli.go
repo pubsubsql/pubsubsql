@@ -55,7 +55,7 @@ type cli struct {
 	fromServer    chan string
 	toServer      chan string
 	conn          net.Conn
-	serverStoping bool
+	disconnecting bool
 }
 
 func newCli() *cli {
@@ -64,7 +64,7 @@ func newCli() *cli {
 		fromStdin:     make(chan string),
 		fromServer:    make(chan string),
 		toServer:      make(chan string),
-		serverStoping: false,
+		disconnecting: false,
 	}
 }
 
@@ -76,8 +76,8 @@ func (this *cli) readInput() {
 			this.fromStdin <- cin.line
 		}
 	}
-	this.stoper.Stop(0)
-	debug("done readInput")
+	// notify server that we want to close
+	this.fromStdin <- "close"
 }
 
 func (this *cli) connect() bool {
@@ -129,7 +129,7 @@ func (this *cli) readMessages() {
 	for ok {
 		bytes, err := reader.readMessage()
 		if err != nil {
-			if !this.serverStoping {
+			if !this.disconnecting {
 				this.outputError(err)
 			}
 			break
@@ -166,10 +166,11 @@ func (this *cli) run() {
 		select {
 		case userInput, ok = <-this.fromStdin:
 			if ok {
-				if userInput == "stop" {
-					// indicate that errors should be ignored when 
-					// reading from net connection
-					this.serverStoping = true
+				switch userInput {
+				case "close":
+					this.disconnecting = true
+				case "stop":
+					this.disconnecting = true
 				}
 				this.toServer <- userInput
 			}

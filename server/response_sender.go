@@ -21,6 +21,7 @@ type responseSender struct {
 	sender           chan response // channel to publish responses to
 	connectionId     uint64
 	connectionStoper *Stoper
+	disconnecting    bool
 }
 
 // factory
@@ -29,6 +30,7 @@ func newResponseSenderStub(connectionId uint64) *responseSender {
 		sender:           make(chan response, config.CHAN_RESPONSE_SENDER_BUFFER_SIZE),
 		connectionId:     connectionId,
 		connectionStoper: NewStoper(),
+		disconnecting:    false,
 	}
 }
 

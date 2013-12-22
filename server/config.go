@@ -137,7 +137,7 @@ func (this *configuration) processCommandLine(args []string) bool {
 	// set up flags
 	flags := flag.NewFlagSet("pubsubsql", flag.ContinueOnError)
 	var loglevel string
-	flags.StringVar(&loglevel, "loglevel", "info", `logging level "debug,info,warn,error"`)
+	flags.StringVar(&loglevel, "loglevel", "info,warn,error", `logging level "debug,info,warn,error"`)
 	flags.StringVar(&this.IP, "ip", config.IP, "ip address")
 	flags.UintVar(&this.PORT, "port", config.PORT, "port number")
 
