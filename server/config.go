@@ -55,6 +55,8 @@ type configuration struct {
 	// run mode
 	CLI    bool
 	SERVER bool
+
+	flags *flag.FlagSet	
 }
 
 func defaultConfig() configuration {
@@ -135,11 +137,11 @@ func (this *configuration) setLogLevel(loglevel string) bool {
 func (this *configuration) processCommandLine(args []string) bool {
 
 	// set up flags
-	flags := flag.NewFlagSet("pubsubsql", flag.ContinueOnError)
+	this.flags = flag.NewFlagSet("pubsubsql", flag.ContinueOnError)
 	var loglevel string
-	flags.StringVar(&loglevel, "loglevel", "info,warn,error", `logging level "debug,info,warn,error"`)
-	flags.StringVar(&this.IP, "ip", config.IP, "ip address")
-	flags.UintVar(&this.PORT, "port", config.PORT, "port number")
+	this.flags.StringVar(&loglevel, "loglevel", "info,warn,error", `logging level "debug,info,warn,error"`)
+	this.flags.StringVar(&this.IP, "ip", config.IP, "ip address")
+	this.flags.UintVar(&this.PORT, "port", config.PORT, "port number")
 
 	// set command 
 	if len(args) > 0 {
@@ -160,21 +162,21 @@ func (this *configuration) processCommandLine(args []string) bool {
 	}
 
 	// parse options
-	if len(args) > 0 && flags.Parse(args) != nil {
+	if len(args) > 0 && this.flags.Parse(args) != nil {
 		return false
 	}
 
 	// set loglevel
 	if !this.setLogLevel(loglevel) {
-		fmt.Println("invalid --loglevel \"" + loglevel + "\"\n" + flags.Lookup("loglevel").Usage)
+		fmt.Println("invalid --loglevel \"" + loglevel + "\"\n" + this.flags.Lookup("loglevel").Usage)
 		return false
 	}
 
 	// check if there is extra stuff
-	if flags.NArg() > 0 {
+	if this.flags.NArg() > 0 {
 		fmt.Println("invalid command line arrguments")
 		fmt.Println("Usage of pubsubsql: ")
-		flags.PrintDefaults()
+		this.flags.PrintDefaults()
 		return false
 	}
 
