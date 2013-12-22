@@ -423,7 +423,7 @@ func TestParseSqlDeleteStatement3(t *testing.T) {
 }
 
 // SUBSCRIBE
-func validateSubscribe(t *testing.T, a request, y *sqlSubscribeRequest) {
+func validateSubscribe(t *testing.T, a request, y *sqlSubscribeRequest, skip bool) {
 	switch a.(type) {
 	case *errorRequest:
 		e := a.(*errorRequest)
@@ -439,6 +439,9 @@ func validateSubscribe(t *testing.T, a request, y *sqlSubscribeRequest) {
 		if x.filter != y.filter {
 			t.Errorf("parse error: filters do not match")
 		}
+		if x.skip != skip {
+			t.Errorf("parse error: skip do not match")
+		}
 
 	default:
 		t.Errorf("parse error: invalid request type expected sqlSubscribeRequest")
@@ -452,7 +455,7 @@ func TestParseSqlSubscribeStatement1(t *testing.T) {
 	x := parse(pc)
 	var y sqlSubscribeRequest
 	y.table = "stocks"
-	validateSubscribe(t, x, &y)
+	validateSubscribe(t, x, &y, false)
 }
 
 func TestParseSqlSubscribeStatement2(t *testing.T) {
@@ -462,10 +465,20 @@ func TestParseSqlSubscribeStatement2(t *testing.T) {
 	var y sqlSubscribeRequest
 	y.table = "stocks"
 	y.filter.addFilter("ticker", "IBM")
-	validateSubscribe(t, x, &y)
+	validateSubscribe(t, x, &y, false)
 }
 
 func TestParseSqlSubscribeStatement3(t *testing.T) {
+	pc := newTokens()
+	lex(" subscribe skip *  from stocks where  ticker = 'IBM'", pc)
+	x := parse(pc)
+	var y sqlSubscribeRequest
+	y.table = "stocks"
+	y.filter.addFilter("ticker", "IBM")
+	validateSubscribe(t, x, &y, true)
+}
+
+func TestParseSqlSubscribeStatement4(t *testing.T) {
 	pc := newTokens()
 	lex(" subscribe ", pc)
 	x := parse(pc)

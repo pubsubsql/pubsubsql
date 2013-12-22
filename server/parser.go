@@ -373,6 +373,13 @@ func (this *parser) parseSqlTag() request {
 // Parses sql subscribe statement and returns sqlSubscribeRequest on success.
 func (this *parser) parseSqlSubscribe() request {
 	tok := this.tokens.Produce()
+	req := new(sqlSubscribeRequest)
+	// skip
+	if tok.typ == tokenTypeSqlSkip {
+		req.skip = true
+		tok = this.tokens.Produce()
+	}
+
 	if tok.typ != tokenTypeSqlStar {
 		return this.parseError("expected * symbol")
 	}
@@ -381,7 +388,6 @@ func (this *parser) parseSqlSubscribe() request {
 	if tok.typ != tokenTypeSqlFrom {
 		return this.parseError("expected from")
 	}
-	req := new(sqlSubscribeRequest)
 	// table name
 	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq

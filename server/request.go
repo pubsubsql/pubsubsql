@@ -155,6 +155,7 @@ type sqlTagRequest struct {
 // sqlSubscribeRequest is a request for sql subscribe statement.
 type sqlSubscribeRequest struct {
 	sqlRequest
+	skip bool
 	filter sqlFilter
 	sender *responseSender
 }
