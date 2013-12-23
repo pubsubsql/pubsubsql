@@ -45,6 +45,7 @@ type configuration struct {
 	TABLE_GET_RECORDS_BY_TAG_CAPACITY         int
 	WAIT_MILLISECOND_SERVER_SHUTDOWN          time.Duration
 	WAIT_MILLISECOND_CLI_SHUTDOWN             time.Duration
+	DATA_BATCH_SIZE							  int
 
 	// command 
 	COMMAND string
@@ -82,6 +83,7 @@ func defaultConfig() configuration {
 		TABLE_GET_RECORDS_BY_TAG_CAPACITY:         20,
 		WAIT_MILLISECOND_SERVER_SHUTDOWN:          3000,
 		WAIT_MILLISECOND_CLI_SHUTDOWN:             1000,
+		DATA_BATCH_SIZE:						   100,
 
 		// command 
 		COMMAND: "start",

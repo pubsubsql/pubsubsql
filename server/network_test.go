@@ -172,3 +172,35 @@ func TestNetworMultiInsert(t *testing.T) {
 	n.stop()
 	s.Wait(time.Millisecond * 500)
 }
+
+func TestNetworkBatchRead(t *testing.T) {
+	context := newNetworkContextStub()
+	address := "localhost:54321"
+	s := context.stoper
+	n := newNetwork(context)
+	n.start(address)
+	c := validateConnect(t, address)
+
+	prevBatchSize := config.DATA_BATCH_SIZE
+	config.DATA_BATCH_SIZE = 1
+	defer func() {
+		config.DATA_BATCH_SIZE = prevBatchSize
+	} () 
+	// subscribe
+	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (IBM, 120)")
+	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (MSFT, 120)")
+	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (GOOG, 120)")
+	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (ORCL, 120)")
+
+	//expected another 3 messages
+	validateWriteRead(t, c, "select * from stocks")
+	validateRead(t, c)
+	validateRead(t, c)
+	validateRead(t, c)
+
+	c.Close()
+	// shutdown
+	s.Stop(0)
+	n.stop()
+	s.Wait(time.Millisecond * 500)
+}

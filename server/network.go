@@ -322,19 +322,24 @@ func (this *networkConnection) write() {
 	this.stoper.Join()
 	defer this.stoper.Leave()
 	writer := newNetMessageReaderWriter(this.conn, this)
+	var err error
 	for {
 		select {
 		case res := <-this.sender.sender:
-			if this.Stoped() {
-				return
-			}
-			err := writer.writeMessage(res.toNetworkReadyJSON())
-			if err != nil {
-				if !this.Stoped() {
-					logerror("failed to write to client connection:", this.sender.connectionId, err.Error())
-					// notify reader and sender that we are done
-					this.sender.connectionStoper.Stop(0)
+			// write messages in batches if applicable
+			var msg []byte
+			more := true
+			for err == nil && more {
+				if this.Stoped() {
+					return
 				}
+				msg, more = res.toNetworkReadyJSON()			
+				err = writer.writeMessage(msg)
+			}
+			if err != nil && !this.Stoped() {
+				logerror("failed to write to client connection:", this.sender.connectionId, err.Error())
+				// notify reader and sender that we are done
+				this.sender.connectionStoper.Stop(0)
 				return
 			}
 		case <-this.stoper.GetChan():
