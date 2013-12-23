@@ -209,6 +209,10 @@ func validateSelect(t *testing.T, a request, y *sqlSelectRequest) {
 
 	case *sqlSelectRequest:
 		x := a.(*sqlSelectRequest)
+		// columns
+		if len(x.cols) != len(y.cols) {
+			t.Errorf("parse error: columns do not match ")
+		}
 		// table name
 		if x.table != y.table {
 			t.Errorf("parse error: table names do not match " + x.table)
@@ -217,11 +221,9 @@ func validateSelect(t *testing.T, a request, y *sqlSelectRequest) {
 		if x.filter != y.filter {
 			t.Errorf("parse error: filters do not match")
 		}
-
 	default:
 		t.Errorf("parse error: invalid request type expected sqlSelectRequest")
 	}
-
 }
 
 func TestParseSqlSelectStatement1(t *testing.T) {
@@ -235,6 +237,18 @@ func TestParseSqlSelectStatement1(t *testing.T) {
 
 func TestParseSqlSelectStatement2(t *testing.T) {
 	pc := newTokens()
+	lex(" select ticker, bid, ask  from stocks ", pc)
+	x := parse(pc)
+	var y sqlSelectRequest
+	y.table = "stocks"
+	y.addColumn("ticker")
+	y.addColumn("bid")
+	y.addColumn("ask")
+	validateSelect(t, x, &y)
+}
+
+func TestParseSqlSelectStatement3(t *testing.T) {
+	pc := newTokens()
 	lex(" select *  from stocks where  ticker = 'IBM'", pc)
 	x := parse(pc)
 	var y sqlSelectRequest
@@ -243,7 +257,7 @@ func TestParseSqlSelectStatement2(t *testing.T) {
 	validateSelect(t, x, &y)
 }
 
-func TestParseSqlSelectStatement3(t *testing.T) {
+func TestParseSqlSelectStatement4(t *testing.T) {
 	pc := newTokens()
 	lex(" select ", pc)
 	x := parse(pc)
@@ -251,6 +265,11 @@ func TestParseSqlSelectStatement3(t *testing.T) {
 	//
 	pc = newTokens()
 	lex(" select *", pc)
+	x = parse(pc)
+	expectedError(t, x)
+	//
+	pc = newTokens()
+	lex(" select ticker , from stocks", pc)
 	x = parse(pc)
 	expectedError(t, x)
 	//

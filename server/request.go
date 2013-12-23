@@ -117,7 +117,12 @@ func (this *sqlInsertRequest) setValueAt(idx int, val string) {
 // sqlSelectRequest is a request for sql select statement.
 type sqlSelectRequest struct {
 	sqlRequest
+	cols []string
 	filter sqlFilter
+}
+
+func (req *sqlSelectRequest) addColumn(col string) {
+	req.cols = append(req.cols, col)
 }
 
 // sqlUpdateRequest is a request for sql update statement.

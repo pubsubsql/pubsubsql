@@ -224,19 +224,44 @@ func (this *parser) parseSqlInsertValue() (request, tokenType, string) {
 
 // SELECT sql statement
 
+func (this *parser) parseSelectColumns(tok **token, req *sqlSelectRequest) request {
+	nextIsColumn := true
+	for {
+		if nextIsColumn {
+			if (*tok).typ != tokenTypeSqlColumn {
+				return this.parseError("expected column name")
+			}
+			nextIsColumn = false
+			req.addColumn((*tok).val)
+		} else {
+			if (*tok).typ != tokenTypeSqlComma {
+				break
+			}
+			nextIsColumn = true
+		}
+		*tok = this.tokens.Produce()
+	}
+	return nil
+}
+
 // Parses sql select statement and returns sqlSelectRequest on success.
 func (this *parser) parseSqlSelect() request {
+	req := &sqlSelectRequest {
+		cols: make([]string, 0, config.PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY),	
+	}
 	// *
 	tok := this.tokens.Produce()
 	if tok.typ != tokenTypeSqlStar {
-		return this.parseError("expected * symbol")
+		if errreq := this.parseSelectColumns(&tok, req); errreq != nil {
+			return errreq
+		}
+	} else {
+		tok = this.tokens.Produce()
 	}
 	// from
-	tok = this.tokens.Produce()
 	if tok.typ != tokenTypeSqlFrom {
 		return this.parseError("expected from")
 	}
-	req := new(sqlSelectRequest)
 	// table name
 	if errreq := this.parseTableName(&req.table); errreq != nil {
 		return errreq
