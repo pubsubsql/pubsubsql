@@ -74,7 +74,10 @@ func (this *Controller) runAsServer() {
 	context.router = router
 	// network	
 	this.network = newNetwork(context)
-	this.network.start(config.netAddress())
+	if !this.network.start(config.netAddress()) {
+		this.stoper.Stop(0)
+		return	
+	}
 	info("started")
 	// watch for quit input
 	go this.readInput()

@@ -22,11 +22,17 @@ import "net"
 import "strconv"
 
 func TestNetworkStartStop(t *testing.T) {
+	address := "localhost:54321"
 	context := newNetworkContextStub()
 	s := context.stoper
 	n := newNetwork(context)
-	if !n.start("localhost:54321") {
-		t.Error(`network.start("localhost:54321") failed`)
+	if !n.start(address) {
+		t.Error("network.start(" + address + ") failed")
+	}
+	//
+	n2 := newNetwork(newNetworkContextStub())
+	if n2.start(address) {
+		t.Error("network.start(" + address + ") should have failed")
 	}
 	// shutdown
 	s.Stop(0)
