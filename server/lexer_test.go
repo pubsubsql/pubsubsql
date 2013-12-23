@@ -199,6 +199,23 @@ func TestSqlSelectStatement1(t *testing.T) {
 
 func TestSqlSelectStatement2(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex(" select ticker, bid, ask from stocks", &consumer)
+	expected := []token{
+		{tokenTypeSqlSelect, "select"},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "bid"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "ask"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+func TestSqlSelectStatement3(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex(" select	* 	 from stocks where ticker = IBM", &consumer)
 	expected := []token{
 		{tokenTypeSqlSelect, "select"},

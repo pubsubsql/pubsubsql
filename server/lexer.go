@@ -495,13 +495,29 @@ func lexSqlInsertValueCommaOrRigthParenthesis(this *lexer) stateFn {
 
 // SELECT sql statement scan state functions.
 
+func lexSqlSelectColumn(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlSelectColumnCommaOrFrom)
+}
+
+func lexSqlSelectColumnCommaOrFrom(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() == ',' {
+		this.emit(tokenTypeSqlComma)
+		return lexSqlSelectColumn
+	} 
+	this.backup()
+	return lexSqlFrom(this)
+}
+
 func lexSqlSelectStar(this *lexer) stateFn {
 	this.skipWhiteSpaces()
 	if this.next() == '*' {
 		this.emit(tokenTypeSqlStar)
 		return lexSqlFrom
 	}
-	return this.errorToken("expected columns or *")
+	this.backup()
+	return lexSqlSelectColumn(this)
 }
 
 // UPDATE sql statement scan state functions.
