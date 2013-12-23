@@ -397,8 +397,11 @@ func (this *table) sqlInsert(req *sqlInsertRequest) response {
 
 // SELECT sql statement
 
-func (this *table) copyRecordsToSqlSelectResponse(res *sqlSelectResponse, records []*record) {
-	res.columns = this.colSlice
+func (this *table) copyRecordsToSqlSelectResponse(res *sqlSelectResponse, records []*record, columns []*column) {
+	res.columns = columns
+	if len(res.columns) == 0 {
+		res.columns = this.colSlice
+	}
 	res.records = make([]*record, 0, len(records))
 	for _, rec := range records {
 		if rec != nil {
@@ -420,8 +423,18 @@ func (this *table) sqlSelect(req *sqlSelectRequest) response {
 	if errResponse != nil {
 		return errResponse
 	}
+	// precreate columns
+	var columns []*column
+	if len(req.cols) > 0 {
+		columns = make([]*column, 0, cap(req.cols))	
+		for _, colName := range req.cols {
+			col, _ := this.getAddColumn(colName)
+			columns = append(columns, col)
+		}
+	}
+	//
 	var res sqlSelectResponse
-	this.copyRecordsToSqlSelectResponse(&res, records)
+	this.copyRecordsToSqlSelectResponse(&res, records, columns)
 	return &res
 }
 
@@ -653,7 +666,7 @@ func (this *table) visitSubscriptions(rec *record, publishActionFunc publishActi
 func (this *table) publishActionAdd(sub *subscription, records []*record) bool {
 	res := new(sqlActionAddResponse)
 	res.pubsubid = sub.id
-	this.copyRecordsToSqlSelectResponse(&res.sqlSelectResponse, records)
+	this.copyRecordsToSqlSelectResponse(&res.sqlSelectResponse, records, nil)
 	return sub.sender.send(res)
 }
 

@@ -186,6 +186,15 @@ func TestTableSqlSelect1(t *testing.T) {
 
 	res = selectHelper(tbl, " select * from stocks where id = 1")
 	validateSqlSelect(t, res, 1, 5)
+
+	res = selectHelper(tbl, " select bid, ask  from stocks where id = 1")
+	validateSqlSelect(t, res, 1, 2)
+
+	res = selectHelper(tbl, " select bid, ask, somecolumn  from stocks where id = 1")
+	validateSqlSelect(t, res, 1, 3)
+
+	res = selectHelper(tbl, " select *  from stocks ")
+	validateSqlSelect(t, res, 2, 6)
 }
 
 // UPDATE
