@@ -99,6 +99,7 @@ func (this *JSONBuilder) beginArray() {
 }
 
 func (this *JSONBuilder) beginObject() {
+	this.WriteByte('\n')
 	this.WriteByte('{')
 }
 
@@ -115,6 +116,10 @@ func (this *JSONBuilder) nameSeparator() {
 }
 
 func (this *JSONBuilder) valueSeparator() {
+	this.WriteByte(',')
+}
+
+func (this *JSONBuilder) objectSeparator() {
 	this.WriteByte(',')
 }
 

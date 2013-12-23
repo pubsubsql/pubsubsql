@@ -167,7 +167,7 @@ func (this *sqlSelectResponse) data(builder *JSONBuilder) {
 	for recIndex, rec := range this.records {
 		// another row
 		if recIndex != 0 {
-			builder.valueSeparator()
+			builder.objectSeparator()
 		}
 		row(builder, this.columns, rec)
 	}
