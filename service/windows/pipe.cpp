@@ -30,7 +30,7 @@ pipe::pipe()
 	// init security attributes
 	securityAttributes.nLength = sizeof(securityAttributes);
 	securityAttributes.lpSecurityDescriptor = NULL;
-	securityAttributes.bInheritHandle = TRUE;
+	securityAttributes.bInheritHandle = FALSE;
 	// create os pipe
 	if (!CreatePipe(&readHandle, &writeHandle, &securityAttributes, BUFFER_SIZE)) {
 		std::cerr << "pipe error: CreatePipe failed err:" << GetLastError() << std::endl;	
@@ -63,11 +63,12 @@ const char* pipe::readLine() {
 }
 
 void pipe::writeLine(const char* line) {
-	fputs(line, writeFile);
-	putc('\n', writeFile);	
+	WriteFile(writeHandle, line, strlen(line), 0, NULL);
+	WriteFile(writeHandle, "\n", 1, 0, NULL);
 }
 	
 FILE* pipe::toFileFromHandle(HANDLE handle, const char* fileOpenMode) {
 	int cfileDescriptor = _open_osfhandle((intptr_t)handle, 0);
+	if (cfileDescriptor == -1) return nullptr;
 	return _fdopen(cfileDescriptor, fileOpenMode);
 }

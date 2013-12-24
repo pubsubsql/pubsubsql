@@ -15,6 +15,7 @@
  */
 
 #include <iostream>
+#include <thread>
 #include "pipe.h"
 
 int main(int argc, char* argv[])
@@ -23,6 +24,13 @@ int main(int argc, char* argv[])
 	if (!testPipe.ok()) {
 		std::cerr << "pipe failed" << std::endl;
 	}
+	//
+	std::thread t([&]() {
+		std::cout<< testPipe.readLine();
+	});
+	testPipe.writeLine("Hello 12345667813248959 qwertyuiopasdfghjkl;zxcbvbnm");
+	t.join();
+	//
 	return 0;
 }
 
