@@ -16,7 +16,7 @@
 
 #include <iostream>
 #include <thread>
-#include "pipe.h"
+#include "process.h"
 
 int main(int argc, char* argv[])
 {
@@ -28,9 +28,16 @@ int main(int argc, char* argv[])
 	std::thread t([&]() {
 		std::cout<< testPipe.readLine();
 	});
-	testPipe.writeLine("Hello 12345667813248959 qwertyuiopasdfghjkl;zxcbvbnm");
+	testPipe.writeLine("pipe test");
 	t.join();
-	//
+	// test process redirection
+	process pubsubsql;
+	if (pubsubsql.start("C:\\Users\\Oleg\\Go\\src\\pubsubsql\\pubsubsql.exe")) {
+		int i = 0;
+		std::cin >> i;
+		pubsubsql.stop();
+		pubsubsql.wait(3000);
+	}
 	return 0;
 }
 

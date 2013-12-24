@@ -144,10 +144,12 @@
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="pipe.cpp" />
+    <ClCompile Include="process.cpp" />
     <ClCompile Include="pubsubsqlsvc.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="pipe.h" />
+    <ClInclude Include="process.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

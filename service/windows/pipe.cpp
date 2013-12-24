@@ -28,9 +28,8 @@ pipe::pipe()
 ,	writeHandle(INVALID_HANDLE_VALUE)
 {
 	// init security attributes
-	securityAttributes.nLength = sizeof(securityAttributes);
-	securityAttributes.lpSecurityDescriptor = NULL;
-	securityAttributes.bInheritHandle = FALSE;
+	SECURITY_ATTRIBUTES securityAttributes;
+	initSecurityAttributes(securityAttributes);
 	// create os pipe
 	if (!CreatePipe(&readHandle, &writeHandle, &securityAttributes, BUFFER_SIZE)) {
 		std::cerr << "pipe error: CreatePipe failed err:" << GetLastError() << std::endl;	
@@ -43,7 +42,7 @@ pipe::pipe()
 		std::cerr << "pipe error: Failed to convert file handles " << GetLastError() << std::endl;	
 		return;
 	}
-	//
+	// 
 	valid = true;
 }
 
@@ -58,8 +57,7 @@ bool pipe::ok() {
 }
 
 const char* pipe::readLine() {
-	fgets(buffer, BUFFER_SIZE, readFile);
-	return buffer;
+	return fgets(buffer, BUFFER_SIZE, readFile);
 }
 
 void pipe::writeLine(const char* line) {
@@ -71,4 +69,18 @@ FILE* pipe::toFileFromHandle(HANDLE handle, const char* fileOpenMode) {
 	int cfileDescriptor = _open_osfhandle((intptr_t)handle, 0);
 	if (cfileDescriptor == -1) return nullptr;
 	return _fdopen(cfileDescriptor, fileOpenMode);
+}
+
+HANDLE pipe::getWriteHandle() {
+	return writeHandle;
+}
+
+HANDLE pipe::getReadHandle() {
+	return readHandle;
+}
+
+void pipe::initSecurityAttributes(SECURITY_ATTRIBUTES& securityAttributes) {
+	securityAttributes.nLength = sizeof(securityAttributes);
+	securityAttributes.lpSecurityDescriptor = NULL;
+	securityAttributes.bInheritHandle = TRUE;
 }

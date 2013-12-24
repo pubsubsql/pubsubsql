@@ -14,35 +14,27 @@
  * along with PubSubSQL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-#ifndef PUBSUBSQLSVC_PIPE_H
-#define PUBSUBSQLSVC_PIPE_H
+#ifndef PUBSUBSQLSVC_PROCESS_H
+#define PUBSUBSQLSVC_PROCESS_H
 
-#include <Windows.h>
-#include <string>
+#include <memory>
+#include <thread>
+#include "pipe.h"
 
-class pipe {
+class process {
 public:
-	pipe();
-	~pipe();
-	bool ok();	
-	const char* readLine();
-	void writeLine(const char*);
-	HANDLE getWriteHandle();	
-	HANDLE getReadHandle();	
-	static void initSecurityAttributes(SECURITY_ATTRIBUTES& securityAttributes);
+	process(); 
+	~process();
+	bool start(char* commandLine);
+	void stop();
+	void wait(unsigned milliseconds);
 
 private:
-	FILE* toFileFromHandle(HANDLE handle, const char* fileOpenMode);
-
-	static const unsigned BUFFER_SIZE = 4096;
-	bool valid;
-	FILE* readFile;
-	FILE* writeFile;
-	HANDLE pipeHandle;
-	HANDLE readHandle;
-	HANDLE writeHandle;
-	char buffer[BUFFER_SIZE + 1];
+	PROCESS_INFORMATION processInfo; 
+	pipe stderrPipe;
+	pipe stdinPipe;
+	std::thread logThread;
 
 };
 
-#endif //PUBSUBSQLSVC_PIPE_H
+#endif //PUBSUBSQLSVC_PROCESS_H
