@@ -22,54 +22,56 @@ import (
 	"time"
 )
 
-type IStoper interface {
-	Stoped() bool
+// IQuitter is a generic interface called from a participating goroutine to determine if it should quit.
+type IQuitter interface {
+	Done() bool
 }
 
-// Stoper implements shutdown protocol to make sure that all active goroutines exit gracefully.
-type Stoper struct {
-	IStoper
+// Quitter implements a quit (shutdown) protocol.
+// When the quit protocol is in progress, all participating goroutines should quit.
+type Quitter struct {
+	IQuitter
 	counter int64
 	channel chan int
-	stoped  bool
-	mutex   sync.Mutex
+	done bool
+	mutex  sync.Mutex
 }
 
-// Stoper factory.
-func NewStoper() *Stoper {
-	return &Stoper{
+// NewQuitter is a Quitter factory.
+func NewQuitter() *Quitter {
+	return &Quitter{
 		counter: 0,
 		channel: make(chan int),
-		stoped:  false,
+		shouldQuitter:  false,
 	}
 }
 
-// Join starts goroutine participation in shutdown protocol.
-func (this *Stoper) Join() {
+// Done returns true if the quit protocol is in progress. 
+func (this *Quitter) Done() bool {
+	return this.done
+}
+
+// Join causes the calling goroutine to participate in the quit protocol. 
+func (this *Quitter) Join() {
 	atomic.AddInt64(&this.counter, 1)
 }
 
-// Leave notifies that participating goroutine gracesfully exited.
-// Should be called with defer symantics.
-func (this *Stoper) Leave() {
+// Leave signals that the participating goroutine has quit.
+// Should be called with defer semantics.
+func (this *Quitter) Leave() {
 	atomic.AddInt64(&this.counter, -1)
 }
 
-// GetChan returns channel to be used in select {} in order to react to Stop event.
-func (this *Stoper) GetChan() chan int {
-	return this.channel
-}
-
-// Stop notifies all participating goroutines that shutdown protocol is in progress
-// and waits for all go routines to exit until timeouti.
-// Returns false when timed out.
-func (this *Stoper) Stop(timeout time.Duration) bool {
-	this.stop()
+// Quit notifies all participating goroutines that the quit protocol is in progress.
+// It waits until all participating goroutines signal that they have quit or until a timeout occurs.
+// Returns false when a timeout has occurred.
+func (this *Quitter) Quit(timeout time.Duration) bool {
+	this.quit()
 	return this.Wait(timeout)
 }
 
-// stop helper
-func (this *Stoper) stop() {
+// quit is a helper function.
+func (this *Quitter) quit() {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
 	if !this.stoped {
@@ -78,7 +80,14 @@ func (this *Stoper) stop() {
 	}
 }
 
-func (this *Stoper) Wait(timeout time.Duration) bool {
+// GetChan returns the channel to be used in a go select statement in order to receive a Quit notification.
+func (this *Quitter) GetChan() chan int {
+	return this.channel
+}
+
+// Wait waits until all participating goroutines signal that they have quit or until a timeout occurs.
+// Returns false when a timeout has occurred.
+func (this *Quitter) Wait(timeout time.Duration) bool {
 	if timeout == 0 {
 		return atomic.LoadInt64(&this.counter) == 0
 	}
@@ -92,11 +101,8 @@ func (this *Stoper) Wait(timeout time.Duration) bool {
 	return true
 }
 
-func (this *Stoper) Stoped() bool {
-	return this.stoped
-}
-
-// Counter returns number of of participating goroutines.
-func (this *Stoper) Counter() int64 {
+// GoRoutines returns the number of participating goroutines in the quit protocol.
+func (this *Quitter) GoRoutines() int64 {
 	return atomic.LoadInt64(&this.counter)
 }
+
