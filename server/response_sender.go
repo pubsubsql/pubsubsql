@@ -63,6 +63,7 @@ func (this *responseSender) tryRecv() response {
 }
 
 // recv receives a response from the client.
-func (this *responseSender) recv() response {
+// For testing only.	
+func (this *responseSender) testRecv() response {
 	return <-this.sender
 }

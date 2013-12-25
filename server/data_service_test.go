@@ -3,7 +3,7 @@
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
- * License, or (at your option) any later version.
+ * License, or (at your option any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
@@ -45,38 +45,38 @@ func TestDataService(t *testing.T) {
 	sender := newResponseSenderStub(1)
 	// insert
 	dataSrv.acceptRequest(sqlHelper("insert into stocks (ticker, bid, ask, sector) values (IBM, 123, 124, TECH) ", sender))
-	res := sender.recv()
+	res := sender.testRecv()
 	validateSqlInsertResponseId(t, res, "0")
 	// select
 	dataSrv.acceptRequest(sqlHelper(" select * from stocks ", sender))
-	res = sender.recv()
+	res = sender.testRecv()
 	validateSqlSelect(t, res, 1, 5)
 	// key
 	dataSrv.acceptRequest(sqlHelper(" key stocks ticker ", sender))
-	res = sender.recv()
+	res = sender.testRecv()
 	validateOkResponse(t, res)
 	// tag
 	dataSrv.acceptRequest(sqlHelper(" tag stocks sector ", sender))
-	res = sender.recv()
+	res = sender.testRecv()
 	validateOkResponse(t, res)
 	// subscribe
 	dataSrv.acceptRequest(sqlHelper(" subscribe * from stocks sector = TECH ", sender))
-	res = sender.recv()
+	res = sender.testRecv()
 	validateSqlSubscribeResponse(t, res)
-	res = sender.recv() // action add
+	res = sender.testRecv() // action add
 	// update
 	dataSrv.acceptRequest(sqlHelper(" update stocks set bid = 140 where ticker = IBM ", sender))
-	res = sender.recv() // first is action update
-	res = sender.recv()
+	res = sender.testRecv() // first is action update
+	res = sender.testRecv()
 	validateSqlUpdate(t, res, 1)
 	// delete
 	dataSrv.acceptRequest(sqlHelper(" delete from stocks where ticker = IBM ", sender))
-	res = sender.recv() // first is action delete
-	res = sender.recv()
+	res = sender.testRecv() // first is action delete
+	res = sender.testRecv()
 	validateSqlDelete(t, res, 1)
 	// unsubscribe
 	dataSrv.acceptRequest(sqlHelper(" unsubscribe from stocks where pubsubid = 1 ", sender))
-	res = sender.recv() // first is action delete
+	res = sender.testRecv() // first is action delete
 	validateSqlUnsubscribe(t, res, 1)
 
 	quit.Quit(time.Millisecond * 1000)
