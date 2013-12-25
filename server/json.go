@@ -65,9 +65,9 @@ func (this *JSONBuilder) string(s string) int {
 				this.WriteByte('\\')
 				this.WriteByte('r')
 			default:
-				// This encodes bytes < 0x20 except for \n and \r, 
+				// This encodes bytes < 0x20 except for \n and \r,
 				// as well as < and >. The latter are escaped because they
-				// can lead to security holes when user-controlled strings 
+				// can lead to security holes when user-controlled strings
 				// are rendered into JSON and served to some browsers.
 				this.WriteString(`\u00`)
 				this.WriteByte(hex[b>>4])

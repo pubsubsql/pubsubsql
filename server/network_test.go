@@ -21,10 +21,10 @@ import "time"
 import "net"
 import "strconv"
 
-func TestNetworkStartStop(t *testing.T) {
+func TestNetworkStartQuit(t *testing.T) {
 	address := "localhost:54321"
 	context := newNetworkContextStub()
-	s := context.stoper
+	s := context.quit
 	n := newNetwork(context)
 	if !n.start(address) {
 		t.Error("network.start(" + address + ") failed")
@@ -35,14 +35,14 @@ func TestNetworkStartStop(t *testing.T) {
 		t.Error("network.start(" + address + ") should have failed")
 	}
 	// shutdown
-	s.Stop(0)
+	s.Quit(0)
 	n.stop()
 	s.Wait(time.Millisecond * 1000)
 }
 
 func TestNetworkConnections(t *testing.T) {
 	context := newNetworkContextStub()
-	s := context.stoper
+	s := context.quit
 	n := newNetwork(context)
 	n.start("localhost:54321")
 	c, err := net.Dial("tcp", "localhost:54321")
@@ -54,7 +54,7 @@ func TestNetworkConnections(t *testing.T) {
 		t.Error("Expected 1 network connection")
 	}
 	// shutdown
-	s.Stop(0)
+	s.Quit(0)
 	n.stop()
 	s.Wait(time.Millisecond * 1000)
 	c.Close()
@@ -94,7 +94,7 @@ func validateConnect(t *testing.T, address string) net.Conn {
 func TestNetworkWriteRead(t *testing.T) {
 	context := newNetworkContextStub()
 	address := "localhost:54321"
-	s := context.stoper
+	s := context.quit
 	n := newNetwork(context)
 	n.start(address)
 	c := validateConnect(t, address)
@@ -129,7 +129,7 @@ func TestNetworkWriteRead(t *testing.T) {
 		t.Error("Expected 0 network connection")
 	}
 	// shutdown
-	s.Stop(0)
+	s.Quit(0)
 	n.stop()
 	s.Wait(time.Millisecond * 500)
 }
@@ -137,7 +137,7 @@ func TestNetworkWriteRead(t *testing.T) {
 func TestNetworMultiInsert(t *testing.T) {
 	context := newNetworkContextStub()
 	address := "localhost:54321"
-	s := context.stoper
+	s := context.quit
 	n := newNetwork(context)
 	n.start(address)
 	c := validateConnect(t, address)
@@ -162,13 +162,13 @@ func TestNetworMultiInsert(t *testing.T) {
 
 		}(i, idblock)
 	}
-	// read inserted published records 
+	// read inserted published records
 	for j := 0; j < (insertsPerConnection * totalConnections); j++ {
 		validateRead(t, c)
 	}
 	c.Close()
 	// shutdown
-	s.Stop(0)
+	s.Quit(0)
 	n.stop()
 	s.Wait(time.Millisecond * 500)
 }
@@ -176,7 +176,7 @@ func TestNetworMultiInsert(t *testing.T) {
 func TestNetworkBatchRead(t *testing.T) {
 	context := newNetworkContextStub()
 	address := "localhost:54321"
-	s := context.stoper
+	s := context.quit
 	n := newNetwork(context)
 	n.start(address)
 	c := validateConnect(t, address)
@@ -185,7 +185,7 @@ func TestNetworkBatchRead(t *testing.T) {
 	config.DATA_BATCH_SIZE = 1
 	defer func() {
 		config.DATA_BATCH_SIZE = prevBatchSize
-	} () 
+	}()
 	// subscribe
 	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (IBM, 120)")
 	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (MSFT, 120)")
@@ -200,7 +200,7 @@ func TestNetworkBatchRead(t *testing.T) {
 
 	c.Close()
 	// shutdown
-	s.Stop(0)
+	s.Quit(0)
 	n.stop()
 	s.Wait(time.Millisecond * 500)
 }

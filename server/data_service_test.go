@@ -20,10 +20,10 @@ import "testing"
 import "time"
 
 func TestDataServiceRunAndStop(t *testing.T) {
-	stoper := NewStoper()
-	dataSrv := newDataService(stoper)
+	quit := NewQuitter()
+	dataSrv := newDataService(quit)
 	go dataSrv.run()
-	if !stoper.Stop(3 * time.Second) {
+	if !quit.Quit(3 * time.Second) {
 		t.Errorf("stoper.Stop() expected true but got false")
 	}
 }
@@ -39,8 +39,8 @@ func sqlHelper(sql string, sender *responseSender) *requestItem {
 }
 
 func TestDataService(t *testing.T) {
-	stoper := NewStoper()
-	dataSrv := newDataService(stoper)
+	quit := NewQuitter()
+	dataSrv := newDataService(quit)
 	go dataSrv.run()
 	sender := newResponseSenderStub(1)
 	// insert
@@ -51,15 +51,15 @@ func TestDataService(t *testing.T) {
 	dataSrv.acceptRequest(sqlHelper(" select * from stocks ", sender))
 	res = sender.recv()
 	validateSqlSelect(t, res, 1, 5)
-	// key 
+	// key
 	dataSrv.acceptRequest(sqlHelper(" key stocks ticker ", sender))
 	res = sender.recv()
 	validateOkResponse(t, res)
-	// tag 
+	// tag
 	dataSrv.acceptRequest(sqlHelper(" tag stocks sector ", sender))
 	res = sender.recv()
 	validateOkResponse(t, res)
-	// subscribe	
+	// subscribe
 	dataSrv.acceptRequest(sqlHelper(" subscribe * from stocks sector = TECH ", sender))
 	res = sender.recv()
 	validateSqlSubscribeResponse(t, res)
@@ -79,5 +79,5 @@ func TestDataService(t *testing.T) {
 	res = sender.recv() // first is action delete
 	validateSqlUnsubscribe(t, res, 1)
 
-	stoper.Stop(time.Millisecond * 1000)
+	quit.Quit(time.Millisecond * 1000)
 }

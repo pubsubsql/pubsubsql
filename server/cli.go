@@ -33,7 +33,7 @@ type lineReader struct {
 	line   string
 }
 
-// returns a new lineReader. 
+// returns a new lineReader.
 func newLineReader(quit string) *lineReader {
 	return &lineReader{
 		reader: bufio.NewReader(os.Stdin),
@@ -41,7 +41,7 @@ func newLineReader(quit string) *lineReader {
 	}
 }
 
-// readLine reads line of text from standard input. 
+// readLine reads line of text from standard input.
 // Returns true if quit string was read.
 func (l *lineReader) readLine() bool {
 	line, err := l.reader.ReadString('\n')
@@ -67,7 +67,7 @@ type cli struct {
 // Returns new cli.
 func newCli() *cli {
 	return &cli{
-		quit: 	       NewQuitter(),
+		quit:          NewQuitter(),
 		fromStdin:     make(chan string),
 		fromServer:    make(chan string),
 		toServer:      make(chan string),
@@ -75,7 +75,7 @@ func newCli() *cli {
 	}
 }
 
-// the run is an event loop function that recieves a command line input and forwards it to the server.
+// run is an event loop function that recieves a command line input and forwards it to the server.
 func (this *cli) run() {
 	this.initConsolePrefix()
 	if !this.connect() {
@@ -85,8 +85,9 @@ func (this *cli) run() {
 	go this.readInput()
 	go this.readMessages()
 	go this.writeMessages()
-	// 
+	//
 	cout := bufio.NewWriter(os.Stdout)
+LOOP:
 	for {
 		// display console prefix
 		cout.WriteString(this.prefix)
@@ -109,7 +110,7 @@ func (this *cli) run() {
 			cout.WriteString("\n")
 			cout.Flush()
 		case <-this.quit.GetChan():
-			break
+			break LOOP
 		}
 	}
 	this.conn.Close()
@@ -140,7 +141,7 @@ func (this *cli) initConsolePrefix() {
 	this.prefix += ">"
 }
 
-// readInput reads a command line input from the standard input and forwards it for further processing. 
+// readInput reads a command line input from the standard input and forwards it for further processing.
 func (this *cli) readInput() {
 	// we do not join the quitter because there is no way to return from blocking readLine
 	cin := newLineReader("q")
@@ -158,16 +159,17 @@ func (this *cli) readMessages() {
 	this.quit.Join()
 	defer this.quit.Leave()
 	reader := newNetMessageReaderWriter(this.conn, nil)
+LOOP:
 	for {
 		bytes, err := reader.readMessage()
 		if err != nil {
 			this.outputError(err)
-			break
+			break LOOP
 		}
 		select {
 		case this.fromServer <- string(bytes):
 		case <-this.quit.GetChan():
-			break
+			break LOOP
 		}
 	}
 	this.quit.Quit(0)
@@ -179,20 +181,18 @@ func (this *cli) writeMessages() {
 	this.quit.Join()
 	defer this.quit.Leave()
 	writer := newNetMessageReaderWriter(this.conn, nil)
+LOOP:
 	for {
 		select {
-		case message, ok := <-this.toServer:
-			if !ok {
-				break
-			}
+		case message := <-this.toServer:
 			bytes := []byte(message)
 			err := writer.writeHeaderAndMessage(bytes)
 			if err != nil {
 				this.outputError(err)
-				break
+				break LOOP
 			}
 		case <-this.quit.GetChan():
-			break
+			break LOOP
 		}
 	}
 	this.quit.Quit(0)
@@ -205,4 +205,3 @@ func (this *cli) outputError(err error) {
 		errorx(err)
 	}
 }
-

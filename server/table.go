@@ -44,7 +44,7 @@ type table struct {
 	subid         uint64
 	//
 	requests chan *requestItem
-	stoper   *Stoper
+	quit     *Quitter
 }
 
 // table factory
@@ -426,7 +426,7 @@ func (this *table) sqlSelect(req *sqlSelectRequest) response {
 	// precreate columns
 	var columns []*column
 	if len(req.cols) > 0 {
-		columns = make([]*column, 0, cap(req.cols))	
+		columns = make([]*column, 0, cap(req.cols))
 		for _, colName := range req.cols {
 			col, _ := this.getAddColumn(colName)
 			columns = append(columns, col)
@@ -584,7 +584,7 @@ func (this *table) subscribeToTable(sender *responseSender, skip bool) (*subscri
 	sender.send(newSubscribeResponse(sub))
 	var records []*record
 	if !skip {
-		records = this.records 
+		records = this.records
 	}
 	return sub, records
 }
@@ -765,18 +765,18 @@ func (this *table) sqlUnsubscribe(req *sqlUnsubscribeRequest) response {
 // run
 
 func (this *table) run() {
-	this.stoper.Join()
-	defer this.stoper.Leave()
+	this.quit.Join()
+	defer this.quit.Leave()
 	for {
 		select {
 		case item := <-this.requests:
-			if this.stoper.Stoped() {
-				debug("table exited isStoping")
+			if this.quit.Done() {
+				debug("table quit")
 				return
 			}
 			this.onSqlRequest(item.req, item.sender)
-		case <-this.stoper.GetChan():
-			debug("table exited stoped")
+		case <-this.quit.GetChan():
+			debug("table quit")
 			return
 		}
 	}

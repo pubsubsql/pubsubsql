@@ -19,7 +19,6 @@ package main
 import "pubsubsql/server"
 
 func main() {
-	var controller pubsubsql.Controller 
+	var controller pubsubsql.Controller
 	controller.Run()
 }
-

@@ -16,42 +16,42 @@
 
 package pubsubsql
 
-// responseSender is responsible for channeling reponses to client connection
+// responseSender is a wrapper around client channel for forwarding reponses back to a client connection.
+// It correctly reacts to the client connection close notification.
 type responseSender struct {
-	sender           chan response // channel to publish responses to
-	connectionId     uint64
-	connectionStoper *Stoper
-	disconnecting    bool
+	sender        chan response // channel to publish responses to
+	connectionId  uint64
+	quit          *Quitter
+	disconnecting bool
 }
 
-// factory
+// Returns new responseSender.
 func newResponseSenderStub(connectionId uint64) *responseSender {
 	return &responseSender{
-		sender:           make(chan response, config.CHAN_RESPONSE_SENDER_BUFFER_SIZE),
-		connectionId:     connectionId,
-		connectionStoper: NewStoper(),
-		disconnecting:    false,
+		sender:        make(chan response, config.CHAN_RESPONSE_SENDER_BUFFER_SIZE),
+		connectionId:  connectionId,
+		quit:          NewQuitter(),
+		disconnecting: false,
 	}
 }
 
+// send sends the response to the client
 func (this *responseSender) send(res response) bool {
 	select {
 	case this.sender <- res:
-		if !this.connectionStoper.Stoped() {
-			return true
-		}
-		debug("sender is stoped")
-	case <-this.connectionStoper.GetChan():
+		return !this.quit.Done()
+	case <-this.quit.GetChan():
 		debug("connection is closed")
 	default:
 		logerror("sender queue is full connection: ", this.connectionId)
-		// notify client connection that it needs to close due to inability to 
+		// notify client connection that it needs to close due to inability to
 		// send responses in a timely manner
-		this.connectionStoper.Stop(0)
+		this.quit.Quit(0)
 	}
 	return false
 }
 
+// tryRecv attemps to receive a response from the client.
 func (this *responseSender) tryRecv() response {
 	select {
 	case res := <-this.sender:
@@ -62,6 +62,7 @@ func (this *responseSender) tryRecv() response {
 	return nil
 }
 
+// recv receives a response from the client.
 func (this *responseSender) recv() response {
 	return <-this.sender
 }

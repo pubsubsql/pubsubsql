@@ -246,8 +246,8 @@ func (this *parser) parseSelectColumns(tok **token, req *sqlSelectRequest) reque
 
 // Parses sql select statement and returns sqlSelectRequest on success.
 func (this *parser) parseSqlSelect() request {
-	req := &sqlSelectRequest {
-		cols: make([]string, 0, config.PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY),	
+	req := &sqlSelectRequest{
+		cols: make([]string, 0, config.PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY),
 	}
 	// *
 	tok := this.tokens.Produce()

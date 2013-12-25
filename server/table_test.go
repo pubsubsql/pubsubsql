@@ -596,7 +596,7 @@ func TestTableSqlSubscribe1(t *testing.T) {
 	sub := validateSqlSubscribeResponse(t, res)
 	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
 
-	//skip	
+	//skip
 	res, sender = subscribeHelper(tbl, "subscribe skip * from stocks ")
 	sub = validateSqlSubscribeResponse(t, res)
 	validateNoResponse(t, sender)
@@ -621,17 +621,15 @@ func TestTableSqlSubscribe1(t *testing.T) {
 	sub = validateSqlSubscribeResponse(t, res)
 	validateNoResponse(t, sender)
 
-
 	// subscribe to id
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where id = 0")
 	sub = validateSqlSubscribeResponse(t, res)
 	validateSqlActionAddResponse(t, sender, sub.pubsubid, 1)
 
-	//skip	
+	//skip
 	res, sender = subscribeHelper(tbl, "subscribe skip * from stocks where id = 0")
 	sub = validateSqlSubscribeResponse(t, res)
 	validateNoResponse(t, sender)
-
 
 	// subscribe to non existing valid key
 	res, sender = subscribeHelper(tbl, "subscribe * from stocks where ticker = MSFT")

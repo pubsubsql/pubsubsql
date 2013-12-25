@@ -117,7 +117,7 @@ func (this *sqlInsertRequest) setValueAt(idx int, val string) {
 // sqlSelectRequest is a request for sql select statement.
 type sqlSelectRequest struct {
 	sqlRequest
-	cols []string
+	cols   []string
 	filter sqlFilter
 }
 
@@ -160,7 +160,7 @@ type sqlTagRequest struct {
 // sqlSubscribeRequest is a request for sql subscribe statement.
 type sqlSubscribeRequest struct {
 	sqlRequest
-	skip bool
+	skip   bool
 	filter sqlFilter
 	sender *responseSender
 }

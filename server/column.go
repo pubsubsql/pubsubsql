@@ -18,7 +18,7 @@ package pubsubsql
 
 type columnType int8
 
-// column types 
+// column types
 const (
 	columnTypeNormal columnType = iota // non indexed column
 	columnTypeId                       // id column

@@ -144,7 +144,7 @@ type sqlSelectResponse struct {
 	response
 	columns []*column
 	records []*record
-	batch int
+	batch   int
 }
 
 func row(builder *JSONBuilder, columns []*column, rec *record) {
@@ -160,7 +160,7 @@ func row(builder *JSONBuilder, columns []*column, rec *record) {
 }
 
 func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
-	more := len(this.records) > config.DATA_BATCH_SIZE  
+	more := len(this.records) > config.DATA_BATCH_SIZE
 	records := this.records
 	if more {
 		records = this.records[0:config.DATA_BATCH_SIZE]
@@ -169,7 +169,7 @@ func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
 		this.batch++
 		builder.nameIntValue("batch", this.batch)
 		builder.valueSeparator()
-	}	
+	}
 	builder.nameIntValue("rows", len(this.records))
 	builder.valueSeparator()
 	builder.string("data")

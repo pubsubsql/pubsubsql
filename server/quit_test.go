@@ -16,57 +16,59 @@
 
 package pubsubsql
 
-import "testing"
-import "time"
-import "runtime"
-import "fmt"
+import (
+	"fmt"
+	"runtime"
+	"testing"
+	"time"
+)
 
 func Test(t *testing.T) {
-	stoper := NewStoper()
-	if !stoper.Stop(0) {
-		t.Errorf("stoper.Stop() expected true but got false")
+	quit := NewQuitter()
+	if !quit.Quit(0) {
+		t.Errorf("quit.Quit() expected true but got false")
 	}
 }
 
-func testStoper(stoper *Stoper, level int, perLevel int) {
-	stoper.Join()
-	defer stoper.Leave()
+func testStoper(quit *Quitter, level int, perLevel int) {
+	quit.Join()
+	defer quit.Leave()
 	level--
 	if level < 0 {
 		return
 	}
 	//start other go routines
 	for i := 0; i < perLevel; i++ {
-		go testStoper(stoper, level, perLevel)
+		go testStoper(quit, level, perLevel)
 	}
 	//wait for stop event
-	c := stoper.GetChan()
+	c := quit.GetChan()
 	<-c
 }
 
 func TestMultiGoroutines(t *testing.T) {
-	stoper := NewStoper()
+	quit := NewQuitter()
 	levels := 5
 	perLevel := 5
-	go testStoper(stoper, levels, perLevel)
+	go testStoper(quit, levels, perLevel)
 	time.Sleep(time.Millisecond * 500)
-	debug(fmt.Sprint("goroutines in progress:", stoper.Counter()))
-	if !stoper.Stop(time.Millisecond * 1000) {
-		t.Errorf("stoper.Stop() expected true but got false")
+	debug(fmt.Sprint("goroutines in progress:", quit.GoRoutines()))
+	if !quit.Quit(time.Millisecond * 1000) {
+		t.Errorf("quit.Quit() expected true but got false")
 	}
-	debug(fmt.Sprint("goroutines in progress:", stoper.Counter()))
+	debug(fmt.Sprint("goroutines in progress:", quit.GoRoutines()))
 }
 
 func TestMultiGoroutinesMultiCores(t *testing.T) {
 	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
-	stoper := NewStoper()
+	quit := NewQuitter()
 	levels := 6
 	perLevel := 6
-	go testStoper(stoper, levels, perLevel)
+	go testStoper(quit, levels, perLevel)
 	time.Sleep(time.Millisecond * 500)
-	debug(fmt.Sprint("goroutines in progress:", stoper.Counter()))
-	if !stoper.Stop(time.Millisecond * 1000) {
-		t.Errorf("stoper.Stop() expected true but got false")
+	debug(fmt.Sprint("goroutines in progress:", quit.GoRoutines()))
+	if !quit.Quit(time.Millisecond * 1000) {
+		t.Errorf("quit.Quit() expected true but got false")
 	}
-	debug(fmt.Sprint("goroutines in progress:", stoper.Counter()))
+	debug(fmt.Sprint("goroutines in progress:", quit.GoRoutines()))
 }

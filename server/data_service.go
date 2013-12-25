@@ -16,54 +16,57 @@
 
 package pubsubsql
 
+// requestItem is a container for client request and sender used to send back responses
 type requestItem struct {
 	req    request
 	sender *responseSender
 }
 
-// dataService prer-processes sqlRequests and channels them to approptiate tables for further proccessging
+// dataService pre-processes sqlRequests and forwards them to approptiate tables for further proccessging.
+// It servers as a collection container for tables.
 type dataService struct {
 	requests chan *requestItem
-	stoper   *Stoper
+	quit     *Quitter
 	tables   map[string]*table
 }
 
-// dataService factory
-func newDataService(stoper *Stoper) *dataService {
+// newDataService returns new dataService.
+func newDataService(quit *Quitter) *dataService {
 	return &dataService{
 		requests: make(chan *requestItem, config.CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE),
-		stoper:   stoper,
+		quit:     quit,
 		tables:   make(map[string]*table),
 	}
 }
 
-// accepts the request
+// acceptRequest accepts the request from a client.
 func (this *dataService) acceptRequest(item *requestItem) {
 	select {
 	case this.requests <- item:
-	case <-this.stoper.GetChan():
+	case <-this.quit.GetChan():
 	}
 }
 
-// runs dataService event loop
+// run is an event loop function that recieves sql requests from connected clients and forwards them for further processing.
 func (this *dataService) run() {
-	this.stoper.Join()
-	defer this.stoper.Leave()
+	this.quit.Join()
+	defer this.quit.Leave()
 	for {
 		select {
 		case item := <-this.requests:
-			if this.stoper.Stoped() {
-				debug("data service exited due to stop event")
+			if this.quit.Done() {
+				debug("data service exited due to quit notification")
 				return
 			}
 			this.onSqlRequest(item)
-		case <-this.stoper.GetChan():
-			debug("data service exited due to stop event")
+		case <-this.quit.GetChan():
+			debug("data service exited due to quit notification")
 			return
 		}
 	}
 }
 
+// onSqlRequest forwards sql request to the appropriate table.
 func (this *dataService) onSqlRequest(item *requestItem) {
 	tableName := item.req.getTableName()
 	tbl := this.tables[tableName]
@@ -71,7 +74,7 @@ func (this *dataService) onSqlRequest(item *requestItem) {
 		// auto create table and go run table event loop
 		tbl = newTable(tableName)
 		this.tables[tableName] = tbl
-		tbl.stoper = this.stoper
+		tbl.quit = this.quit
 		tbl.requests = make(chan *requestItem, config.CHAN_TABLE_REQUESTS_BUFFER_SIZE)
 		go tbl.run()
 	}

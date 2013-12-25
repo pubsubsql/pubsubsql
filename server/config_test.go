@@ -47,7 +47,7 @@ func TestConfigCommand(t *testing.T) {
 	c = new(configuration)
 	ASSERT_TRUE(t, c.processCommandLine(args), "processCommandLine")
 	ASSERT_TRUE(t, c.COMMAND == "start", "command start")
-	// empty  
+	// empty
 	c = new(configuration)
 	ASSERT_FALSE(t, c.processCommandLine(nil), "processCommandLine")
 	ASSERT_TRUE(t, c.COMMAND == "", "empty command")
@@ -67,7 +67,7 @@ func TestConfigLogLevel(t *testing.T) {
 	ASSERT_TRUE(t, c.LOG_INFO == false, "debug: info")
 	ASSERT_TRUE(t, c.LOG_WARN == false, "debug: warn")
 	ASSERT_TRUE(t, c.LOG_ERROR == false, "debug: error")
-	// info 
+	// info
 	args = []string{"start", "--loglevel", "info"}
 	c = new(configuration)
 	ASSERT_TRUE(t, c.processCommandLine(args), "processCommandLine")

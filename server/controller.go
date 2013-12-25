@@ -17,35 +17,37 @@
 package pubsubsql
 
 import (
+	"fmt"
 	"os"
 	"time"
-	"fmt"
 )
 
+// Controller is a container that initializes, binds and controls server components.
 type Controller struct {
 	network  *network
 	requests chan *requestItem
-	stoper   *Stoper
+	quit     *Quitter
 }
 
+// Run is a main server entry function. It processes command line options and runs the server in the appropriate mode.
 func (this *Controller) Run() {
 	if !config.processCommandLine(os.Args[1:]) {
 		return
 	}
-	// stoper
-	this.stoper = NewStoper()
-	// process commands 
+	this.quit = NewQuitter()
+	// process commands
 	switch config.COMMAND {
-	case "start":
-		this.runAsServer()
+	case "help":
+		this.displayHelp()
 	case "cli":
 		this.runAsClient()
-	case "help":
-		this.helpCommand()
+	case "start":
+		this.runAsServer()
 	}
 }
 
-func (this *Controller) helpCommand() {
+// displayHelp displays help to the cli user.
+func (this *Controller) displayHelp() {
 	fmt.Println("")
 	fmt.Println("commands:")
 	fmt.Println(validCommandsUsageString())
@@ -54,68 +56,72 @@ func (this *Controller) helpCommand() {
 	config.flags.PrintDefaults()
 }
 
+// runAsClient runs the programm in cli mode.
 func (this *Controller) runAsClient() {
 	client := newCli()
+	// start cli event loop
 	client.run()
 }
 
+// runAsServer runs the programm in server mode.
 func (this *Controller) runAsServer() {
+	// initialize server components
 	// requests
 	this.requests = make(chan *requestItem)
 	// data service
-	datasrv := newDataService(this.stoper)
+	datasrv := newDataService(this.quit)
 	go datasrv.run()
-	// router 
+	// router
 	router := newRequestRouter(datasrv)
 	router.controllerRequests = this.requests
 	// network context
 	context := new(networkContext)
-	context.stoper = this.stoper
+	context.quit = this.quit
 	context.router = router
-	// network	
+	// network
 	this.network = newNetwork(context)
 	if !this.network.start(config.netAddress()) {
-		this.stoper.Stop(0)
-		return	
+		this.quit.Quit(0)
+		return
 	}
 	info("started")
-	// watch for quit input
+	// watch for quit (q) input
 	go this.readInput()
-	// wait for command or stop event
-	ok := true
-	for ok {
+	// wait for command to process or stop event
+LOOP:
+	for {
 		select {
-		case <-this.stoper.GetChan():
-			ok = false
+		case <-this.quit.GetChan():
+			break LOOP
 		case item := <-this.requests:
 			this.onCommandRequest(item)
 		}
 	}
 	// shutdown
 	this.network.stop()
-	this.stoper.Stop(0)
-	this.stoper.Wait(time.Millisecond * config.WAIT_MILLISECOND_SERVER_SHUTDOWN)
+	this.quit.Quit(0)
+	this.quit.Wait(time.Millisecond * config.WAIT_MILLISECOND_SERVER_SHUTDOWN)
 	info("stoped")
 }
 
-func (this *Controller) onCommandRequest(item *requestItem) {
-	switch item.req.(type) {
-	case *cmdStatusRequest:
-		loginfo("client connection:", item.sender.connectionId, "requested server status ")
-		res := &cmdStatusResponse{connections: this.network.connectionCount()}
-		item.sender.send(res)
-	case *cmdStopRequest:
-		loginfo("client connection:", item.sender.connectionId, "requested to stop the server ")
-		this.stoper.Stop(0)
-	}
-}
-
+// readInput reads a command line input from the standard until quit (q) input.
 func (this *Controller) readInput() {
-	// we do not join the stoper because there is no way to return from blocking readLine
-	// closing Stdin does not do anything
 	cin := newLineReader("q")
 	for cin.readLine() {
 	}
-	this.stoper.Stop(0)
+	this.quit.Quit(0)
 	debug("controller done readInput")
+}
+
+// onCommandRequest processes request from a connected client, sending respond back to the client.
+func (this *Controller) onCommandRequest(item *requestItem) {
+	switch item.req.(type) {
+	case *cmdStatusRequest:
+		loginfo("client connection:", item.sender.connectionId, "requested server status")
+		res := &cmdStatusResponse{connections: this.network.connectionCount()}
+		item.sender.send(res)
+	case *cmdStopRequest:
+		loginfo("client connection:", item.sender.connectionId, "requested to stop the server")
+		this.quit.Quit(0)
+	}
 }

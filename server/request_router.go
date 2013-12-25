@@ -51,7 +51,7 @@ func (this *requestRouter) onCmd(item *requestItem) {
 	case *cmdCloseRequest:
 		loginfo("client connection:", item.sender.connectionId, "requested to disconnect ")
 		item.sender.disconnecting = true
-		item.sender.connectionStoper.Stop(0)
+		item.sender.quit.Quit(0)
 	default:
 		this.onControllerCmd(item)
 	}

@@ -42,7 +42,7 @@ const (
 	tokenTypeSqlSelect                                // select
 	tokenTypeSqlSubscribe                             // subscribe
 	tokenTypeSqlUnsubscribe                           // unsubscribe
-	tokenTypeSqlSkip				  // skip
+	tokenTypeSqlSkip                                  // skip
 	tokenTypeSqlWhere                                 // where
 	tokenTypeSqlValues                                // values
 	tokenTypeSqlStar                                  // *
@@ -505,7 +505,7 @@ func lexSqlSelectColumnCommaOrFrom(this *lexer) stateFn {
 	if this.next() == ',' {
 		this.emit(tokenTypeSqlComma)
 		return lexSqlSelectColumn
-	} 
+	}
 	this.backup()
 	return lexSqlFrom(this)
 }

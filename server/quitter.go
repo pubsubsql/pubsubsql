@@ -22,36 +22,38 @@ import (
 	"time"
 )
 
+//
 // IQuitter is a generic interface called from a participating goroutine to determine if it should quit.
 type IQuitter interface {
 	Done() bool
 }
 
+//
 // Quitter implements a quit (shutdown) protocol.
 // When the quit protocol is in progress, all participating goroutines should quit.
 type Quitter struct {
 	IQuitter
 	counter int64
 	channel chan int
-	done bool
-	mutex  sync.Mutex
+	done    bool
+	mutex   sync.Mutex
 }
 
-// NewQuitter is a Quitter factory.
+// NewQuitter returns a new Quitter.
 func NewQuitter() *Quitter {
 	return &Quitter{
 		counter: 0,
 		channel: make(chan int),
-		shouldQuitter:  false,
+		done:    false,
 	}
 }
 
-// Done returns true if the quit protocol is in progress. 
+// Done returns true if the quit protocol is in progress.
 func (this *Quitter) Done() bool {
 	return this.done
 }
 
-// Join causes the calling goroutine to participate in the quit protocol. 
+// Join causes the calling goroutine to participate in the quit protocol.
 func (this *Quitter) Join() {
 	atomic.AddInt64(&this.counter, 1)
 }
@@ -74,8 +76,8 @@ func (this *Quitter) Quit(timeout time.Duration) bool {
 func (this *Quitter) quit() {
 	this.mutex.Lock()
 	defer this.mutex.Unlock()
-	if !this.stoped {
-		this.stoped = true
+	if !this.done {
+		this.done = true
 		close(this.channel)
 	}
 }
@@ -105,4 +107,3 @@ func (this *Quitter) Wait(timeout time.Duration) bool {
 func (this *Quitter) GoRoutines() int64 {
 	return atomic.LoadInt64(&this.counter)
 }
-

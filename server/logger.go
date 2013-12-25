@@ -35,7 +35,7 @@ func debug(v ...interface{}) {
 
 func loginfo(v ...interface{}) {
 	if config.LOG_INFO {
-		infoLogger.Output(2, fmt.Sprintln(v...))
+		info(v...)
 	}
 }
 
@@ -47,10 +47,14 @@ func logwarn(v ...interface{}) {
 
 func logerror(v ...interface{}) {
 	if config.LOG_ERROR {
-		errLogger.Output(2, fmt.Sprintln(v...))
+		errorx(v...)
 	}
 }
 
 func info(v ...interface{}) {
 	infoLogger.Output(2, fmt.Sprintln(v...))
+}
+
+func errorx(v ...interface{}) {
+	errLogger.Output(2, fmt.Sprintln(v...))
 }

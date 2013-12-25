@@ -26,20 +26,20 @@ import (
 
 // networkContext
 type networkContext struct {
-	stoper *Stoper
+	quit   *Quitter
 	router *requestRouter
 }
 
 func newNetworkContextStub() *networkContext {
-	stoper := NewStoper()
+	quit := NewQuitter()
 	//
-	datasrv := newDataService(stoper)
+	datasrv := newDataService(quit)
 	go datasrv.run()
 	//
 	router := newRequestRouter(datasrv)
 	//
 	context := new(networkContext)
-	context.stoper = stoper
+	context.quit = quit
 	context.router = router
 	//
 	return context
@@ -59,15 +59,15 @@ type network struct {
 }
 
 func (this *network) addConnection(netconn *networkConnection) {
-	if this.context.stoper.Stoped() {
+	if this.context.quit.Done() {
 		return
 	}
 	this.mutex.Lock()
+	defer this.mutex.Unlock()
 	if this.connections == nil {
 		this.connections = make(map[uint64]*networkConnection)
 	}
 	this.connections[netconn.getConnectionId()] = netconn
-	this.mutex.Unlock()
 	loginfo("new client connection id:", strconv.FormatUint(netconn.getConnectionId(), 10))
 }
 
@@ -112,13 +112,13 @@ func (this *network) start(address string) bool {
 	var connectionId uint64 = 0
 	// accept connections
 	acceptor := func() {
-		stoper := this.context.stoper
-		stoper.Join()
-		defer stoper.Leave()
+		quit := this.context.quit
+		quit.Join()
+		defer quit.Leave()
 		for {
 			conn, err := this.listener.Accept()
 			// stop was called
-			if stoper.Stoped() {
+			if quit.Done() {
 				return
 			}
 			if err == nil {
@@ -147,7 +147,7 @@ func (this *network) stop() {
 type networkConnection struct {
 	parent networkConnectionContainer
 	conn   net.Conn
-	stoper *Stoper
+	quit   *Quitter
 	router *requestRouter
 	sender *responseSender
 }
@@ -156,7 +156,7 @@ func newNetworkConnection(conn net.Conn, context *networkContext, connectionId u
 	return &networkConnection{
 		parent: parent,
 		conn:   conn,
-		stoper: context.stoper,
+		quit:   context.quit,
 		router: context.router,
 		sender: newResponseSenderStub(connectionId),
 	}
@@ -172,15 +172,15 @@ func (this *networkConnection) getConnectionId() uint64 {
 
 func (this *networkConnection) watchForQuit() {
 	select {
-	case <-this.sender.connectionStoper.GetChan():
-	case <-this.stoper.GetChan():
+	case <-this.sender.quit.GetChan():
+	case <-this.quit.GetChan():
 	}
 	this.conn.Close()
 	this.parent.removeConnection(this)
 }
 
 func (this *networkConnection) close() {
-	this.sender.connectionStoper.Stop(0)
+	this.sender.quit.Quit(0)
 }
 
 func (this *networkConnection) run() {
@@ -189,36 +189,36 @@ func (this *networkConnection) run() {
 	this.write()
 }
 
-func (this *networkConnection) Stoped() bool {
+func (this *networkConnection) Done() bool {
 	// connection can be stoped becuase of global shutdown sequence
 	// or response sender is full
 	// or socket error
-	return this.sender.connectionStoper.Stoped() || this.stoper.Stoped()
+	return this.sender.quit.Done() || this.quit.Done()
 }
 
 // message reader
 type netMessageReaderWriter struct {
-	conn   net.Conn
-	bytes  []byte
-	stoper IStoper
+	conn  net.Conn
+	bytes []byte
+	quit  IQuitter
 }
 
-func newNetMessageReaderWriter(conn net.Conn, stoper IStoper) *netMessageReaderWriter {
+func newNetMessageReaderWriter(conn net.Conn, quit IQuitter) *netMessageReaderWriter {
 	return &netMessageReaderWriter{
-		conn:   conn,
-		bytes:  make([]byte, 2048, 2048),
-		stoper: stoper,
+		conn:  conn,
+		bytes: make([]byte, 2048, 2048),
+		quit:  quit,
 	}
 }
 
-func (this *netMessageReaderWriter) Stoped() bool {
-	return this.stoper != nil && this.stoper.Stoped()
+func (this *netMessageReaderWriter) Done() bool {
+	return this.quit != nil && this.quit.Done()
 }
 
 func (this *netMessageReaderWriter) writeMessage(bytes []byte) error {
 	leftToWrite := len(bytes)
 	for {
-		if this.Stoped() {
+		if this.Done() {
 			err := errors.New("Write was interupted by quit event.")
 			return err
 		}
@@ -267,7 +267,7 @@ func (this *netMessageReaderWriter) readMessage() ([]byte, error) {
 	message := bytes
 	read = 0
 	for left > 0 {
-		if this.Stoped() {
+		if this.Done() {
 			err = errors.New("Read was interupted by quit event.")
 			return nil, err
 		}
@@ -290,15 +290,15 @@ func (c *networkConnection) route(req request) {
 }
 
 func (this *networkConnection) read() {
-	this.stoper.Join()
-	defer this.stoper.Leave()
+	this.quit.Join()
+	defer this.quit.Leave()
 	reader := newNetMessageReaderWriter(this.conn, this)
 	//
 	var err error
 	var message []byte
 	for {
 		err = nil
-		if this.Stoped() {
+		if this.Done() {
 			break
 		}
 		message, err = reader.readMessage()
@@ -311,16 +311,16 @@ func (this *networkConnection) read() {
 		req := parse(tokens)
 		this.route(req)
 	}
-	if err != nil && !this.Stoped() {
+	if err != nil && !this.Done() {
 		logerror("failed to read from client connection:", this.sender.connectionId, err.Error())
 		// notify writer and sender that we are done
-		this.sender.connectionStoper.Stop(0)
+		this.sender.quit.Quit(0)
 	}
 }
 
 func (this *networkConnection) write() {
-	this.stoper.Join()
-	defer this.stoper.Leave()
+	this.quit.Join()
+	defer this.quit.Leave()
 	writer := newNetMessageReaderWriter(this.conn, this)
 	var err error
 	for {
@@ -330,22 +330,22 @@ func (this *networkConnection) write() {
 			var msg []byte
 			more := true
 			for err == nil && more {
-				if this.Stoped() {
+				if this.Done() {
 					return
 				}
-				msg, more = res.toNetworkReadyJSON()			
+				msg, more = res.toNetworkReadyJSON()
 				err = writer.writeMessage(msg)
 			}
-			if err != nil && !this.Stoped() {
+			if err != nil && !this.Done() {
 				logerror("failed to write to client connection:", this.sender.connectionId, err.Error())
 				// notify reader and sender that we are done
-				this.sender.connectionStoper.Stop(0)
+				this.sender.quit.Quit(0)
 				return
 			}
-		case <-this.stoper.GetChan():
+		case <-this.quit.GetChan():
 			debug("on write stop")
 			return
-		case <-this.sender.connectionStoper.GetChan():
+		case <-this.sender.quit.GetChan():
 			debug("on write connection stop")
 			return
 		}
