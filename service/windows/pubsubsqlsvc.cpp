@@ -21,6 +21,7 @@
 
 int main(int argc, char* argv[])
 {
+	/*
 	pipe testPipe;
 	if (!testPipe.ok()) {
 		std::cerr << "pipe failed" << std::endl;
@@ -33,12 +34,15 @@ int main(int argc, char* argv[])
 	t.join();
 	// test filepath
 	std::cout << eventlog::getPath() << std::endl;
-	eventlog::install("pubsubsqllog.dll", "pubsubsql");
+	*/
+	eventlog::install("pubsubsqlsvc.exe", "pubsubsql");
+	/*
 	eventlog log("pubsubsql");
 	log.logdebug("debug");
 	log.loginfo("info");
 	log.logwarn("warn");
 	log.logerror("error");
+	*/
 	// test process redirection
 	process pubsubsql;
 	if (pubsubsql.start("C:\\Users\\Oleg\\Go\\src\\pubsubsql\\pubsubsql.exe")) {

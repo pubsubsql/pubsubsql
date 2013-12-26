@@ -14,7 +14,9 @@
  * along with PubSubSQL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
+
 #include "eventlog.h"
+#include "pubsubsqllog.h"
 #include <iostream>
 
 std::string eventlog::getPath() {
@@ -44,7 +46,7 @@ bool eventlog::install(const char* messagedll, const char* eventSource) {
 	//
 	std::string value = getPath();
 	value.append(messagedll);
-	value.append(".dll");
+	//value.append(".dll");
 	//
 	std::string key(SYSLOG_PATH);
 	key.append(eventSource);
@@ -110,5 +112,5 @@ void eventlog::logerror(const char* message) {
 }
 
 void eventlog::log(const char* message, WORD messageType) {
-	ReportEvent(eventSourceHandle, messageType, 0, 1, 0, 1, 0, &message, 0);
+	ReportEvent(eventSourceHandle, messageType, 0, MSG_SYSLOG, 0, 1, 0, &message, 0);
 }
