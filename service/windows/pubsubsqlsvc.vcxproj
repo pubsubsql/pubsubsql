@@ -143,11 +143,13 @@
     <Text Include="ReadMe.txt" />
   </ItemGroup>
   <ItemGroup>
+    <ClCompile Include="eventlog.cpp" />
     <ClCompile Include="pipe.cpp" />
     <ClCompile Include="process.cpp" />
     <ClCompile Include="pubsubsqlsvc.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="eventlog.h" />
     <ClInclude Include="pipe.h" />
     <ClInclude Include="process.h" />
   </ItemGroup>

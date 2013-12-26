@@ -16,6 +16,7 @@
 
 #include <iostream>
 #include "process.h"
+#include "eventlog.h"
 
 process::process() {
 	ZeroMemory(&processInfo, sizeof(processInfo));
@@ -52,6 +53,7 @@ bool process::start(char* commandLine) {
 	}
 	// redirect log entries from pubsubsql to event log
 	std::thread t ( [] (pipe& stderrPipe) {
+		eventlog log("pubsubsql");
 		for (;;) {
 			const char* line = stderrPipe.readLine();
 			if (!line) {
@@ -59,6 +61,16 @@ bool process::start(char* commandLine) {
 				return;
 			}
 			std::cout << line;
+			// redirect log message to event log
+			if (strncmp(line, "info", 4) == 0) {
+				log.loginfo(line);
+			} else if (strncmp(line, "error", 5) == 0) {
+				log.logerror(line);
+			} else if (strncmp(line, "debug", 5) == 0) {
+				log.loginfo(line);
+			} else {
+				log.logwarn(line);
+			}
 		}
 	}, std::ref(stderrPipe) );
 	logThread = std::move(t);

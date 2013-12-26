@@ -17,6 +17,7 @@
 #include <iostream>
 #include <thread>
 #include "process.h"
+#include "eventlog.h"
 
 int main(int argc, char* argv[])
 {
@@ -30,6 +31,14 @@ int main(int argc, char* argv[])
 	});
 	testPipe.writeLine("pipe test");
 	t.join();
+	// test filepath
+	std::cout << eventlog::getPath() << std::endl;
+	eventlog::install("pubsubsqllog.dll", "pubsubsql");
+	eventlog log("pubsubsql");
+	log.logdebug("debug");
+	log.loginfo("info");
+	log.logwarn("warn");
+	log.logerror("error");
 	// test process redirection
 	process pubsubsql;
 	if (pubsubsql.start("C:\\Users\\Oleg\\Go\\src\\pubsubsql\\pubsubsql.exe")) {
