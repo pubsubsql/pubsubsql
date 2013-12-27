@@ -25,7 +25,7 @@ class process {
 public:
 	process(); 
 	~process();
-	bool start(char* commandLine);
+	bool start(char* commandLine, const char* eventSource);
 	void stop();
 	void wait(unsigned milliseconds);
 	HANDLE handle();

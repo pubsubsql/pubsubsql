@@ -31,11 +31,11 @@ void redirectLogEntries(pipe& stderrPipe) {
 
 }
 
-bool process::start(char* commandLine) {
+bool process::start(char* commandLine, const char* eventSource) {
 	//
 	SECURITY_ATTRIBUTES securityAttributes;
 	pipe::initSecurityAttributes(securityAttributes);
-	//
+	// setup startup info
 	STARTUPINFO startupInfo;
 	ZeroMemory(&startupInfo, sizeof(startupInfo));
 	startupInfo.cb = sizeof(startupInfo);
@@ -43,17 +43,15 @@ bool process::start(char* commandLine) {
 	startupInfo.hStdInput = stdinPipe.getReadHandle();
 	startupInfo.hStdError = stderrPipe.getWriteHandle();
 	startupInfo.hStdOutput = NULL;
-	//
-	DWORD createFlags = CREATE_NO_WINDOW;
-	//	
-	BOOL created = CreateProcess(NULL, commandLine, NULL, NULL, TRUE, createFlags, NULL, NULL, &startupInfo, &processInfo); 
+	// create pubsubsql.exe process	
+	BOOL created = CreateProcess(NULL, commandLine, NULL, NULL, TRUE, CREATE_NO_WINDOW, NULL, NULL, &startupInfo, &processInfo); 
 	if (!created) {
 		std::cerr << "process error: Failed to create child process" << std::endl;
 		return false;
 	}
 	// redirect log entries from pubsubsql to event log
-	std::thread t ( [] (pipe& stderrPipe) {
-		eventlog log("pubsubsql");
+	std::thread t ( [] (pipe& stderrPipe, const char* eventSource) {
+		eventlog log(eventSource);
 		for (;;) {
 			const char* line = stderrPipe.readLine();
 			if (!line) {
@@ -72,7 +70,7 @@ bool process::start(char* commandLine) {
 				log.logwarn(line);
 			}
 		}
-	}, std::ref(stderrPipe) );
+	}, std::ref(stderrPipe), eventSource);
 	logThread = std::move(t);
 	// 
 	return true;
