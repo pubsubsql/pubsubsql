@@ -28,6 +28,7 @@ public:
 	bool start(char* commandLine);
 	void stop();
 	void wait(unsigned milliseconds);
+	HANDLE handle();
 
 private:
 	PROCESS_INFORMATION processInfo; 

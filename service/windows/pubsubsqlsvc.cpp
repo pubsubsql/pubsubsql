@@ -22,8 +22,15 @@
 int install(const char* serviceFile, const std::string& options);
 int uninstall();
 int runAsService();
+VOID WINAPI serviceMain( DWORD argc, PTSTR* argv);
+VOID WINAPI serviceHandler(DWORD control);
+VOID reportServiceStatus( DWORD currentState, DWORD Win32ExitCode, DWORD waitHint);
 
-const char* SERVICE_NAME = "PubSubSQL";
+char SERVICE_NAME[] = "PubSubSQL\0";
+std::string options;
+SERVICE_STATUS          serviceStatus; 
+SERVICE_STATUS_HANDLE   serviceStatusHandle = 0; 
+HANDLE                  serviceStopEvent = NULL;
 
 int main(int argc, char* argv[])
 {
@@ -34,7 +41,6 @@ int main(int argc, char* argv[])
 		return EXIT_FAILURE;
 	}
 	// assemble options
-	std::string options;
 	for (int i = 2; i < argc; i++) {
 		char* arg = argv[i];
 		options.append(" ");
@@ -82,7 +88,6 @@ int main(int argc, char* argv[])
 		pubsubsql.wait(3000);
 	}
 	*/
-	return 0;
 }
 
 int install(const char* serviceFile, const std::string& options) {
@@ -145,5 +150,77 @@ int uninstall() {
 }
 
 int runAsService() {
+	SERVICE_TABLE_ENTRY serviceTable[] = {
+		{SERVICE_NAME, serviceMain},
+		{NULL, NULL}
+	};
+	// initialize here
+	StartServiceCtrlDispatcher(serviceTable);
 	return EXIT_SUCCESS;
 }
+
+
+VOID WINAPI serviceMain( DWORD argc, PTSTR* argv) {
+	eventlog log("pubsubsql");
+	/*
+	for (unsigned i = 0; i < argc; i++) {
+		log.loginfo(argv[i]);
+	}
+	log.logwarn(options.c_str());
+	*/
+	serviceStatusHandle = RegisterServiceCtrlHandler(SERVICE_NAME, serviceHandler);
+	if (serviceStatusHandle == 0) {
+		log.logerror("RegisterServiceCtrlHandlerEx failed");
+		return;
+	}
+	// report
+	serviceStatus.dwServiceType = SERVICE_WIN32_OWN_PROCESS;
+	serviceStatus.dwServiceSpecificExitCode = 0;
+	reportServiceStatus(SERVICE_START_PENDING, NO_ERROR, 3000);
+	// init
+	serviceStopEvent = CreateEvent(NULL, TRUE, FALSE, NULL);
+	if (NULL == serviceStopEvent) {
+		log.logerror("CreateEvent failed");
+		reportServiceStatus(SERVICE_STOPPED, NO_ERROR, 0);
+		return;
+	}
+	// path
+	std::string path = eventlog::getPath();
+	path.append("pubsubsql.exe ");
+	path.append(options);
+	// start pubsubsql.exe
+	process pubsubsql;
+	if (pubsubsql.start(const_cast<char*>(path.c_str()))) {
+		HANDLE handles[] = {serviceStopEvent, pubsubsql.handle() };
+		reportServiceStatus(SERVICE_RUNNING, NO_ERROR, 0);
+		WaitForMultipleObjects(2, handles, FALSE, INFINITE);
+		pubsubsql.stop();
+		pubsubsql.wait(3000);
+		reportServiceStatus(SERVICE_STOPPED, NO_ERROR, 0);
+	} else {
+		log.logerror("Failed to start pubsubsql.exe");
+	}
+}
+VOID reportServiceStatus( DWORD currentState, DWORD Win32ExitCode, DWORD waitHint) {
+    static DWORD dwCheckPoint = 1;
+    // Fill in the SERVICE_STATUS structure.
+    serviceStatus.dwCurrentState = currentState;
+    serviceStatus.dwWin32ExitCode = Win32ExitCode;
+    serviceStatus.dwWaitHint = waitHint;
+    if (currentState == SERVICE_START_PENDING) serviceStatus.dwControlsAccepted = 0;
+    else serviceStatus.dwControlsAccepted = SERVICE_ACCEPT_STOP;
+	//
+    if (currentState == SERVICE_RUNNING || currentState == SERVICE_STOPPED) serviceStatus.dwCheckPoint = 0;
+    else serviceStatus.dwCheckPoint = dwCheckPoint++;
+    // Report the status of the service to the SCM.
+    SetServiceStatus(serviceStatusHandle, &serviceStatus);
+}
+
+VOID WINAPI serviceHandler(DWORD control) {
+	if (SERVICE_CONTROL_STOP == control) {
+		reportServiceStatus(SERVICE_STOP_PENDING, NO_ERROR, 0);
+		SetEvent(serviceStopEvent);
+		reportServiceStatus(serviceStatus.dwCurrentState, NO_ERROR, 0);
+	}
+}
+

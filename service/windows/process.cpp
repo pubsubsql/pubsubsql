@@ -91,3 +91,7 @@ void process::wait(unsigned milliseconds) {
 	TerminateThread(logThread.native_handle(), EXIT_SUCCESS);
 	logThread.detach();	
 }
+	
+HANDLE process::handle() {
+	return processInfo.hProcess;
+}
