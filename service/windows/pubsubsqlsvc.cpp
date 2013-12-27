@@ -19,9 +19,11 @@
 #include "process.h"
 #include "eventlog.h"
 
-int install(const std::string& options);
+int install(const char* serviceFile, const std::string& options);
 int uninstall();
 int runAsService();
+
+const char* SERVICE_NAME = "PubSubSQL";
 
 int main(int argc, char* argv[])
 {
@@ -41,14 +43,12 @@ int main(int argc, char* argv[])
 	std::cout << options << std::endl;
 	// execute
 	std::string command(argv[1]);
-	if (command == "install") return install();
+	if (command == "install") return install(argv[0], options);
 	else if (command == "uninstall") return uninstall();
 	else if (command == "svc") return runAsService();
 	// invalid command
 	std::cerr << "invalid command: " << usage << std::endl;
 	return EXIT_FAILURE;
-
-
 	/*
 	pipe testPipe;
 	if (!testPipe.ok()) {
@@ -85,24 +85,63 @@ int main(int argc, char* argv[])
 	return 0;
 }
 
-int install(const std::string& options) {
+int install(const char* serviceFile, const std::string& options) {
 	int ret = EXIT_SUCCESS;
+	std::cout << "installing " << SERVICE_NAME << " service" << std::endl;
 	SC_HANDLE manager = OpenSCManager(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_CREATE_SERVICE);
 	if (NULL == manager) {
-		std::cerr << "failed to connect to service control manager" << std::endl;
+		std::cout << "failed to connect to service control manager error:" << GetLastError() << std::endl;
 		return EXIT_FAILURE;
 	}
-
 	std::string servicePath;
-	SC_HANDLE service = CreateService(manager, "PubSubSQL Service", "PubSubSQL Service", SERVICE_START | SERVICE_STOP | DELETE,
+	servicePath.append(serviceFile);
+	servicePath.append(" svc ");
+	servicePath.append(options);
+	SC_HANDLE service = CreateService(manager, SERVICE_NAME, SERVICE_NAME, SERVICE_START | SERVICE_STOP | DELETE,
 		SERVICE_WIN32_OWN_PROCESS, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, servicePath.c_str(),
 		NULL, NULL, NULL, NULL, NULL);
-	
-	return EXIT_SUCCESS;
+	if (NULL == service) {
+		std::cout << "failed to install service error:" << GetLastError() << std::endl;	
+		ret = EXIT_FAILURE;
+	}
+	CloseServiceHandle(manager);
+	CloseServiceHandle(service);
+	//
+	//
+	if (ret != EXIT_FAILURE) {
+		eventlog::install("pubsubsqlsvc.exe", "pubsubsql");
+		std::cout << "service " << SERVICE_NAME << " was installed " << std::endl;
+	} else {
+		std::cout << "MAKE SURE YOU ARE RUNNING WITH REQUIRED SECURITY PRIVILEGES AND SERVICE DOES NOT ALREADY EXIST!" << std::endl;
+	}
+	return ret;
 }
 
 int uninstall() {
-	return EXIT_SUCCESS;
+	int ret = EXIT_SUCCESS;
+	std::cout << "uninstalling " << SERVICE_NAME << " service" << std::endl;
+	SC_HANDLE manager = OpenSCManager(NULL, SERVICES_ACTIVE_DATABASE, SC_MANAGER_CREATE_SERVICE);
+	if (NULL == manager) {
+		std::cout << "failed to connect to service control manager error:" << GetLastError() << std::endl;
+		return EXIT_FAILURE;
+	}
+	SC_HANDLE service = OpenService(manager, SERVICE_NAME, SC_MANAGER_ALL_ACCESS);
+	if (NULL == service) {
+		std::cout << "failed to open service error:" << GetLastError() << std::endl;	
+		ret = EXIT_FAILURE;
+	}
+	if (!DeleteService(service)) {
+		std::cout << "failed to uninstall service error:" << GetLastError() << std::endl;	
+		ret = EXIT_FAILURE;
+	}
+	CloseServiceHandle(manager);
+	CloseServiceHandle(service);
+	if (ret != EXIT_FAILURE) {
+		std::cout << "service " << SERVICE_NAME << " was uninstalled " << std::endl;
+	} else {
+		std::cout << "MAKE SURE YOU ARE RUNNING WITH REQUIRED SECURITY PRIVILEGES AND SERVICE EXISTS!" << std::endl;
+	}
+	return ret;
 }
 
 int runAsService() {
