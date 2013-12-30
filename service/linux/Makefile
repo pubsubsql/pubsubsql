@@ -3,11 +3,11 @@ CFLAGS= -Wall -std=c++0x -lpthread
 
 all: pubsubsqlsvc
 
-pubsubsqlsvc: main.o
-	$(CC) -o pubsubsqlsvc main.cpp
+pubsubsqlsvc: pubsubsqlsvc.o
+	$(CC) -o pubsubsqlsvc pubsubsqlsvc.cpp
 
 main.o: main.cpp
-	$(CC) $(CFLAGS) -c -o main.o main.cpp
+	$(CC) $(CFLAGS) -c -o pubsubsqlsvc.o pubsubsqlsvc.cpp
 
 clean:
 	-rm *.o pubsubsqlsvc
