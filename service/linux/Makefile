@@ -1,13 +1,13 @@
 CC=g++
-CFLAGS= -Wall -std=c++0x -lpthread
+CFLAGS= -Wall -pthread
 
 all: pubsubsqlsvc
 
 pubsubsqlsvc: pubsubsqlsvc.o
-	$(CC) -o pubsubsqlsvc pubsubsqlsvc.cpp
+	$(CC) $(CFLAGS) pubsubsqlsvc.o -o pubsubsqlsvc 
 
-main.o: main.cpp
-	$(CC) $(CFLAGS) -c -o pubsubsqlsvc.o pubsubsqlsvc.cpp
+pubsubsqlsvc.o: pubsubsqlsvc.cpp
+	$(CC) $(CFLAGS) -c pubsubsqlsvc.cpp -o pubsubsqlsvc.o
 
 clean:
 	-rm *.o pubsubsqlsvc
