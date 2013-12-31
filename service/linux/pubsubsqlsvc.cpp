@@ -89,7 +89,6 @@ int install(const char* servicePath, const std::string& options) {
 	scriptd.append(				
 	"\n#"
 	"\n#"
-	"\n#"
 	"\nstart() {"
 	"\n	$SERVICE_PATH svc $PUBSUBSQL_PATH "); 
 	scriptd.append(options);
@@ -97,13 +96,22 @@ int install(const char* servicePath, const std::string& options) {
 	scriptd.append(
 	"\n#"
 	"\n#"
+	"\nstop() {"
+	"\n	$PUBSUBSQL_PATH stop "); 
+	scriptd.append(options);
+	scriptd.append("\n}");
+	scriptd.append(
+	"\n#"
 	"\n#"
 	"\ncase \"$1\" in "
 	"\n	start)  "
 	"\n	start   "
 	"\n	;;"
+	"\n	stop)  "
+	"\n	stop   "
+	"\n	;;"
 	"\n	*)"
-	"\n	echo \"Usage: pubsubsqld {start|stop|restart}\""
+	"\n	echo \"Usage: pubsubsqld {start|stop}\""
 	"\n	exit 1  "
 	"\n	;;"
 	"\nesac"
