@@ -43,8 +43,11 @@ func (this *Controller) Run() {
 		this.runAsClient()
 	case "start":
 		this.runAsServer()
+	case "stop":
+		this.runOnce("stop")
 	}
 }
+
 
 // displayHelp displays help to the cli user.
 func (this *Controller) displayHelp() {
@@ -63,6 +66,11 @@ func (this *Controller) runAsClient() {
 	client.run()
 }
 
+// run command once
+func (this *Controller) runOnce(command string) {
+	client := newCli()
+	client.runOnce(command)
+}
 // runAsServer runs the programm in server mode.
 func (this *Controller) runAsServer() {
 	// initialize server components
@@ -125,3 +133,4 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		this.quit.Quit(0)
 	}
 }
+

@@ -100,6 +100,7 @@ var validCommands = map[string]string{
 	"start": "",
 	"cli":   "",
 	"help":  "",
+	"stop":  "",
 }
 
 func validCommandsUsageString() string {

@@ -75,6 +75,24 @@ func newCli() *cli {
 	}
 }
 
+// run command once
+func (this *cli) runOnce(command string) {
+	if !this.connect() {
+		return
+	}
+	rw := newNetMessageReaderWriter(this.conn, nil)
+	bytes := []byte(command)
+	err := rw.writeHeaderAndMessage(bytes)
+	if err != nil {
+		logerror(err)
+		return
+	}
+	bytes, err = rw.readMessage()
+	if err != nil && command != "stop" {
+		logerror(err)
+	}
+}
+
 // run is an event loop function that recieves a command line input and forwards it to the server.
 func (this *cli) run() {
 	this.initConsolePrefix()
