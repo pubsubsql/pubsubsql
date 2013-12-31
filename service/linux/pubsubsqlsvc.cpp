@@ -50,6 +50,11 @@ int main(int argc, char** argv) {
 	std::string command(argv[1]);
 	if (command == "install") { 
 		std::string options;
+		for (int i = 2; i < argc; i++) {
+			char* arg = argv[i];
+			options.append(" ");
+			options.append(arg);
+		}
 		return install(argv[0], options);
 	} else if (command == "uninstall") { 
 		return uninstall();
