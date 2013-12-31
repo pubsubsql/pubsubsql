@@ -1,11 +1,15 @@
 #include <cstdlib>
 #include <unistd.h>
 #include <sys/wait.h>
+#include <sys/stat.h>
 #include <syslog.h>
 #include <stdio.h>
 #include <string.h>
+#include <libgen.h>
+#include <limits.h>
 #include <string>
 #include <iostream>
+#include <fstream>
 
 int install(const char* serviceFile, const std::string& options);
 int uninstall();
@@ -32,15 +36,17 @@ private:
 int logpipe[2];
 int inpipe[2]; 
 const char* logprefix = "pubsubsql";
+const char* pubsubsqld = "/etc/init.d/pubsubsqld";
 
 int main(int argc, char** argv) {
 	// validate command line input
-	std::string usage = " valid commands [install, uninstall]";
+	std::string usage = "Usage: pubsubsqlsvc {install|uinstall}\"";
 	if (argc < 2) {
-		std::cerr << "invalid command: " <<  usage << std::endl;
+		std::cerr << "NO COMMAND" << std::endl
+				  <<  usage << std::endl;
 		return EXIT_FAILURE;
 	}
-	// execute
+	// execute command
 	std::string command(argv[1]);
 	if (command == "install") { 
 		std::string options;
@@ -49,23 +55,108 @@ int main(int argc, char** argv) {
 		return uninstall();
 	} else if (command == "svc") { 
 		if (argc < 3) {
-			std::cerr << "expected executable file path" << std::endl;
+			std::cerr << "MISSING PUBSUBSQL EXECUTABLE PATH" << std::endl;
 			return EXIT_FAILURE;
 		}
 		rundaemon(argv[2], argv + 2);
 	}
 	// invalid command
-	std::cerr << "invalid command: " << command << usage << std::endl;
+	std::cerr << "INVALID COMMAND: " << command << std::endl
+			  <<  usage << std::endl;
 	return EXIT_FAILURE;
 }
 
-int install(const char* serviceFile, const std::string& options) {
-	std::cout << "install" << std::endl;
+int install(const char* servicePath, const std::string& options) {
+	std::cerr << "Installing pubsubsqld service..." << std::endl;
+	// set paths
+	char tempPath[PATH_MAX];
+	std::string pubsubsqlsvc = realpath(servicePath, tempPath);	
+	std::string temp = pubsubsqlsvc.c_str();
+	std::string pubsubsql(dirname(const_cast<char*>(temp.c_str())));
+	pubsubsql.append("/");
+	pubsubsql.append("pubsubsql");
+	// create script file 
+	std::string scriptd(
+	"#!/bin/bash"
+	"\n#"
+	"\n# service daemon path"
+	"\nSERVICE_PATH=");
+	scriptd.append(pubsubsqlsvc);	
+	scriptd.append(
+	"\n# pubsubsql path"
+	"\nPUBSUBSQL_PATH=");	
+	scriptd.append(pubsubsql);
+	scriptd.append(				
+	"\n#"
+	"\n#"
+	"\n#"
+	"\nstart() {"
+	"\n	$SERVICE_PATH svc $PUBSUBSQL_PATH "); 
+	scriptd.append(options);
+	scriptd.append("\n}");
+	scriptd.append(
+	"\n#"
+	"\n#"
+	"\n#"
+	"\ncase \"$1\" in "
+	"\n	start)  "
+	"\n	start   "
+	"\n	;;"
+	"\n	*)"
+	"\n	echo \"Usage: pubsubsqld {start|stop|restart}\""
+	"\n	exit 1  "
+	"\n	;;"
+	"\nesac"
+	"\nexit $?");
+
+	// check if service exists	
+	if (0 == access(pubsubsqld, F_OK)) {
+		std::cerr 	<< "FAILED TO INSTALL PUBSUBSQLD SERVICE" << std::endl
+					<< "The service is already installed. " << std::endl
+					<< "Run [pubsubsqlsvc uninstall]" << " to uninstall the service before installing it." << std::endl;
+		return EXIT_FAILURE;
+	}
+	// install the service (write script)
+	std::ofstream fout(pubsubsqld, std::ios::out);	
+	if (!fout.is_open()) {
+		std::cerr 	<< "FAILED TO INSTALL PUBSUBSQLD SERVICE" << std::endl
+					<< "Can not open file: " << pubsubsqld << " for output operations." << std::endl  
+					<< "MAKE SURE YOU ARE RUNNING WITH VALID ACCESS RIGHTS TO PERFORM THIS OPERATION" << std::endl;
+		return EXIT_FAILURE;
+			
+	}	
+	fout << scriptd << std::endl;
+	if (fout.bad()) {
+		std::cerr 	<< "FAILED TO INSTALL PUBSUBSQLD SERVICE" << std::endl
+					<< "Write operation for file:" << pubsubsqld << " failed.";
+		return EXIT_FAILURE;
+
+	}
+	// success
+	fout.close();
+	// add execute permission
+	mode_t mode = S_IRWXU | S_IRGRP | S_IXGRP | S_IROTH | S_IXOTH;
+	chmod(pubsubsqld, mode);	
+	std::cerr << "Done." << std::endl;
 	return EXIT_SUCCESS;
 }
 
 int uninstall() {
-	std::cout << "uninstall" << std::endl;
+	std::cerr << "Uninstalling pubsubsqld service..." << std::endl;
+	// check if installed
+	if (0 != access(pubsubsqld, F_OK)) {
+		std::cerr 	<< "FAILED TO UNINSTALL PUBSUBSQLD SERVICE" << std::endl
+					<< "The service is not installed?" << std::endl;
+		return EXIT_FAILURE;
+	}
+	// uninstall service (delete script)
+	if (remove(pubsubsqld) != 0) {
+		std::cerr 	<< "FAILED TO UNINSTALL PUBSUBSQLD SERVICE" << std::endl
+					<< "MAKE SURE YOU ARE RUNNING WITH VALID ACCESS RIGHTS TO PERFORM THIS OPERATION" << std::endl;
+		return EXIT_FAILURE;
+	}
+	// success
+	std::cerr << "Done." << std::endl;
 	return EXIT_SUCCESS;
 }
 
