@@ -57,15 +57,15 @@ type Client interface {
 	// Action returns action of last operation.
 	Action() string				
 
-	// Rows returns number of rows returned in last result set batch.
-	Rows() int
+	// RecordCount returns number of rows returned in last result set batch.
+	RecordCount() int
 
-	// Next move cusrsor to the next data record in returned result set batch.    
+	// Next move cusrsor to the next data row in returned result set batch.    
 	// Returns false when all records are read.
 	// Must be called initially to move to the first record. 
 	Next() bool
 
-	// JSONRecord returns current record in JSON format.
+	// JSONRecord returns current row in JSON format.
 	JSONRecord() string
 	
 	// Value returns column value by column name.
@@ -76,7 +76,11 @@ type Client interface {
 	// If column ordinal does not exist returns empty string.	
 	ValueByColumnOrdinal(ordinal int) string
 
-			
+	// Columns returns array of valid column names returned by last operation. 		
+	Columns() []string
+
+	// ColumnCount returns number of valid columns
+	ColumnCount() int
 		
 
 	ContainsId() bool		
