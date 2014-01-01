@@ -16,8 +16,22 @@
 
 package pubsubsql
 
-type Client interface {
+type ActionType int
 
+const (
+	NoAction ActionType = iota
+	Insert
+	Select
+	Update
+	Delete
+	PubSubInsert
+	PubSubAdd
+	PubSubUpdate
+	PubSubDelete
+)
+	
+
+type Client interface {
 	// Connect establishes connection to pubsubsql server.
 	// Address format ipaddress:port
 	Connect(address string) bool
@@ -81,15 +95,17 @@ type Client interface {
 
 	// ColumnCount returns number of valid columns
 	ColumnCount() int
+
+	// WaitForPublish waits until publish message is retreived or
+	// timeout expired.
+	// Returns false on timeout.
+	WaitForPublish(timeout int) bool
 		
 
 	ContainsId() bool		
 	ContainsPubSubId() bool
-	ContainsAction() bool
-	ContainsRows() bool
 	ContainsColumn(column string) bool
 	ContainsColumnOrdinal(ordinal int) bool
 	ContainsRecord() bool
-		
 			
 }
