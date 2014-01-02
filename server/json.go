@@ -28,9 +28,6 @@ type JSONBuilder struct {
 	err bool
 }
 
-var HEADER_SIZE = 4
-var emptyHeader = make([]byte, HEADER_SIZE, HEADER_SIZE)
-
 func networkReadyJSONBuilder() *JSONBuilder {
 	builder := new(JSONBuilder)
 	// first four bytes is network header

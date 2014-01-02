@@ -96,10 +96,10 @@ type Client interface {
 	// ColumnCount returns number of valid columns
 	ColumnCount() int
 
-	// WaitForPublish waits until publish message is retreived or
+	// WaitForPubSub waits until publish message is retreived or
 	// timeout expired.
 	// Returns false on timeout.
-	WaitForPublish(timeout int) bool
+	WaitForPubSub(timeout int) bool
 		
 
 	ContainsId() bool		

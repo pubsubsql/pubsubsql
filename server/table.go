@@ -45,6 +45,8 @@ type table struct {
 	//
 	requests chan *requestItem
 	quit     *Quitter
+	//
+	requestId uint32
 }
 
 // table factory
@@ -56,6 +58,7 @@ func newTable(name string) *table {
 		records:       make([]*record, 0, config.TABLE_RECORDS_CAPACITY),
 		tagedColumns:  make([]*column, 0, config.TABLE_COLUMNS_CAPACITY),
 		subscriptions: make(mapSubscriptionByConnection),
+		requestId: 0,
 	}
 	table.addColumn("id")
 	return table
@@ -390,7 +393,8 @@ func (this *table) sqlInsert(req *sqlInsertRequest) response {
 	// ready to insert
 	this.bindRecord(cols, req.colVals, rec, id)
 	this.addNewRecord(rec)
-	res := sqlInsertResponse{id: rec.idAsString()}
+	res := *newSqlInsertResponse(rec.idAsString(), this.requestId)
+	this.requestId = 0
 	this.onInsert(rec)
 	return &res
 }
@@ -416,7 +420,7 @@ func (this *table) copyRecordToSqlSelectResponse(res *sqlSelectResponse, rec *re
 	res.copyRecordData(rec)
 }
 
-// Processes sql select requesthis.
+// Processes sql select request.
 // On success returns sqlSelectResponse.
 func (this *table) sqlSelect(req *sqlSelectRequest) response {
 	records, errResponse := this.getRecordsBySqlFilter(req.filter)
@@ -782,25 +786,27 @@ func (this *table) run() {
 	}
 }
 
-func (this *table) onSqlRequest(r request, sender *responseSender) {
-	switch r.(type) {
+func (this *table) onSqlRequest(req request, sender *responseSender) {
+	this.requestId = 0 
+	switch req.(type) {
 	case *sqlInsertRequest:
-		this.onSqlInsert(r.(*sqlInsertRequest), sender)
+		this.onSqlInsert(req.(*sqlInsertRequest), sender)
 	case *sqlSelectRequest:
-		this.onSqlSelect(r.(*sqlSelectRequest), sender)
+		this.onSqlSelect(req.(*sqlSelectRequest), sender)
 	case *sqlUpdateRequest:
-		this.onSqlUpdate(r.(*sqlUpdateRequest), sender)
+		this.onSqlUpdate(req.(*sqlUpdateRequest), sender)
 	case *sqlDeleteRequest:
-		this.onSqlDelete(r.(*sqlDeleteRequest), sender)
+		this.onSqlDelete(req.(*sqlDeleteRequest), sender)
 	case *sqlSubscribeRequest:
-		this.onSqlSubscribe(r.(*sqlSubscribeRequest), sender)
+		this.onSqlSubscribe(req.(*sqlSubscribeRequest), sender)
 	case *sqlUnsubscribeRequest:
-		this.onSqlUnsubscribe(r.(*sqlUnsubscribeRequest), sender)
+		this.onSqlUnsubscribe(req.(*sqlUnsubscribeRequest), sender)
 	case *sqlKeyRequest:
-		this.onSqlKey(r.(*sqlKeyRequest), sender)
+		this.onSqlKey(req.(*sqlKeyRequest), sender)
 	case *sqlTagRequest:
-		this.onSqlTag(r.(*sqlTagRequest), sender)
+		this.onSqlTag(req.(*sqlTagRequest), sender)
 	}
+	this.requestId = 0
 }
 
 func (this *table) onSqlInsert(req *sqlInsertRequest, sender *responseSender) {

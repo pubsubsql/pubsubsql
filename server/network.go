@@ -17,7 +17,6 @@
 package pubsubsql
 
 import (
-	"encoding/binary"
 	"errors"
 	"net"
 	"strconv"
@@ -236,53 +235,53 @@ func (this *netMessageReaderWriter) writeMessage(bytes []byte) error {
 }
 
 // for cli
-func (this *netMessageReaderWriter) writeHeaderAndMessage(bytes []byte) error {
-	header := make([]byte, HEADER_SIZE, HEADER_SIZE)
-	binary.LittleEndian.PutUint32(header, uint32(len(bytes)))
-	err := this.writeMessage(header)
+func (this *netMessageReaderWriter) writeHeaderAndMessage(requestId uint32, bytes []byte) error {
+	err := this.writeMessage(NewNetworkHeader(uint32(len(bytes)), requestId).GetBytes())
 	if err != nil {
 		return err
 	}
 	return this.writeMessage(bytes)
 }
 
-func (this *netMessageReaderWriter) readMessage() ([]byte, error) {
+func (this *netMessageReaderWriter) readMessage() (*NetworkHeader, []byte, error) {
 	// header
 	read, err := this.conn.Read(this.bytes[0:HEADER_SIZE])
 	if err != nil {
-		return nil, err
+		return nil, nil, err
 	}
 	if read < HEADER_SIZE {
 		err = errors.New("Failed to read header.")
-		return nil, err
+		return nil, nil, err
 	}
-	header := binary.LittleEndian.Uint32(this.bytes)
+	var header NetworkHeader
+	header.ReadFrom(this.bytes)
 	// prepare buffer
-	if len(this.bytes) < int(header) {
-		this.bytes = make([]byte, header, header)
+	if len(this.bytes) < int(header.MessageSize) {
+		this.bytes = make([]byte, header.MessageSize, header.MessageSize)
 	}
 	// message
-	bytes := this.bytes[:header]
+	bytes := this.bytes[:header.MessageSize]
 	left := len(bytes)
 	message := bytes
 	read = 0
 	for left > 0 {
 		if this.Done() {
 			err = errors.New("Read was interupted by quit event.")
-			return nil, err
+			return nil, nil, err
 		}
 		bytes = bytes[read:]
 		read, err = this.conn.Read(bytes)
 		if err != nil {
-			return nil, err
+			return nil, nil, err
 		}
 		left -= read
 	}
-	return message, nil
+	return &header, message, nil
 }
 
-func (c *networkConnection) route(req request) {
+func (c *networkConnection) route(header *NetworkHeader, req request) {
 	item := &requestItem{
+		header: header,
 		req:    req,
 		sender: c.sender,
 	}
@@ -296,12 +295,13 @@ func (this *networkConnection) read() {
 	//
 	var err error
 	var message []byte
+	var header *NetworkHeader
 	for {
 		err = nil
 		if this.Done() {
 			break
 		}
-		message, err = reader.readMessage()
+		header, message, err = reader.readMessage()
 		if err != nil {
 			break
 		}
@@ -309,7 +309,7 @@ func (this *networkConnection) read() {
 		tokens := newTokens()
 		lex(string(message), tokens)
 		req := parse(tokens)
-		this.route(req)
+		this.route(header, req)
 	}
 	if err != nil && !this.Done() {
 		logerror("failed to read from client connection:", this.sender.connectionId, err.Error())

@@ -32,6 +32,15 @@ type response interface {
 	toNetworkReadyJSON() ([]byte, bool)
 }
 
+type requestIdResponse struct {
+	response
+	requestId uint32
+}
+
+func getRequestIdResponse(requestId uint32) requestIdResponse {
+	return requestIdResponse {requestId: requestId,}
+}
+
 // json helper functions
 func ok(builder *JSONBuilder) {
 	builder.nameValue("status", "ok")
@@ -115,8 +124,15 @@ func (this *cmdStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
 
 // sqlInsertResponse is a response for sql insert statement
 type sqlInsertResponse struct {
-	response
+	requestIdResponse
 	id string
+}
+
+func newSqlInsertResponse(id string, requestId uint32) *sqlInsertResponse  {
+	return &sqlInsertResponse {
+		id: id,
+		requestIdResponse: getRequestIdResponse(requestId),
+	} 
 }
 
 func (this *sqlInsertResponse) getResponsStatus() responseStatusType {

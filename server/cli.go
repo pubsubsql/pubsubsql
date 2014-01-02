@@ -62,6 +62,7 @@ type cli struct {
 	toServer      chan string
 	conn          net.Conn
 	disconnecting bool
+	requestId	uint32
 }
 
 // Returns new cli.
@@ -80,14 +81,15 @@ func (this *cli) runOnce(command string) {
 	if !this.connect() {
 		return
 	}
+	this.requestId++
 	rw := newNetMessageReaderWriter(this.conn, nil)
 	bytes := []byte(command)
-	err := rw.writeHeaderAndMessage(bytes)
+	err := rw.writeHeaderAndMessage(this.requestId, bytes)
 	if err != nil {
 		logerror(err)
 		return
 	}
-	bytes, err = rw.readMessage()
+	_, bytes, err = rw.readMessage()
 	if err != nil && command != "stop" {
 		logerror(err)
 	}
@@ -179,7 +181,7 @@ func (this *cli) readMessages() {
 	reader := newNetMessageReaderWriter(this.conn, nil)
 LOOP:
 	for {
-		bytes, err := reader.readMessage()
+		_, bytes, err := reader.readMessage()
 		if err != nil {
 			this.outputError(err)
 			break LOOP
@@ -204,7 +206,8 @@ LOOP:
 		select {
 		case message := <-this.toServer:
 			bytes := []byte(message)
-			err := writer.writeHeaderAndMessage(bytes)
+			this.requestId++
+			err := writer.writeHeaderAndMessage(this.requestId, bytes)
 			if err != nil {
 				this.outputError(err)
 				break LOOP

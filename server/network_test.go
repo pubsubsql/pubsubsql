@@ -60,23 +60,27 @@ func TestNetworkConnections(t *testing.T) {
 	c.Close()
 }
 
-func validateWriteRead(t *testing.T, conn net.Conn, message string) {
+func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId uint32) {
 	rw := newNetMessageReaderWriter(conn, nil)
 	bytes := []byte(message)
-	err := rw.writeHeaderAndMessage(bytes)
+	var header *NetworkHeader
+	err := rw.writeHeaderAndMessage(requestId, bytes)
 	if err != nil {
 		t.Error(err)
 	}
-	bytes, err = rw.readMessage()
+	header, bytes, err = rw.readMessage()
 	if err != nil {
 		t.Error(err)
+	}
+	if (header.RequestId != requestId) {
+		t.Error("Request id does not match command:" + message); 
 	}
 	debug(string(bytes))
 }
 
 func validateRead(t *testing.T, conn net.Conn) {
 	rw := newNetMessageReaderWriter(conn, nil)
-	bytes, err := rw.readMessage()
+	_, bytes, err := rw.readMessage()
 	if err != nil {
 		t.Error(err)
 	}
@@ -99,18 +103,18 @@ func TestNetworkWriteRead(t *testing.T) {
 	n.start(address)
 	c := validateConnect(t, address)
 	// send valid message get result
-	validateWriteRead(t, c, "key stocks ticker")
-	validateWriteRead(t, c, "bla bla bla")
-	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (IBM,123,124)")
-	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (MSFT,37,38.45)")
-	validateWriteRead(t, c, "select * from stocks")
-	validateWriteRead(t, c, "key stocks ticker")
+	validateWriteRead(t, c, "key stocks ticker", 1)
+	validateWriteRead(t, c, "bla bla bla", 2)
+	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (IBM,123,124)", 3)
+	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (MSFT,37,38.45)", 4)
+	validateWriteRead(t, c, "select * from stocks", 5)
+	validateWriteRead(t, c, "key stocks ticker", 6)
 	// test pubsub
 	c2 := validateConnect(t, address)
-	validateWriteRead(t, c2, "subscribe * from stocks")
+	validateWriteRead(t, c2, "subscribe * from stocks", 7)
 	// on add
 	validateRead(t, c2)
-	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (ORCL,37,38.45)")
+	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (ORCL,37,38.45)", 8)
 	// on insert
 	validateRead(t, c2)
 	//
@@ -143,8 +147,8 @@ func TestNetworMultiInsert(t *testing.T) {
 	c := validateConnect(t, address)
 
 	// subscribe
-	validateWriteRead(t, c, "key stocks ticker")
-	validateWriteRead(t, c, "subscribe * from stocks")
+	validateWriteRead(t, c, "key stocks ticker", 1)
+	validateWriteRead(t, c, "subscribe * from stocks", 2)
 
 	// insert bunch of records
 	idblock := 1
@@ -153,11 +157,13 @@ func TestNetworMultiInsert(t *testing.T) {
 	for i := 0; i < totalConnections; i++ {
 		idblock += 100000
 		go func(cid int, tickerid int) {
+			requestId := uint32(0)
+			requestId++
 			c2 := validateConnect(t, address)
 			for j := 0; j < insertsPerConnection; j++ {
 				ticker := strconv.Itoa(tickerid)
 				tickerid++
-				validateWriteRead(t, c2, "insert into stocks (ticker, bid, ask) values ( "+ticker+",10,10)")
+				validateWriteRead(t, c2, "insert into stocks (ticker, bid, ask) values ( "+ticker+",10,10)", requestId)
 			}
 
 		}(i, idblock)
@@ -186,14 +192,14 @@ func TestNetworkBatchRead(t *testing.T) {
 	defer func() {
 		config.DATA_BATCH_SIZE = prevBatchSize
 	}()
-	// subscribe
-	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (IBM, 120)")
-	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (MSFT, 120)")
-	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (GOOG, 120)")
-	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (ORCL, 120)")
+	// insert
+	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (IBM, 120)", 1)
+	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (MSFT, 120)", 2)
+	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (GOOG, 120)", 3)
+	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (ORCL, 120)",4)
 
 	//expected another 3 messages
-	validateWriteRead(t, c, "select * from stocks")
+	validateWriteRead(t, c, "select * from stocks", 5)
 	validateRead(t, c)
 	validateRead(t, c)
 	validateRead(t, c)

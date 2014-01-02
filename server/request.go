@@ -47,23 +47,25 @@ type sqlRequest struct {
 	table string
 }
 
-func (act sqlRequest) getRequestType() requestType {
+func (this *sqlRequest) getRequestType() requestType {
 	return requestTypeSql
 }
 
-func (act sqlRequest) getTableName() string {
-	return act.table
+func (this *sqlRequest) getTableName() string {
+	return this.table
 }
 
 // cmdRequest is a generic command request.
 type cmdRequest struct {
 	request
+	requestId uint32
 }
 
-func (act cmdRequest) getRequestType() requestType {
+func (this *cmdRequest) getRequestType() requestType {
 	return requestTypeCmd
 }
 
+// 
 type cmdStatusRequest struct {
 	cmdRequest
 }
