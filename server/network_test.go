@@ -16,10 +16,13 @@
 
 package pubsubsql
 
-import "testing"
-import "time"
-import "net"
-import "strconv"
+import (
+	"testing"
+	"time"
+	"net"
+	"strconv"
+	"pubsubsql/client"
+)
 
 func TestNetworkStartQuit(t *testing.T) {
 	debug("TestNetworkStartQuit")
@@ -65,7 +68,7 @@ func TestNetworkConnections(t *testing.T) {
 func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId uint32) {
 	rw := newNetMessageReaderWriter(conn, nil)
 	bytes := []byte(message)
-	var header *NetworkHeader
+	var header *pubsubsql.NetworkHeader
 	err := rw.writeHeaderAndMessage(requestId, bytes)
 	if err != nil {
 		t.Error(err)

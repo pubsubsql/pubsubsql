@@ -35,7 +35,7 @@ type NetworkHeader struct {
 }
 
 var HEADER_SIZE = 8
-var emptyHeader = make([]byte, HEADER_SIZE, HEADER_SIZE)
+var EMPTY_HEADER = make([]byte, HEADER_SIZE, HEADER_SIZE)
 
 func NewNetworkHeader(messageSize uint32, requestId uint32) *NetworkHeader {
 	return &NetworkHeader {

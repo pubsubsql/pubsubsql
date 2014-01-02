@@ -21,6 +21,7 @@ import (
 	"net"
 	"strconv"
 	"sync"
+	"pubsubsql/client"
 )
 
 // networkContext
@@ -236,24 +237,24 @@ func (this *netMessageReaderWriter) writeMessage(bytes []byte) error {
 
 // for cli
 func (this *netMessageReaderWriter) writeHeaderAndMessage(requestId uint32, bytes []byte) error {
-	err := this.writeMessage(NewNetworkHeader(uint32(len(bytes)), requestId).GetBytes())
+	err := this.writeMessage(pubsubsql.NewNetworkHeader(uint32(len(bytes)), requestId).GetBytes())
 	if err != nil {
 		return err
 	}
 	return this.writeMessage(bytes)
 }
 
-func (this *netMessageReaderWriter) readMessage() (*NetworkHeader, []byte, error) {
+func (this *netMessageReaderWriter) readMessage() (*pubsubsql.NetworkHeader, []byte, error) {
 	// header
-	read, err := this.conn.Read(this.bytes[0:HEADER_SIZE])
+	read, err := this.conn.Read(this.bytes[0:pubsubsql.HEADER_SIZE])
 	if err != nil {
 		return nil, nil, err
 	}
-	if read < HEADER_SIZE {
+	if read < pubsubsql.HEADER_SIZE {
 		err = errors.New("Failed to read header.")
 		return nil, nil, err
 	}
-	var header NetworkHeader
+	var header pubsubsql.NetworkHeader
 	header.ReadFrom(this.bytes)
 	// prepare buffer
 	if len(this.bytes) < int(header.MessageSize) {
@@ -279,7 +280,7 @@ func (this *netMessageReaderWriter) readMessage() (*NetworkHeader, []byte, error
 	return &header, message, nil
 }
 
-func (c *networkConnection) route(header *NetworkHeader, req request) {
+func (c *networkConnection) route(header *pubsubsql.NetworkHeader, req request) {
 	item := &requestItem{
 		header: header,
 		req:    req,
@@ -295,7 +296,7 @@ func (this *networkConnection) read() {
 	//
 	var err error
 	var message []byte
-	var header *NetworkHeader
+	var header *pubsubsql.NetworkHeader
 	for {
 		err = nil
 		if this.Done() {

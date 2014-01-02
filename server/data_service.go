@@ -16,9 +16,13 @@
 
 package pubsubsql
 
+import (
+	"pubsubsql/client"
+)
+
 // requestItem is a container for client request and sender used to send back responses
 type requestItem struct {
-	header *NetworkHeader
+	header *pubsubsql.NetworkHeader
 	req    request
 	sender *responseSender
 }
