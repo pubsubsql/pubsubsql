@@ -326,6 +326,7 @@ func (this *networkConnection) write() {
 	for {
 		select {
 		case res := <-this.sender.sender:
+			debug("response is ready to be send over tcp")
 			// write messages in batches if applicable
 			var msg []byte
 			more := true

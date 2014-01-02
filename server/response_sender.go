@@ -39,6 +39,7 @@ func newResponseSenderStub(connectionId uint64) *responseSender {
 func (this *responseSender) send(res response) bool {
 	select {
 	case this.sender <- res:
+		debug("response was sent")
 		return !this.quit.Done()
 	case <-this.quit.GetChan():
 		debug("connection is closed")

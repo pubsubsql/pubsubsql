@@ -22,6 +22,7 @@ import "net"
 import "strconv"
 
 func TestNetworkStartQuit(t *testing.T) {
+	debug("TestNetworkStartQuit")
 	address := "localhost:54321"
 	context := newNetworkContextStub()
 	s := context.quit
@@ -41,6 +42,7 @@ func TestNetworkStartQuit(t *testing.T) {
 }
 
 func TestNetworkConnections(t *testing.T) {
+	debug("TestNetworkConnections")
 	context := newNetworkContextStub()
 	s := context.quit
 	n := newNetwork(context)
@@ -78,11 +80,14 @@ func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId ui
 	debug(string(bytes))
 }
 
-func validateRead(t *testing.T, conn net.Conn) {
+func validateRead(t *testing.T, conn net.Conn, requestId uint32) {
 	rw := newNetMessageReaderWriter(conn, nil)
-	_, bytes, err := rw.readMessage()
+	header, bytes, err := rw.readMessage()
 	if err != nil {
 		t.Error(err)
+	}
+	if (header.RequestId != requestId) {
+		t.Error("Request id 0 does not match "); 
 	}
 	debug(string(bytes))
 }
@@ -96,6 +101,7 @@ func validateConnect(t *testing.T, address string) net.Conn {
 }
 
 func TestNetworkWriteRead(t *testing.T) {
+	debug("TestNetworkReadWrite")
 	context := newNetworkContextStub()
 	address := "localhost:54321"
 	s := context.quit
@@ -113,10 +119,10 @@ func TestNetworkWriteRead(t *testing.T) {
 	c2 := validateConnect(t, address)
 	validateWriteRead(t, c2, "subscribe * from stocks", 7)
 	// on add
-	validateRead(t, c2)
+	validateRead(t, c2, 0)
 	validateWriteRead(t, c, "insert into stocks (ticker, bid, ask) values (ORCL,37,38.45)", 8)
 	// on insert
-	validateRead(t, c2)
+	validateRead(t, c2, 0)
 	//
 	if n.connectionCount() != 2 {
 		t.Error("Expected 1 network connection")
@@ -170,7 +176,7 @@ func TestNetworMultiInsert(t *testing.T) {
 	}
 	// read inserted published records
 	for j := 0; j < (insertsPerConnection * totalConnections); j++ {
-		validateRead(t, c)
+		validateRead(t, c, 0)
 	}
 	c.Close()
 	// shutdown
@@ -200,9 +206,9 @@ func TestNetworkBatchRead(t *testing.T) {
 
 	//expected another 3 messages
 	validateWriteRead(t, c, "select * from stocks", 5)
-	validateRead(t, c)
-	validateRead(t, c)
-	validateRead(t, c)
+	validateRead(t, c, 5)
+	validateRead(t, c, 5)
+	validateRead(t, c, 5)
 
 	c.Close()
 	// shutdown

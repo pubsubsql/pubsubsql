@@ -23,6 +23,13 @@ type requestItem struct {
 	sender *responseSender
 }
 
+func (this *requestItem) getRequestId() uint32 {
+	if this.header != nil {
+		return this.header.RequestId
+	}
+	return uint32(0)
+}
+
 // dataService pre-processes sqlRequests and forwards them to approptiate tables for further proccessging.
 // It servers as a collection container for tables.
 type dataService struct {

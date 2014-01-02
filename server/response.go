@@ -30,6 +30,7 @@ type response interface {
 	getResponseStatus() responseStatusType
 	String() string
 	toNetworkReadyJSON() ([]byte, bool)
+	setRequestId(requestId uint32)
 }
 
 type requestIdResponse struct {
@@ -37,8 +38,8 @@ type requestIdResponse struct {
 	requestId uint32
 }
 
-func getRequestIdResponse(requestId uint32) requestIdResponse {
-	return requestIdResponse {requestId: requestId,}
+func (this *requestIdResponse) setRequestId(requestId uint32) {
+	this.requestId = requestId	
 }
 
 // json helper functions
@@ -56,12 +57,14 @@ func action(builder *JSONBuilder, action string) {
 
 // errorResponse
 type errorResponse struct {
-	response
+	requestIdResponse
 	msg string
 }
 
 func newErrorResponse(msg string) *errorResponse {
-	return &errorResponse{msg: msg}
+	return &errorResponse{
+		msg: msg,
+	}
 }
 
 func (this *errorResponse) getResponsStatus() responseStatusType {
@@ -79,12 +82,12 @@ func (this *errorResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	builder.nameValue("msg", this.msg)
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(this.requestId), false
 }
 
 // okResponse
 type okResponse struct {
-	response
+	requestIdResponse
 }
 
 func newOkResponse() *okResponse {
@@ -104,13 +107,19 @@ func (this *okResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.beginObject()
 	ok(builder)
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(this.requestId), false
 }
 
 // cmdStatusResponse
 type cmdStatusResponse struct {
-	response
+	requestIdResponse
 	connections int
+}
+
+func newCmdStatusResponse(connections int) *cmdStatusResponse {
+	return &cmdStatusResponse {
+		connections: connections,
+	} 
 }
 
 func (this *cmdStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -119,7 +128,7 @@ func (this *cmdStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
 	ok(builder)
 	builder.nameIntValue("connections", this.connections)
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(this.requestId), false
 }
 
 // sqlInsertResponse is a response for sql insert statement
@@ -128,10 +137,9 @@ type sqlInsertResponse struct {
 	id string
 }
 
-func newSqlInsertResponse(id string, requestId uint32) *sqlInsertResponse  {
+func newSqlInsertResponse(id string) *sqlInsertResponse  {
 	return &sqlInsertResponse {
 		id: id,
-		requestIdResponse: getRequestIdResponse(requestId),
 	} 
 }
 
@@ -152,12 +160,12 @@ func (this *sqlInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	id(builder, this.id)
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(this.requestId), false
 }
 
 // sqlSelectResponse is a response for sql select statement
 type sqlSelectResponse struct {
-	response
+	requestIdResponse
 	columns []*column
 	records []*record
 	batch   int
@@ -211,7 +219,7 @@ func (this *sqlSelectResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	more := this.data(builder)
 	builder.endObject()
-	return builder.getNetworkBytes(), more
+	return builder.getNetworkBytes(this.requestId), more
 }
 
 func (this *sqlSelectResponse) copyRecordData(source *record) {
@@ -227,7 +235,7 @@ func (this *sqlSelectResponse) copyRecordData(source *record) {
 
 // sqlDeleteResponse
 type sqlDeleteResponse struct {
-	response
+	requestIdResponse
 	deleted int
 }
 
@@ -240,12 +248,12 @@ func (this *sqlDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	builder.nameIntValue("rows", this.deleted)
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(this.requestId), false
 }
 
 // sqlUpdateResponse
 type sqlUpdateResponse struct {
-	response
+	requestIdResponse	
 	updated int
 }
 
@@ -258,12 +266,12 @@ func (this *sqlUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	builder.nameIntValue("rows", this.updated)
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(this.requestId), false
 }
 
 // sqlSubscribeResponse
 type sqlSubscribeResponse struct {
-	response
+	requestIdResponse
 	pubsubid uint64
 }
 
@@ -276,7 +284,7 @@ func (this *sqlSubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(this.requestId), false
 }
 
 func newSubscribeResponse(sub *subscription) response {
@@ -302,7 +310,7 @@ func (this *sqlActionDataResponse) toNetworkReadyJSONHelper(act string) ([]byte,
 	builder.valueSeparator()
 	more := this.data(builder)
 	builder.endObject()
-	return builder.getNetworkBytes(), more
+	return builder.getNetworkBytes(0), more
 }
 
 // sqlActionAddResponse
@@ -330,6 +338,10 @@ type sqlActionDeleteResponse struct {
 	pubsubid uint64
 }
 
+func (this *sqlActionDeleteResponse) setRequestId(requestId uint32) {
+
+}
+
 func (this *sqlActionDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
@@ -341,7 +353,7 @@ func (this *sqlActionDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	builder.nameValue("id", this.id)
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(0), false
 }
 
 // sqlActionRemoveResponse
@@ -349,6 +361,10 @@ type sqlActionRemoveResponse struct {
 	response
 	id       string
 	pubsubid uint64
+}
+
+func (this *sqlActionRemoveResponse) setRequestId(requestId uint32) {
+
 }
 
 func (this *sqlActionRemoveResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -362,7 +378,7 @@ func (this *sqlActionRemoveResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	builder.nameValue("id", this.id)
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(0), false
 }
 
 // sqlActionUpdateResponse
@@ -371,6 +387,10 @@ type sqlActionUpdateResponse struct {
 	pubsubid uint64
 	cols     []*column
 	rec      *record
+}
+
+func (this *sqlActionUpdateResponse) setRequestId(requestId uint32) {
+
 }
 
 func (this *sqlActionUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -390,7 +410,7 @@ func (this *sqlActionUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.endArray()
 
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(0), false
 }
 
 func newSqlActionUpdateResponse(pubsubid uint64, cols []*column, rec *record) *sqlActionUpdateResponse {
@@ -411,7 +431,7 @@ func newSqlActionUpdateResponse(pubsubid uint64, cols []*column, rec *record) *s
 
 // sqlUnsubscribeResponse
 type sqlUnsubscribeResponse struct {
-	response
+	requestIdResponse	
 	unsubscribed int
 }
 
@@ -424,5 +444,6 @@ func (this *sqlUnsubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	builder.nameIntValue("subscriptions", this.unsubscribed)
 	builder.endObject()
-	return builder.getNetworkBytes(), false
+	return builder.getNetworkBytes(this.requestId), false
 }
+

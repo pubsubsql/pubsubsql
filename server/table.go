@@ -393,8 +393,7 @@ func (this *table) sqlInsert(req *sqlInsertRequest) response {
 	// ready to insert
 	this.bindRecord(cols, req.colVals, rec, id)
 	this.addNewRecord(rec)
-	res := *newSqlInsertResponse(rec.idAsString(), this.requestId)
-	this.requestId = 0
+	res := *newSqlInsertResponse(rec.idAsString())
 	this.onInsert(rec)
 	return &res
 }
@@ -439,6 +438,7 @@ func (this *table) sqlSelect(req *sqlSelectRequest) response {
 	//
 	var res sqlSelectResponse
 	this.copyRecordsToSqlSelectResponse(&res, records, columns)
+	res.requestId = this.requestId
 	return &res
 }
 
@@ -585,7 +585,7 @@ func (this *table) newSubscription(sender *responseSender) *subscription {
 func (this *table) subscribeToTable(sender *responseSender, skip bool) (*subscription, []*record) {
 	sub := this.newSubscription(sender)
 	this.pubsub.add(sub)
-	sender.send(newSubscribeResponse(sub))
+	this.send(sender, newSubscribeResponse(sub))
 	var records []*record
 	if !skip {
 		records = this.records
@@ -600,7 +600,7 @@ func (this *table) subscribeToKeyOrTag(col *column, val string, sender *response
 		records = this.getRecordsByTag(val, col)
 	}
 	col.tagmap.getAddTagItem(val).pubsub.add(sub)
-	sender.send(newSubscribeResponse(sub))
+	this.send(sender, newSubscribeResponse(sub))
 	return sub, records
 }
 
@@ -609,14 +609,19 @@ func (this *table) subscribeToId(id string, sender *responseSender, skip bool) (
 	if len(records) > 0 {
 		sub := this.newSubscription(sender)
 		records[0].addSubscription(sub)
-		sender.send(newSubscribeResponse(sub))
+		this.send(sender, newSubscribeResponse(sub))
 		if skip {
 			records = nil
 		}
 		return sub, records
 	}
-	sender.send(newErrorResponse("id: " + id + " does not exist"))
+	this.send(sender, newErrorResponse("id: " + id + " does not exist"))
 	return nil, nil
+}
+
+func (this *table) send(sender *responseSender, res response) {
+	res.setRequestId(this.requestId)
+	sender.send(res)	
 }
 
 func (this *table) subscribe(col *column, val string, sender *responseSender, skip bool) (*subscription, []*record) {
@@ -631,17 +636,17 @@ func (this *table) subscribe(col *column, val string, sender *responseSender, sk
 	case columnTypeId:
 		return this.subscribeToId(val, sender, skip)
 	}
-	sender.send(newErrorResponse("Unexpected logical error"))
+	this.send(sender, newErrorResponse("Unexpected logical error"))
 	return nil, nil
 }
 
 // Processes sql subscribe requesthis.
-// Does not return anything, responses are send directly to response sender.
+// Does not return anything, responses are send directly to response this.
 func (this *table) sqlSubscribe(req *sqlSubscribeRequest) {
 	// validate
 	errRes, col := this.validateSqlFilter(req.filter)
 	if errRes != nil {
-		req.sender.send(errRes)
+		this.send(req.sender, errRes)
 		return
 	}
 	// subscribe
@@ -778,6 +783,7 @@ func (this *table) run() {
 				debug("table quit")
 				return
 			}
+			this.requestId = item.getRequestId()
 			this.onSqlRequest(item.req, item.sender)
 		case <-this.quit.GetChan():
 			debug("table quit")
@@ -787,7 +793,6 @@ func (this *table) run() {
 }
 
 func (this *table) onSqlRequest(req request, sender *responseSender) {
-	this.requestId = 0 
 	switch req.(type) {
 	case *sqlInsertRequest:
 		this.onSqlInsert(req.(*sqlInsertRequest), sender)
@@ -806,23 +811,22 @@ func (this *table) onSqlRequest(req request, sender *responseSender) {
 	case *sqlTagRequest:
 		this.onSqlTag(req.(*sqlTagRequest), sender)
 	}
-	this.requestId = 0
 }
 
 func (this *table) onSqlInsert(req *sqlInsertRequest, sender *responseSender) {
-	sender.send(this.sqlInsert(req))
+	this.send(sender, this.sqlInsert(req))
 }
 
 func (this *table) onSqlSelect(req *sqlSelectRequest, sender *responseSender) {
-	sender.send(this.sqlSelect(req))
+	this.send(sender, this.sqlSelect(req))
 }
 
 func (this *table) onSqlUpdate(req *sqlUpdateRequest, sender *responseSender) {
-	sender.send(this.sqlUpdate(req))
+	this.send(sender, this.sqlUpdate(req))
 }
 
 func (this *table) onSqlDelete(req *sqlDeleteRequest, sender *responseSender) {
-	sender.send(this.sqlDelete(req))
+	this.send(sender, this.sqlDelete(req))
 }
 
 func (this *table) onSqlSubscribe(req *sqlSubscribeRequest, sender *responseSender) {
@@ -832,13 +836,13 @@ func (this *table) onSqlSubscribe(req *sqlSubscribeRequest, sender *responseSend
 
 func (this *table) onSqlUnsubscribe(req *sqlUnsubscribeRequest, sender *responseSender) {
 	req.connectionId = sender.connectionId
-	sender.send(this.sqlUnsubscribe(req))
+	this.send(sender, this.sqlUnsubscribe(req))
 }
 
 func (this *table) onSqlKey(req *sqlKeyRequest, sender *responseSender) {
-	sender.send(this.sqlKey(req))
+	this.send(sender, this.sqlKey(req))
 }
 
 func (this *table) onSqlTag(req *sqlTagRequest, sender *responseSender) {
-	sender.send(this.sqlTag(req))
+	this.send(sender, this.sqlTag(req))
 }
