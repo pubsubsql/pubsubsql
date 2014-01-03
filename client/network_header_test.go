@@ -16,7 +16,10 @@
 
 package pubsubsql
 
-import "testing"
+import ( 
+	"testing"
+	"fmt"
+)
 
 func TestNetworkHeader(t *testing.T) {
 	header1 := NetworkHeader {
@@ -32,4 +35,6 @@ func TestNetworkHeader(t *testing.T) {
 	if header1 != header2 {
 		t.Error("NetworkHeader data does not match")
 	}	
+	
+	fmt.Println(header1.String())
 }

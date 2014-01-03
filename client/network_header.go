@@ -18,7 +18,7 @@ package pubsubsql
 
 import (
 	"encoding/binary"
-	"strconv"
+	"encoding/json"
 )
 
 /*
@@ -61,6 +61,7 @@ func (this *NetworkHeader) GetBytes() []byte {
 }
 
 func (this *NetworkHeader) String() string {
-	str := "{ MessageSize:" + strconv.Itoa(int(this.MessageSize)) + " RequestId:" + strconv.Itoa(int(this.RequestId)) + " }"
-	return str
+	bytes, err := json.Marshal(this)	
+	return string(bytes)
 } 
+
