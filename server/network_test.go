@@ -66,14 +66,14 @@ func TestNetworkConnections(t *testing.T) {
 }
 
 func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId uint32) {
-	rw := newNetMessageReaderWriter(conn, nil)
+	rw := pubsubsql.NewNetMessageReaderWriter(conn, config.NET_READWRITE_BUFFER_SIZE)
 	bytes := []byte(message)
 	var header *pubsubsql.NetworkHeader
-	err := rw.writeHeaderAndMessage(requestId, bytes)
+	err := rw.WriteHeaderAndMessage(requestId, bytes)
 	if err != nil {
 		t.Error(err)
 	}
-	header, bytes, err = rw.readMessage()
+	header, bytes, err = rw.ReadMessage()
 	if err != nil {
 		t.Error(err)
 	}
@@ -84,8 +84,8 @@ func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId ui
 }
 
 func validateRead(t *testing.T, conn net.Conn, requestId uint32) {
-	rw := newNetMessageReaderWriter(conn, nil)
-	header, bytes, err := rw.readMessage()
+	rw := pubsubsql.NewNetMessageReaderWriter(conn, config.NET_READWRITE_BUFFER_SIZE)
+	header, bytes, err := rw.ReadMessage()
 	if err != nil {
 		t.Error(err)
 	}

@@ -17,7 +17,6 @@
 package pubsubsql
 
 import (
-	"errors"
 	"net"
 	"strconv"
 	"sync"
@@ -196,89 +195,7 @@ func (this *networkConnection) Done() bool {
 	return this.sender.quit.Done() || this.quit.Done()
 }
 
-// message reader
-type netMessageReaderWriter struct {
-	conn  net.Conn
-	bytes []byte
-	quit  IQuitter
-}
 
-func newNetMessageReaderWriter(conn net.Conn, quit IQuitter) *netMessageReaderWriter {
-	return &netMessageReaderWriter{
-		conn:  conn,
-		bytes: make([]byte, 2048, 2048),
-		quit:  quit,
-	}
-}
-
-func (this *netMessageReaderWriter) Done() bool {
-	return this.quit != nil && this.quit.Done()
-}
-
-func (this *netMessageReaderWriter) writeMessage(bytes []byte) error {
-	leftToWrite := len(bytes)
-	for {
-		if this.Done() {
-			err := errors.New("Write was interupted by quit event.")
-			return err
-		}
-		written, err := this.conn.Write(bytes)
-		if err != nil {
-			return err
-		}
-		leftToWrite -= written
-		if leftToWrite == 0 {
-			break
-		}
-		bytes = bytes[written:]
-	}
-	return nil
-}
-
-// for cli
-func (this *netMessageReaderWriter) writeHeaderAndMessage(requestId uint32, bytes []byte) error {
-	err := this.writeMessage(pubsubsql.NewNetworkHeader(uint32(len(bytes)), requestId).GetBytes())
-	if err != nil {
-		return err
-	}
-	return this.writeMessage(bytes)
-}
-
-func (this *netMessageReaderWriter) readMessage() (*pubsubsql.NetworkHeader, []byte, error) {
-	// header
-	read, err := this.conn.Read(this.bytes[0:pubsubsql.HEADER_SIZE])
-	if err != nil {
-		return nil, nil, err
-	}
-	if read < pubsubsql.HEADER_SIZE {
-		err = errors.New("Failed to read header.")
-		return nil, nil, err
-	}
-	var header pubsubsql.NetworkHeader
-	header.ReadFrom(this.bytes)
-	// prepare buffer
-	if len(this.bytes) < int(header.MessageSize) {
-		this.bytes = make([]byte, header.MessageSize, header.MessageSize)
-	}
-	// message
-	bytes := this.bytes[:header.MessageSize]
-	left := len(bytes)
-	message := bytes
-	read = 0
-	for left > 0 {
-		if this.Done() {
-			err = errors.New("Read was interupted by quit event.")
-			return nil, nil, err
-		}
-		bytes = bytes[read:]
-		read, err = this.conn.Read(bytes)
-		if err != nil {
-			return nil, nil, err
-		}
-		left -= read
-	}
-	return &header, message, nil
-}
 
 func (c *networkConnection) route(header *pubsubsql.NetworkHeader, req request) {
 	item := &requestItem{
@@ -292,7 +209,7 @@ func (c *networkConnection) route(header *pubsubsql.NetworkHeader, req request) 
 func (this *networkConnection) read() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	reader := newNetMessageReaderWriter(this.conn, this)
+	reader := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	//
 	var err error
 	var message []byte
@@ -302,7 +219,7 @@ func (this *networkConnection) read() {
 		if this.Done() {
 			break
 		}
-		header, message, err = reader.readMessage()
+		header, message, err = reader.ReadMessage()
 		if err != nil {
 			break
 		}
@@ -322,7 +239,7 @@ func (this *networkConnection) read() {
 func (this *networkConnection) write() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	writer := newNetMessageReaderWriter(this.conn, this)
+	writer := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	var err error
 	for {
 		select {
@@ -336,7 +253,7 @@ func (this *networkConnection) write() {
 					return
 				}
 				msg, more = res.toNetworkReadyJSON()
-				err = writer.writeMessage(msg)
+				err = writer.WriteMessage(msg)
 			}
 			if err != nil && !this.Done() {
 				logerror("failed to write to client connection:", this.sender.connectionId, err.Error())

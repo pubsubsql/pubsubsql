@@ -23,6 +23,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"pubsubsql/client"
 )
 
 //
@@ -82,14 +83,14 @@ func (this *cli) runOnce(command string) {
 		return
 	}
 	this.requestId++
-	rw := newNetMessageReaderWriter(this.conn, nil)
+	rw := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	bytes := []byte(command)
-	err := rw.writeHeaderAndMessage(this.requestId, bytes)
+	err := rw.WriteHeaderAndMessage(this.requestId, bytes)
 	if err != nil {
 		logerror(err)
 		return
 	}
-	_, bytes, err = rw.readMessage()
+	_, bytes, err = rw.ReadMessage()
 	if err != nil && command != "stop" {
 		logerror(err)
 	}
@@ -178,10 +179,10 @@ func (this *cli) readInput() {
 func (this *cli) readMessages() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	reader := newNetMessageReaderWriter(this.conn, nil)
+	reader := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 LOOP:
 	for {
-		_, bytes, err := reader.readMessage()
+		_, bytes, err := reader.ReadMessage()
 		if err != nil {
 			this.outputError(err)
 			break LOOP
@@ -200,14 +201,14 @@ LOOP:
 func (this *cli) writeMessages() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	writer := newNetMessageReaderWriter(this.conn, nil)
+	writer := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 LOOP:
 	for {
 		select {
 		case message := <-this.toServer:
 			bytes := []byte(message)
 			this.requestId++
-			err := writer.writeHeaderAndMessage(this.requestId, bytes)
+			err := writer.WriteHeaderAndMessage(this.requestId, bytes)
 			if err != nil {
 				this.outputError(err)
 				break LOOP

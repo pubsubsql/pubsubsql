@@ -46,6 +46,7 @@ type configuration struct {
 	WAIT_MILLISECOND_SERVER_SHUTDOWN          time.Duration
 	WAIT_MILLISECOND_CLI_SHUTDOWN             time.Duration
 	DATA_BATCH_SIZE                           int
+	NET_READWRITE_BUFFER_SIZE				  int
 
 	// command
 	COMMAND string
@@ -84,6 +85,7 @@ func defaultConfig() configuration {
 		WAIT_MILLISECOND_SERVER_SHUTDOWN:          3000,
 		WAIT_MILLISECOND_CLI_SHUTDOWN:             1000,
 		DATA_BATCH_SIZE:                           100,
+		NET_READWRITE_BUFFER_SIZE:				   2048,
 
 		// command
 		COMMAND: "start",
