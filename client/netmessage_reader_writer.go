@@ -28,10 +28,25 @@ type NetMessageReaderWriter struct {
 }
 
 func NewNetMessageReaderWriter(conn net.Conn, bufferSize int) *NetMessageReaderWriter {
-	return &NetMessageReaderWriter{
-		conn:  conn,
-		bytes: make([]byte, bufferSize, bufferSize),
+	var ret NetMessageReaderWriter
+	ret.Set(conn, bufferSize)
+	return &ret
+}
+
+func (this* NetMessageReaderWriter) Set(conn net.Conn, bufferSize int) {
+	this.conn = conn
+	this.bytes = make([]byte, bufferSize, bufferSize)
+}
+
+func (this* NetMessageReaderWriter) Close() {
+	if this.conn != nil {
+		this.conn.Close()
+		this.conn = nil
 	}
+}
+
+func (this* NetMessageReaderWriter) Valid() bool {
+	return this.conn != nil
 }
 
 func (this *NetMessageReaderWriter) WriteMessage(bytes []byte) error {

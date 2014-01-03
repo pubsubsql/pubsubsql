@@ -61,7 +61,7 @@ func (this *NetworkHeader) GetBytes() []byte {
 }
 
 func (this *NetworkHeader) String() string {
-	bytes, err := json.Marshal(this)	
+	bytes, _ := json.Marshal(this)	
 	return string(bytes)
 } 
 

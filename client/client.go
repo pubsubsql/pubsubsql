@@ -115,33 +115,30 @@ func NewClient() Client {
 	return &c
 }
 
+var CLIENT_DEFAULT_BUFFER_SIZE int = 2048
+
 type client struct {
 	Client
-	conn net.Conn	
+	rw NetMessageReaderWriter
 	errorString string	
 		
 }
 
 func (this *client)	Connect(address string) bool {
-	var err error	
-	network := "tcp"
 	this.Disconnect()	
-	this.conn, err = net.Dial(network, address)
+	conn , err := net.Dial("tcp", address)
 	if err != nil {
-		this.conn = nil
 		this.errorString = err.Error()	
 		return false
 	}
+	this.rw.Set(conn, CLIENT_DEFAULT_BUFFER_SIZE)
 	return true
 } 
 
 func (this *client) Disconnect() {
+	this.send(0, "close")	
 	this.reset()
-	if this.conn != nil {
-		this.conn.Close()
-		//TODO
-		this.conn = nil
-	}	
+	this.rw.Close()
 }
 
 func (this *client) Ok() bool {
@@ -157,7 +154,28 @@ func (this *client) ErrorString() string {
 }
 
 func (this *client) reset() {
+	this.resetError()
+}
+
+func (this *client) resetError() {
 	this.errorString = ""
 }
 
+func (this *client) setError(err error) {
+	this.errorString = err.Error()
+}
+
+func (this *client) send(requestId uint32, message string) bool {
+	this.resetError()	
+	if this.rw.Valid() {
+		err := this.rw.WriteHeaderAndMessage(requestId, []byte(message)) 	
+		if err == nil {
+			return true	
+		}
+		this.setError(err)
+		return false
+	}
+	this.errorString = "Not connected"
+	return false
+}
 
