@@ -161,7 +161,11 @@ type sqlSelectResponse struct {
 	requestIdResponse
 	columns []*column
 	records []*record
-	batch   int
+	//
+	init bool
+	rows int
+	fromrow int
+	torow int
 }
 
 func row(builder *JSONBuilder, columns []*column, rec *record) {
@@ -177,18 +181,31 @@ func row(builder *JSONBuilder, columns []*column, rec *record) {
 }
 
 func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
+	if !this.init {
+		this.init = true
+		this.rows = len(this.records)	
+	}
 	more := len(this.records) > config.DATA_BATCH_SIZE
 	records := this.records
 	if more {
 		records = this.records[0:config.DATA_BATCH_SIZE]
 		this.records = this.records[config.DATA_BATCH_SIZE:]
-		//
-		this.batch++
-		builder.nameIntValue("batch", this.batch)
-		builder.valueSeparator()
+		this.fromrow = this.torow + 1
+		this.torow = this.fromrow + config.DATA_BATCH_SIZE - 1		
+	} else {
+		if this.rows > 0 {
+			this.fromrow = 1
+			this.torow = this.rows
+		}		
 	}
-	builder.nameIntValue("rows", len(this.records))
+	// rows, fromrow, torow
+	builder.nameIntValue("rows", this.rows)
 	builder.valueSeparator()
+	builder.nameIntValue("fromrow", this.fromrow)
+	builder.valueSeparator()
+	builder.nameIntValue("torow", this.torow)
+	builder.valueSeparator()
+	//
 	builder.string("data")
 	builder.nameSeparator()
 	builder.beginArray()
