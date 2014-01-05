@@ -22,9 +22,14 @@ import (
 	"time"
 )
 
+func generateTableName() string {
+	return "T" + strconv.FormatInt(time.Now().Unix(), 10)
+}
+
 var ADDRESS = "localhost:7777"
 var T *testing.T = nil
-var TABLE = "T" + strconv.FormatInt(time.Now().Unix(), 10)
+var TABLE = generateTableName()
+var ROWS = 250
 
 func ASSERT_TRUE(b bool) {
 	if !b {
@@ -35,6 +40,13 @@ func ASSERT_TRUE(b bool) {
 func ASSERT_FALSE(b bool) {
 	if b {
 		T.Error("Expected false")
+	}
+}
+
+func ASSERT_INT_EQ(val1 int, val2 int, err string) {
+	if val1 != val2 {
+		T.Error("int values do not match val1:", val1, "val2:", val2)
+		T.Error(err)
 	}
 }
 
@@ -80,6 +92,18 @@ func ASSERT_NOID(client Client) {
 	}
 }
 
+func ASSERT_PUSUBID(client Client) {
+	if client.PubSubId() == "" {
+		T.Error("Expected pubsubid but got empty string")
+	}
+}
+
+func ASSERT_NOPUBSUBID(client Client) {
+	if client.PubSubId() != "" {
+		T.Error("Expected no pubsubid but got", client.PubSubId())
+	}
+}
+
 func ASSERT_RECORD_COUNT(client Client, count int) {
 	if client.RecordCount() != count {
 		T.Error("Expected record count ", count, "but got", client.RecordCount())
@@ -100,6 +124,7 @@ func TestStatusCommand(t *testing.T) {
 	ASSERT_EXECUTE(client, "status", "status failed")
 	ASSERT_ACTION(client, "status")
 	ASSERT_NOID(client)
+	ASSERT_NOPUBSUBID(client)
 	client.Disconnect()
 }
 
@@ -110,6 +135,7 @@ func TestInsertCommand(t *testing.T) {
 	ASSERT_EXECUTE(client, "insert into insertcommand (col1, col2) values ('HELLO', WORLD)", "insert failed")
 	ASSERT_ACTION(client, "insert")
 	ASSERT_ID(client)
+	ASSERT_NOPUBSUBID(client)
 	client.Disconnect()
 }
 
@@ -118,19 +144,25 @@ func TestSelectCommand(t *testing.T) {
 	T = t
 	client := NewClient()
 	ASSERT_CONNECT(client)
-	rows := 250
 	command := "insert into " + TABLE + " (col1, col2, col3) values (col1, col2, col3) "
-	for i := 0; i < rows; i++ {
+	for i := 0; i < ROWS; i++ {
 		ASSERT_EXECUTE(client, command, "insert failed "+command)
 		ASSERT_ACTION(client, "insert")
 		ASSERT_ID(client)
+		ASSERT_NOPUBSUBID(client)
 	}
 	//
 	command = "select * from " + TABLE
 	ASSERT_EXECUTE(client, command, "select failed")
 	ASSERT_ACTION(client, "select")
 	ASSERT_NOID(client)
-	ASSERT_RECORD_COUNT(client, rows)
+	ASSERT_RECORD_COUNT(client, ROWS)
+	rowsread := 0
+	for client.NextRecord() {
+		rowsread++
+	}
+	ASSERT_INT_EQ(ROWS, rowsread, "NextRecord failed")
+	ASSERT_NOPUBSUBID(client)
 	client.Disconnect()
 }
 
@@ -138,13 +170,12 @@ func TestUpdateCommand(t *testing.T) {
 	T = t
 	client := NewClient()
 	ASSERT_CONNECT(client)
-	rows := 250
-	// previous test inserted 250 records
 	command := "update " + TABLE + " set col1 = updated_value "
 	ASSERT_EXECUTE(client, command, "update failed")
 	ASSERT_ACTION(client, "update")
 	ASSERT_NOID(client)
-	ASSERT_RECORD_COUNT(client, rows)
+	ASSERT_RECORD_COUNT(client, ROWS)
+	ASSERT_NOPUBSUBID(client)
 	client.Disconnect()
 }
 
@@ -152,13 +183,12 @@ func TestDeleteCommand(t *testing.T) {
 	T = t
 	client := NewClient()
 	ASSERT_CONNECT(client)
-	rows := 250
-	// previous test inserted 250 records
 	command := "delete from " + TABLE
 	ASSERT_EXECUTE(client, command, "delete failed")
 	ASSERT_ACTION(client, "delete")
 	ASSERT_NOID(client)
-	ASSERT_RECORD_COUNT(client, rows)
+	ASSERT_RECORD_COUNT(client, ROWS)
+	ASSERT_NOPUBSUBID(client)
 	client.Disconnect()
 }
 
@@ -171,5 +201,19 @@ func TestKeyCommand(t *testing.T) {
 	ASSERT_ACTION(client, "key")
 	ASSERT_NOID(client)
 	ASSERT_RECORD_COUNT(client, 0)
+	ASSERT_NOPUBSUBID(client)
+	client.Disconnect()
+}
+
+func TestTagCommand(t *testing.T) {
+	T = t
+	client := NewClient()
+	ASSERT_CONNECT(client)
+	command := "tag " + TABLE + " col2"
+	ASSERT_EXECUTE(client, command, "tag failed")
+	ASSERT_ACTION(client, "tag")
+	ASSERT_NOID(client)
+	ASSERT_RECORD_COUNT(client, 0)
+	ASSERT_NOPUBSUBID(client)
 	client.Disconnect()
 }
