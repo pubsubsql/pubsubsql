@@ -534,11 +534,13 @@ func (this *table) sqlKey(req *sqlKeyRequest) response {
 		unique := make(map[string]int, cap(this.records))
 		// check if there are duplicates
 		for idx, rec := range this.records {
-			val := rec.getValue(col.ordinal)
-			if _, contains := unique[val]; contains {
-				return newErrorResponse("can not define key due to possible duplicates in existing records")
+			if rec != nil {
+				val := rec.getValue(col.ordinal)
+				if _, contains := unique[val]; contains {
+					return newErrorResponse("can not define key due to possible duplicates in existing records")
+				}
+				unique[val] = idx
 			}
-			unique[val] = idx
 		}
 	}
 	//
@@ -555,7 +557,9 @@ func (this *table) tagOrKeyColumn(c string, coltyp columnType) {
 	col.typ = coltyp
 	// tag existing values
 	for idx, rec := range this.records {
-		this.tagValue(col, idx, rec)
+		if rec != nil {
+			this.tagValue(col, idx, rec)
+		}
 	}
 }
 
