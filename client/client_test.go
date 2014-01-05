@@ -18,50 +18,87 @@ package pubsubsql
 
 import  (
 	"testing"
-	"encoding/json"
 )
 
 var address = "localhost:7777"
+var T *testing.T = nil
 
-func TestConnectDisconnect(t *testing.T) {
-	client := NewClient()
-	if !client.Connect(address) {
-		t.Error("Connect failed.", client.ErrorString())
+func ASSERT_TRUE(b bool) {
+	if !b {
+		T.Error("Expected true")
+	}
+}
+
+func ASSERT_FALSE(b bool) {
+	if b {
+		T.Error("Expected false")
+	}
+}
+
+func ASSERT_EXECUTE(client Client, command string, err string) {
+	if !client.Execute(command)	{
+		T.Error("Execute failed")
+		T.Error(err)	
+		ASSERT_FALSE(client.Ok())
+		ASSERT_TRUE(client.Failed())
 		return
 	}
-	if client.Failed() {
-		t.Error("unexpected error")
-	}		
+	ASSERT_TRUE(client.Ok())
+	ASSERT_FALSE(client.Failed())
+}
+
+func ASSERT_CONNECT(client Client) {
+	if !client.Connect(address) {
+		T.Error("Connect failed.", client.Error())
+		ASSERT_FALSE(client.Ok())
+		ASSERT_TRUE(client.Failed())
+		return
+	}
+	ASSERT_TRUE(client.Ok())
+	ASSERT_FALSE(client.Failed())
+}
+
+func ASSERT_ACTION(client Client, action string) {
+	if client.Action() != action {
+		T.Error("Expected action", action, "but got", client.Action())
+	}
+}
+
+func ASSERT_ID(client Client) {
+	if client.Id() == "" {
+		T.Error("Expected id but got empty string")
+	}
+}
+
+func ASSERT_NOID(client Client) {
+	if client.Id() != "" {
+		T.Error("Expected no id but got", client.Id())
+	}
+}
+
+func TestConnectDisconnect(t *testing.T) {
+	T  = t
+	client := NewClient()
+	ASSERT_CONNECT(client)	
 	client.Disconnect()
 }
 
-type unmarshall struct {
-	Status string //`json:"status"`
-	Data []map[string]string
+func TestStatusCommand(t *testing.T) {
+	T  = t
+	client := NewClient()
+	ASSERT_CONNECT(client)	
+	ASSERT_EXECUTE(client, "status", "status failed")
+	ASSERT_ACTION(client, "status")
+	ASSERT_NOID(client)
+	client.Disconnect()
 }
 
-func TestUnmarshall(t *testing.T) {
+func TestInsertCommand(t *testing.T) {
+	T = t
 	client := NewClient()
-	client.Connect(address)
-
-	if !client.Execute("insert into stocks (ticker, bid) values (IBM, 140.45)") {
-		t.Error("failed to execute status command", client.ErrorString())
-	}
-	if !client.Execute("select * from stocks") {
-		t.Error("failed to execute status command", client.ErrorString())
-	}
-	var status unmarshall
-	message := client.JSON()
-	if err := json.Unmarshal([]byte(message), &status); err != nil {
-		t.Error(err.Error())
-	}
-	if status.Status != "ok" {
-		t.Error("expected status ok")
-	}
-	if status.Data[0]["ticker"] != "IBM" {
-		t.Error("expected ticker IBM")
-	}
-	
+	ASSERT_CONNECT(client)	
+	ASSERT_EXECUTE(client, "insert into insertcommand (col1, col2) values ('HELLO', WORLD)", "insert failed")
+	ASSERT_ID(client)
 	client.Disconnect()
 }
 

@@ -118,6 +118,8 @@ func (this *cmdStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
+	action(builder, "status")
+	builder.valueSeparator()
 	builder.nameIntValue("connections", this.connections)
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
