@@ -83,10 +83,11 @@ func (this *errorResponse) toNetworkReadyJSON() ([]byte, bool) {
 // okResponse
 type okResponse struct {
 	requestIdResponse
+	action string
 }
 
-func newOkResponse() *okResponse {
-	return &okResponse{}
+func newOkResponse(action string) *okResponse {
+	return &okResponse{action: action}
 }
 
 func (this *okResponse) getResponsStatus() responseStatusType {
@@ -97,6 +98,8 @@ func (this *okResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
+	builder.valueSeparator()
+	action(builder, this.action)
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }

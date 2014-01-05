@@ -438,7 +438,6 @@ func (this *table) sqlSelect(req *sqlSelectRequest) response {
 	//
 	var res sqlSelectResponse
 	this.copyRecordsToSqlSelectResponse(&res, records, columns)
-	res.requestId = this.requestId
 	return &res
 }
 
@@ -544,7 +543,7 @@ func (this *table) sqlKey(req *sqlKeyRequest) response {
 	}
 	//
 	this.tagOrKeyColumn(req.column, columnTypeKey)
-	return newOkResponse()
+	return newOkResponse("key")
 }
 
 // TAG sql statement
@@ -570,7 +569,7 @@ func (this *table) sqlTag(req *sqlTagRequest) response {
 	}
 	//
 	this.tagOrKeyColumn(req.column, columnTypeTag)
-	return newOkResponse()
+	return newOkResponse("tag")
 }
 
 // SUBSCRIBE sql statement
