@@ -31,16 +31,16 @@ import (
 
 type NetworkHeader struct {
 	MessageSize uint32
-	RequestId uint32
+	RequestId   uint32
 }
 
 var HEADER_SIZE = 8
 var EMPTY_HEADER = make([]byte, HEADER_SIZE, HEADER_SIZE)
 
 func NewNetworkHeader(messageSize uint32, requestId uint32) *NetworkHeader {
-	return &NetworkHeader {
+	return &NetworkHeader{
 		MessageSize: messageSize,
-		RequestId: requestId,
+		RequestId:   requestId,
 	}
 }
 
@@ -56,12 +56,11 @@ func (this *NetworkHeader) WriteTo(bytes []byte) {
 
 func (this *NetworkHeader) GetBytes() []byte {
 	bytes := make([]byte, HEADER_SIZE, HEADER_SIZE)
-	this.WriteTo(bytes);
-	return bytes;
+	this.WriteTo(bytes)
+	return bytes
 }
 
 func (this *NetworkHeader) String() string {
-	bytes, _ := json.Marshal(this)	
+	bytes, _ := json.Marshal(this)
 	return string(bytes)
-} 
-
+}

@@ -17,8 +17,8 @@
 package pubsubsql
 
 import (
-	"net"
 	"errors"
+	"net"
 )
 
 // message reader
@@ -33,19 +33,19 @@ func NewNetMessageReaderWriter(conn net.Conn, bufferSize int) *NetMessageReaderW
 	return &ret
 }
 
-func (this* NetMessageReaderWriter) Set(conn net.Conn, bufferSize int) {
+func (this *NetMessageReaderWriter) Set(conn net.Conn, bufferSize int) {
 	this.conn = conn
 	this.bytes = make([]byte, bufferSize, bufferSize)
 }
 
-func (this* NetMessageReaderWriter) Close() {
+func (this *NetMessageReaderWriter) Close() {
 	if this.conn != nil {
 		this.conn.Close()
 		this.conn = nil
 	}
 }
 
-func (this* NetMessageReaderWriter) Valid() bool {
+func (this *NetMessageReaderWriter) Valid() bool {
 	return this.conn != nil
 }
 
@@ -104,4 +104,3 @@ func (this *NetMessageReaderWriter) ReadMessage() (*NetworkHeader, []byte, error
 	}
 	return &header, message, nil
 }
-
