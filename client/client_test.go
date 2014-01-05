@@ -16,7 +16,10 @@
 
 package pubsubsql
 
-import "testing"
+import  (
+	"testing"
+	"encoding/json"
+)
 
 var address = "localhost:7777"
 
@@ -32,17 +35,34 @@ func TestConnectDisconnect(t *testing.T) {
 	client.Disconnect()
 }
 
+type unmarshall struct {
+	Status string //`json:"status"`
+	Data []map[string]string
+}
 
-func TestStatus(t *testing.T) {
+func TestUnmarshall(t *testing.T) {
 	client := NewClient()
 	client.Connect(address)
-	if !client.Execute("status") {
+
+	if !client.Execute("insert into stocks (ticker, bid) values (IBM, 140.45)") {
 		t.Error("failed to execute status command", client.ErrorString())
-	}	
+	}
+	if !client.Execute("select * from stocks") {
+		t.Error("failed to execute status command", client.ErrorString())
+	}
+	var status unmarshall
+	message := client.JSON()
+	if err := json.Unmarshal([]byte(message), &status); err != nil {
+		t.Error(err.Error())
+	}
+	if status.Status != "ok" {
+		t.Error("expected status ok")
+	}
+	if status.Data[0]["ticker"] != "IBM" {
+		t.Error("expected ticker IBM")
+	}
+	
 	client.Disconnect()
-	if client.Execute("status") {
-		t.Error("execute should have failed")
-	}	
 }
 
 
