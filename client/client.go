@@ -219,7 +219,7 @@ func (this *client) NextRecord() bool {
 			return false
 		}
 		if this.response.Fromrow == 0 || this.response.Torow == 0 {
-			this.setErrorString("protocol error invalid fromrow, torow values")
+			return false
 		}
 		// the current record is valid 
 		this.record++
@@ -228,9 +228,11 @@ func (this *client) NextRecord() bool {
 		}
 		// we reached the end of result set
 		if this.response.Rows == this.response.Torow {
+			// gaurd against over fill
+			this.record--
 			return false
 		}
-		// get another batch 
+		// if we are here there is another batch 
 		this.reset()
 		header, bytes, ok := this.read()
 		if !ok {

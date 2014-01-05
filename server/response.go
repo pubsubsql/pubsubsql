@@ -184,6 +184,8 @@ func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
 	if !this.init {
 		this.init = true
 		this.rows = len(this.records)
+		this.fromrow = 0
+		this.torow = 0
 	}
 	more := len(this.records) > config.DATA_BATCH_SIZE
 	records := this.records
@@ -194,7 +196,7 @@ func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
 		this.torow = this.fromrow + config.DATA_BATCH_SIZE - 1
 	} else {
 		if this.rows > 0 {
-			this.fromrow = 1
+			this.fromrow = this.torow + 1
 			this.torow = this.rows
 		}
 	}

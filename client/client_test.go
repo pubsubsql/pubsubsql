@@ -29,7 +29,7 @@ func generateTableName() string {
 var ADDRESS = "localhost:7777"
 var T *testing.T = nil
 var TABLE = generateTableName()
-var ROWS = 250
+var ROWS = 300 
 
 func ASSERT_TRUE(b bool) {
 	if !b {
@@ -160,7 +160,9 @@ func TestSelectCommand(t *testing.T) {
 	rowsread := 0
 	for client.NextRecord() {
 		rowsread++
+		ASSERT_RECORD_COUNT(client, ROWS)
 	}
+	println("rowsread:", rowsread)
 	ASSERT_INT_EQ(ROWS, rowsread, "NextRecord failed")
 	ASSERT_NOPUBSUBID(client)
 	client.Disconnect()
@@ -217,3 +219,4 @@ func TestTagCommand(t *testing.T) {
 	ASSERT_NOPUBSUBID(client)
 	client.Disconnect()
 }
+
