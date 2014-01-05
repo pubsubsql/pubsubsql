@@ -129,11 +129,9 @@ func TestTableSqlInsert(t *testing.T) {
 	//
 	res := insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645)")
 	validateSqlInsertResponseId(t, res, "0")
-	t.Log(res.String())
 	//
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (MSFT, 37, 38) ")
 	validateSqlInsertResponseId(t, res, "1")
-	t.Log(res.String())
 }
 
 func BenchmarkTableSqlInser(b *testing.B) {

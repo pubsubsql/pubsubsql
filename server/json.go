@@ -18,9 +18,9 @@ package pubsubsql
 
 import (
 	"bytes"
+	"pubsubsql/client"
 	"strconv"
 	"unicode/utf8"
-	"pubsubsql/client"
 )
 
 type JSONBuilder struct {
@@ -133,9 +133,9 @@ func (this *JSONBuilder) nameIntValue(name string, val int) {
 
 func (this *JSONBuilder) getNetworkBytes(requestId uint32) []byte {
 	bytes := this.Bytes()
-	var header pubsubsql.NetworkHeader 
+	var header pubsubsql.NetworkHeader
 	header.MessageSize = uint32(len(bytes)) - uint32(pubsubsql.HEADER_SIZE)
-	header.RequestId = requestId 
+	header.RequestId = requestId
 	header.WriteTo(bytes)
 	return bytes
 }

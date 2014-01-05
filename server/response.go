@@ -28,7 +28,6 @@ const (
 // response
 type response interface {
 	getResponseStatus() responseStatusType
-	String() string
 	toNetworkReadyJSON() ([]byte, bool)
 	setRequestId(requestId uint32)
 }
@@ -39,7 +38,7 @@ type requestIdResponse struct {
 }
 
 func (this *requestIdResponse) setRequestId(requestId uint32) {
-	this.requestId = requestId	
+	this.requestId = requestId
 }
 
 // json helper functions
@@ -71,10 +70,6 @@ func (this *errorResponse) getResponsStatus() responseStatusType {
 	return responseStatusErr
 }
 
-func (this *errorResponse) String() string {
-	return `{"status":"err" "msg":"` + this.msg + `"}`
-}
-
 func (this *errorResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
@@ -98,10 +93,6 @@ func (this *okResponse) getResponsStatus() responseStatusType {
 	return responseStatusOk
 }
 
-func (this *okResponse) String() string {
-	return `{"status":"ok"}`
-}
-
 func (this *okResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
@@ -117,9 +108,9 @@ type cmdStatusResponse struct {
 }
 
 func newCmdStatusResponse(connections int) *cmdStatusResponse {
-	return &cmdStatusResponse {
+	return &cmdStatusResponse{
 		connections: connections,
-	} 
+	}
 }
 
 func (this *cmdStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -138,18 +129,14 @@ type sqlInsertResponse struct {
 	id string
 }
 
-func newSqlInsertResponse(id string) *sqlInsertResponse  {
-	return &sqlInsertResponse {
+func newSqlInsertResponse(id string) *sqlInsertResponse {
+	return &sqlInsertResponse{
 		id: id,
-	} 
+	}
 }
 
 func (this *sqlInsertResponse) getResponsStatus() responseStatusType {
 	return responseStatusOk
-}
-
-func (this *sqlInsertResponse) String() string {
-	return `{"response":"insert" "status":"ok" "id":"` + this.id + `"}`
 }
 
 func (this *sqlInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -254,7 +241,7 @@ func (this *sqlDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
 
 // sqlUpdateResponse
 type sqlUpdateResponse struct {
-	requestIdResponse	
+	requestIdResponse
 	updated int
 }
 
@@ -432,7 +419,7 @@ func newSqlActionUpdateResponse(pubsubid uint64, cols []*column, rec *record) *s
 
 // sqlUnsubscribeResponse
 type sqlUnsubscribeResponse struct {
-	requestIdResponse	
+	requestIdResponse
 	unsubscribed int
 }
 
@@ -447,4 +434,3 @@ func (this *sqlUnsubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }
-

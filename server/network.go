@@ -18,9 +18,9 @@ package pubsubsql
 
 import (
 	"net"
+	"pubsubsql/client"
 	"strconv"
 	"sync"
-	"pubsubsql/client"
 )
 
 // networkContext
@@ -194,8 +194,6 @@ func (this *networkConnection) Done() bool {
 	// or socket error
 	return this.sender.quit.Done() || this.quit.Done()
 }
-
-
 
 func (c *networkConnection) route(header *pubsubsql.NetworkHeader, req request) {
 	item := &requestItem{

@@ -48,7 +48,6 @@ func (this *Controller) Run() {
 	}
 }
 
-
 // displayHelp displays help to the cli user.
 func (this *Controller) displayHelp() {
 	fmt.Println("")
@@ -71,6 +70,7 @@ func (this *Controller) runOnce(command string) {
 	client := newCli()
 	client.runOnce(command)
 }
+
 // runAsServer runs the programm in server mode.
 func (this *Controller) runAsServer() {
 	// initialize server components
@@ -134,4 +134,3 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		this.quit.Quit(0)
 	}
 }
-

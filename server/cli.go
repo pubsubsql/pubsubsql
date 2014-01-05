@@ -20,10 +20,10 @@ import (
 	"bufio"
 	"net"
 	"os"
+	"pubsubsql/client"
 	"strconv"
 	"strings"
 	"time"
-	"pubsubsql/client"
 )
 
 //
@@ -63,7 +63,7 @@ type cli struct {
 	toServer      chan string
 	conn          net.Conn
 	disconnecting bool
-	requestId	uint32
+	requestId     uint32
 }
 
 // Returns new cli.

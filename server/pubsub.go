@@ -60,7 +60,6 @@ func (this *pubsub) count() int {
 
 func (this *pubsub) publishTest(res response) {
 	visitor := func(sub *subscription) bool {
-		debug(res.String())
 		return true
 	}
 	this.visit(visitor)

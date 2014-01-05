@@ -17,11 +17,11 @@
 package pubsubsql
 
 import (
+	"net"
+	"pubsubsql/client"
+	"strconv"
 	"testing"
 	"time"
-	"net"
-	"strconv"
-	"pubsubsql/client"
 )
 
 func TestNetworkStartQuit(t *testing.T) {
@@ -77,8 +77,8 @@ func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId ui
 	if err != nil {
 		t.Error(err)
 	}
-	if (header.RequestId != requestId) {
-		t.Error("Request id does not match command:" + message); 
+	if header.RequestId != requestId {
+		t.Error("Request id does not match command:" + message)
 	}
 	debug(string(bytes))
 }
@@ -89,8 +89,8 @@ func validateRead(t *testing.T, conn net.Conn, requestId uint32) {
 	if err != nil {
 		t.Error(err)
 	}
-	if (header.RequestId != requestId) {
-		t.Error("Request id 0 does not match "); 
+	if header.RequestId != requestId {
+		t.Error("Request id 0 does not match ")
 	}
 	debug(string(bytes))
 }
@@ -205,7 +205,7 @@ func TestNetworkBatchRead(t *testing.T) {
 	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (IBM, 120)", 1)
 	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (MSFT, 120)", 2)
 	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (GOOG, 120)", 3)
-	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (ORCL, 120)",4)
+	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (ORCL, 120)", 4)
 
 	//expected another 3 messages
 	validateWriteRead(t, c, "select * from stocks", 5)

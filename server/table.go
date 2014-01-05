@@ -58,7 +58,7 @@ func newTable(name string) *table {
 		records:       make([]*record, 0, config.TABLE_RECORDS_CAPACITY),
 		tagedColumns:  make([]*column, 0, config.TABLE_COLUMNS_CAPACITY),
 		subscriptions: make(mapSubscriptionByConnection),
-		requestId: 0,
+		requestId:     0,
 	}
 	table.addColumn("id")
 	return table
@@ -615,13 +615,13 @@ func (this *table) subscribeToId(id string, sender *responseSender, skip bool) (
 		}
 		return sub, records
 	}
-	this.send(sender, newErrorResponse("id: " + id + " does not exist"))
+	this.send(sender, newErrorResponse("id: "+id+" does not exist"))
 	return nil, nil
 }
 
 func (this *table) send(sender *responseSender, res response) {
 	res.setRequestId(this.requestId)
-	sender.send(res)	
+	sender.send(res)
 }
 
 func (this *table) subscribe(col *column, val string, sender *responseSender, skip bool) (*subscription, []*record) {
