@@ -107,6 +107,8 @@ type responseData struct {
 	Id string
 	PubSubId string	
 	Rows int
+	FromRows int
+	ToRows int
 	Data []map[string]string
 }
 
@@ -114,7 +116,10 @@ func (this * responseData) reset() {
 	this.Status = ""
 	this.Msg = ""
 	this.Action = ""
+	this.Id = ""
 	this.Rows = 0
+	this.FromRows = 0
+	this.ToRows = 0
 	this.Data = nil
 }
 

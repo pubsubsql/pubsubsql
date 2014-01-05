@@ -18,10 +18,13 @@ package pubsubsql
 
 import  (
 	"testing"
+	"strconv"
+	"time"
 )
 
-var address = "localhost:7777"
+var ADDRESS = "localhost:7777"
 var T *testing.T = nil
+var TABLE = "T" + strconv.FormatInt(time.Now().Unix(), 10)
 
 func ASSERT_TRUE(b bool) {
 	if !b {
@@ -48,7 +51,7 @@ func ASSERT_EXECUTE(client Client, command string, err string) {
 }
 
 func ASSERT_CONNECT(client Client) {
-	if !client.Connect(address) {
+	if !client.Connect(ADDRESS) {
 		T.Error("Connect failed.", client.Error())
 		ASSERT_FALSE(client.Ok())
 		ASSERT_TRUE(client.Failed())
@@ -76,6 +79,12 @@ func ASSERT_NOID(client Client) {
 	}
 }
 
+func ASSERT_RECORD_COUNT(client Client, count int) {
+	if client.RecordCount() != count {
+		T.Error("Expected record count ", count, "but got", client.RecordCount())
+	}	
+}
+
 func TestConnectDisconnect(t *testing.T) {
 	T  = t
 	client := NewClient()
@@ -98,8 +107,43 @@ func TestInsertCommand(t *testing.T) {
 	client := NewClient()
 	ASSERT_CONNECT(client)	
 	ASSERT_EXECUTE(client, "insert into insertcommand (col1, col2) values ('HELLO', WORLD)", "insert failed")
+	ASSERT_ACTION(client, "insert")
 	ASSERT_ID(client)
 	client.Disconnect()
 }
 
+func TestSelectCommand(t *testing.T) {
+	println(TABLE)
+	T = t
+	client := NewClient()
+	ASSERT_CONNECT(client)	
+	rows := 250
+	command := "insert into " + TABLE + " (col1, col2, col3) values (col1, col2, col3) " 
+	for i := 0; i < rows; i++ {
+		ASSERT_EXECUTE(client, command, "insert failed " + command)		
+		ASSERT_ACTION(client, "insert")
+		ASSERT_ID(client)
+	}
+	//
+	command = "select * from " + TABLE
+	ASSERT_EXECUTE(client, command, "select failed")
+	ASSERT_ACTION(client, "select")
+	ASSERT_NOID(client)
+	ASSERT_RECORD_COUNT(client, rows)		
+	client.Disconnect()
+}
+
+func TestDeleteCommand(t *testing.T) {
+	T = t
+	client := NewClient()
+	ASSERT_CONNECT(client)	
+	rows := 250
+	// previous test inserted 250 records
+	command := "delete from " + TABLE
+	ASSERT_EXECUTE(client, command, "delete failed")
+	ASSERT_ACTION(client, "delete")
+	ASSERT_NOID(client)
+	ASSERT_RECORD_COUNT(client, rows)		
+	client.Disconnect()
+}
 
