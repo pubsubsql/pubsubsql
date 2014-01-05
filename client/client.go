@@ -116,6 +116,7 @@ func (this *responseData) reset() {
 	this.Msg = ""
 	this.Action = ""
 	this.Id = ""
+	this.PubSubId = ""
 	this.Rows = 0
 	this.Fromrow = 0
 	this.Torow = 0

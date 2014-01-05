@@ -92,7 +92,7 @@ func ASSERT_NOID(client Client) {
 	}
 }
 
-func ASSERT_PUSUBID(client Client) {
+func ASSERT_PUBSUBID(client Client) {
 	if client.PubSubId() == "" {
 		T.Error("Expected pubsubid but got empty string")
 	}
@@ -217,6 +217,28 @@ func TestTagCommand(t *testing.T) {
 	ASSERT_NOID(client)
 	ASSERT_RECORD_COUNT(client, 0)
 	ASSERT_NOPUBSUBID(client)
+	client.Disconnect()
+}
+
+func TestSubscribeUnsubscribeCommand(t *testing.T) {
+	T = t
+	client := NewClient()
+	ASSERT_CONNECT(client)
+	// subscribe
+	command := "subscribe skip * from " + TABLE 
+	ASSERT_EXECUTE(client, command, "subscribe failed")
+	ASSERT_ACTION(client, "subscribe")
+	ASSERT_NOID(client)
+	ASSERT_RECORD_COUNT(client, 0)
+	ASSERT_PUBSUBID(client)
+	// unsubscribe
+	command = "unsubscribe from " + TABLE + " where pubsubid = " + client.PubSubId()
+	ASSERT_EXECUTE(client, command, "subscribe failed")
+	ASSERT_ACTION(client, "unsubscribe")
+	ASSERT_NOID(client)
+	ASSERT_RECORD_COUNT(client, 0)
+	ASSERT_NOPUBSUBID(client)
+	//
 	client.Disconnect()
 }
 
