@@ -33,3 +33,16 @@ func TestConnectDisconnect(t *testing.T) {
 }
 
 
+func TestStatus(t *testing.T) {
+	client := NewClient()
+	client.Connect(address)
+	if !client.Execute("status") {
+		t.Error("failed to execute status command", client.ErrorString())
+	}	
+	client.Disconnect()
+	if client.Execute("status") {
+		t.Error("execute should have failed")
+	}	
+}
+
+

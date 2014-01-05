@@ -54,7 +54,7 @@ type Client interface {
 
 	// Execute executes a command.
 	// Returns true on success.
-	Execute(command string, timeoutMillisecons int) bool
+	Execute(command string) bool
 	
 	// JSONResponse() returns JSON response string returned from the last operation.
 	JSONResponse() string
@@ -120,8 +120,9 @@ var CLIENT_DEFAULT_BUFFER_SIZE int = 2048
 type client struct {
 	Client
 	rw NetMessageReaderWriter
+	requestId uint32
 	errorString string	
-		
+	rawjson string
 }
 
 func (this *client)	Connect(address string) bool {
@@ -136,7 +137,7 @@ func (this *client)	Connect(address string) bool {
 } 
 
 func (this *client) Disconnect() {
-	this.send(0, "close")	
+	this.write("close")	
 	this.reset()
 	this.rw.Close()
 }
@@ -153,8 +154,27 @@ func (this *client) ErrorString() string {
 	return this.errorString
 }
 
+func (this *client) Execute(command string) bool {
+	ok := this.write(command)
+	var bytes []byte
+	var header *NetworkHeader
+	if ok {
+		header, bytes, ok = this.read()
+		if header.RequestId != this.requestId {
+			ok = false
+			this.errorString = "invalid requestId"
+		}
+	}
+	if ok {
+		this.rawjson = string(bytes)
+		// decode message
+	}	
+	return ok
+}
+
 func (this *client) reset() {
 	this.resetError()
+	this.rawjson = ""
 }
 
 func (this *client) resetError() {
@@ -165,10 +185,11 @@ func (this *client) setError(err error) {
 	this.errorString = err.Error()
 }
 
-func (this *client) send(requestId uint32, message string) bool {
+func (this *client) write(message string) bool {
+	this.requestId++
 	this.resetError()	
 	if this.rw.Valid() {
-		err := this.rw.WriteHeaderAndMessage(requestId, []byte(message)) 	
+		err := this.rw.WriteHeaderAndMessage(this.requestId, []byte(message)) 	
 		if err == nil {
 			return true	
 		}
@@ -177,5 +198,19 @@ func (this *client) send(requestId uint32, message string) bool {
 	}
 	this.errorString = "Not connected"
 	return false
+}
+
+func (this *client) read() (*NetworkHeader, []byte, bool) {
+	this.reset()
+	if this.rw.Valid() {
+		header, bytes, err := this.rw.ReadMessage()
+		if err == nil {
+			return header, bytes, true
+		}
+		this.setError(err)
+		return nil, nil, false
+	}
+	this.errorString = "Not connected"
+	return nil, nil, false
 }
 
