@@ -17,10 +17,10 @@
 package pubsubsql
 
 import (
+	"fmt"
 	"strconv"
 	"testing"
 	"time"
-	"fmt"
 )
 
 func generateTableName() string {
@@ -30,7 +30,7 @@ func generateTableName() string {
 var ADDRESS = "localhost:7777"
 var T *testing.T = nil
 var TABLE = generateTableName()
-var ROWS = 300 
+var ROWS = 300
 
 func ASSERT_TRUE(b bool) {
 	if !b {
@@ -238,7 +238,7 @@ func TestSubscribeUnsubscribeCommand(t *testing.T) {
 	client := NewClient()
 	ASSERT_CONNECT(client)
 	// subscribe
-	command := "subscribe skip * from " + TABLE 
+	command := "subscribe skip * from " + TABLE
 	ASSERT_EXECUTE(client, command, "subscribe failed")
 	ASSERT_ACTION(client, "subscribe")
 	ASSERT_NOID(client)
@@ -260,7 +260,7 @@ func TestValueAndColumns(t *testing.T) {
 	client := NewClient()
 	ASSERT_CONNECT(client)
 	// subscribe
-	command := "delete from " + TABLE 
+	command := "delete from " + TABLE
 	// clear the table first
 	ASSERT_EXECUTE(client, command, "delete failed")
 	// insert values
@@ -270,9 +270,9 @@ func TestValueAndColumns(t *testing.T) {
 		val3 := "3:" + strconv.Itoa(i)
 		command := fmt.Sprintf("insert into %s (col1, col2, col3) values (%s, %s, %s)", TABLE, val1, val2, val3)
 		ASSERT_EXECUTE(client, command, "insert failed")
-	}	
+	}
 	// test value	
-	command = "select * from " + TABLE	
+	command = "select * from " + TABLE
 	ASSERT_EXECUTE(client, command, "select failed")
 	i := 0
 	for client.NextRecord() {
@@ -286,7 +286,7 @@ func TestValueAndColumns(t *testing.T) {
 		ASSERT_COLUMN(client, "col3")
 		ASSERT_VALUE(client, "col3", val3)
 		ASSERT_VALUE(client, "invalid_column", "")
-				
+
 		i++
 	}
 	// since id is returned on select * 4 columns are expected
@@ -298,11 +298,10 @@ func TestExecuteWithOpenCursor(t *testing.T) {
 	T = t
 	client := NewClient()
 	ASSERT_CONNECT(client)
-	command := "select * from " + TABLE	
+	command := "select * from " + TABLE
 	ASSERT_EXECUTE(client, command, "select failed")
-	ASSERT_TRUE(client.NextRecord())			
+	ASSERT_TRUE(client.NextRecord())
 	// there are more records in the result set and the result set may come in batches
 	// execute of another command should work properly
-	ASSERT_EXECUTE(client, "status", "status failed") 
+	ASSERT_EXECUTE(client, "status", "status failed")
 }
-

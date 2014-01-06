@@ -19,6 +19,7 @@ package pubsubsql
 import (
 	"errors"
 	"net"
+	"time"
 )
 
 // message reader
@@ -71,6 +72,17 @@ func (this *NetMessageReaderWriter) WriteHeaderAndMessage(requestId uint32, byte
 		return err
 	}
 	return this.WriteMessage(bytes)
+}
+
+func (this *NetMessageReaderWriter) ReadMessageTimeout(milliseconds int64) (*NetworkHeader, []byte, error, bool) {
+	this.conn.SetReadDeadline(time.Now().Add(time.Duration(milliseconds) * time.Millisecond))
+	header, bytes, err := this.ReadMessage()
+	timedout := false
+	if neterr, ok := err.(net.Error); ok && neterr.Timeout() {
+		timedout = true
+		err = nil
+	}
+	return header, bytes, err, timedout
 }
 
 func (this *NetMessageReaderWriter) ReadMessage() (*NetworkHeader, []byte, error) {

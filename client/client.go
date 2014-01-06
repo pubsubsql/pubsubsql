@@ -17,6 +17,7 @@
 package pubsubsql
 
 import (
+	"container/list"
 	"encoding/json"
 	"net"
 )
@@ -78,9 +79,10 @@ type Client interface {
 	// Columns returns an array of valid column names in the current result set. 		
 	Columns() []string
 
-	// WaitForPubSub waits until publish message is retreived or timeout expired
-	// Returns false on timeout.
-	WaitForPubSub(timeout int) bool
+	// WaitForPubSub waits until publish message is retreived or timeout expired.
+	// Returns false on error or timeout.
+	// When timeout expires Ok() will return true.
+	WaitForPubSub(timeout int64) bool
 }
 
 func NewClient() Client {
@@ -127,10 +129,13 @@ type client struct {
 	//
 	response responseData
 	record   int
+
+	// pubsub back log
+	backlog list.List
 }
 
 func (this *client) Connect(address string) bool {
-	this.address = address		
+	this.address = address
 	this.Disconnect()
 	conn, err := net.Dial("tcp", this.address)
 	if err != nil {
@@ -175,6 +180,8 @@ func (this *client) Execute(command string) bool {
 			return this.unmarshalJSON(bytes)
 		} else if header.RequestId == 0 {
 			// pubsub action, save it and skip it for now
+			// will be proccesed next time WaitPubSub is called
+			this.backlog.PushBack(bytes)
 		} else if header.RequestId < this.requestId {
 			// we did not read full result set from previous command ignore it or flag and error?
 			// for now lets ignore it, continue reading until we hit our request id 
@@ -247,7 +254,7 @@ func (this *client) NextRecord() bool {
 
 func (this *client) Value(column string) string {
 	if this.record > -1 && this.record < len(this.response.Data) {
-		rec := this.response.Data[this.record]	
+		rec := this.response.Data[this.record]
 		return rec[column]
 	}
 	return ""
@@ -263,7 +270,29 @@ func (this *client) HasColumn(column string) bool {
 
 func (this *client) Columns() []string {
 	return this.response.Columns
-} 
+}
+
+func (this *client) WaitForPubSub(timeout int64) bool {
+	// process backlog first	
+	var bytes []byte
+	if element := this.backlog.Front(); element != nil {
+		bytes = element.Value.([]byte)
+		this.backlog.Remove(element)
+	}
+	if len(bytes) == 0 {
+		header, temp, success, timedout := this.readTimeout(timeout)
+		bytes = temp
+		if !success || timedout {
+			return false
+		}
+		// this is not pubsub message
+		if header.RequestId != 0 {
+			this.setErrorString("WaitForPubSub failed. Protocol error request id should be 0")
+			return false
+		}
+	}
+	return this.unmarshalJSON(bytes)
+}
 
 func (this *client) unmarshalJSON(bytes []byte) bool {
 	this.rawjson = bytes
@@ -301,27 +330,45 @@ func (this *client) setError(err error) {
 
 func (this *client) write(message string) bool {
 	this.requestId++
-	if this.rw.Valid() {
-		err := this.rw.WriteHeaderAndMessage(this.requestId, []byte(message))
-		if err == nil {
-			return true
-		}
+	if !this.rw.Valid() {
+		this.setErrorString("Not connected")
+		return false
+	}
+	err := this.rw.WriteHeaderAndMessage(this.requestId, []byte(message))
+	if err != nil {
 		this.setError(err)
 		return false
 	}
-	this.setErrorString("Not connected")
-	return false
+	return true
+}
+
+func (this *client) readTimeout(timeout int64) (*NetworkHeader, []byte, bool, bool) {
+	if !this.rw.Valid() {
+		this.setErrorString("Not connected")
+		return nil, nil, false, false
+	}
+	// 3 minutes
+	var MAX_READ_TIMEOUT_MILLISECONDS int64 = 1000 * 60 * 3
+	header, bytes, err, timedout := this.rw.ReadMessageTimeout(MAX_READ_TIMEOUT_MILLISECONDS)
+	if timedout {
+		return nil, nil, true, true
+	}
+	// error
+	if err != nil {
+		this.setError(err)
+		return nil, nil, false, false
+	}
+	// success
+	return header, bytes, true, false
+
 }
 
 func (this *client) read() (*NetworkHeader, []byte, bool) {
-	if this.rw.Valid() {
-		header, bytes, err := this.rw.ReadMessage()
-		if err == nil {
-			return header, bytes, true
-		}
-		this.setError(err)
+	var MAX_READ_TIMEOUT_MILLISECONDS int64 = 1000 * 60 * 3
+	header, bytes, success, timedout := this.readTimeout(MAX_READ_TIMEOUT_MILLISECONDS)
+	if timedout {
+		this.setErrorString("Read timed out")
 		return nil, nil, false
 	}
-	this.setErrorString("Not connected")
-	return nil, nil, false
+	return header, bytes, success
 }
