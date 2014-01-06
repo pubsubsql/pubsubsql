@@ -51,6 +51,20 @@ func ASSERT_INT_EQ(val1 int, val2 int, err string) {
 	}
 }
 
+func ASSERT_STR_EQ(val1 string, val2 string, err string) {
+	if val1 != val2 {
+		T.Error("str values do not match val1:", val1, "val2:", val2)
+		T.Error(err)
+	}
+}
+
+func ASSERT_OK(client Client, err string) {
+	if client.Failed() {
+		T.Error(client.Error())
+		T.Error(err)
+	}
+}
+
 func ASSERT_EXECUTE(client Client, command string, err string) {
 	if !client.Execute(command) {
 		T.Error("Execute failed")
@@ -175,7 +189,6 @@ func TestSelectCommand(t *testing.T) {
 		rowsread++
 		ASSERT_RECORD_COUNT(client, ROWS)
 	}
-	println("rowsread:", rowsread)
 	ASSERT_INT_EQ(ROWS, rowsread, "NextRecord failed")
 	ASSERT_NOPUBSUBID(client)
 	client.Disconnect()
@@ -304,4 +317,51 @@ func TestExecuteWithOpenCursor(t *testing.T) {
 	// there are more records in the result set and the result set may come in batches
 	// execute of another command should work properly
 	ASSERT_EXECUTE(client, "status", "status failed")
+}
+
+func TestWaitPubSub(t *testing.T) {
+	T = t
+	subscriber := NewClient()
+	ASSERT_CONNECT(subscriber)
+	publisher := NewClient()
+	ASSERT_CONNECT(publisher)
+	//   	
+	command := "subscribe * from " + TABLE
+	ASSERT_EXECUTE(subscriber, command, "subscribe failed")
+	ASSERT_ACTION(subscriber, "subscribe")
+	ASSERT_PUBSUBID(subscriber)
+	pubsubid := subscriber.PubSubId()
+
+	// ADD
+	// since we subscribed without skip symantics there is published data
+	// do not wait to timeout
+	ASSERT_TRUE(subscriber.WaitForPubSub(0))
+	ASSERT_STR_EQ(pubsubid, subscriber.PubSubId(), "pubsubids should match")
+	ASSERT_ACTION(subscriber, "add")
+	rowsread := 0
+	for subscriber.NextRecord() {
+		rowsread++
+	}
+	ASSERT_OK(subscriber, "NextRecord failed")
+	ASSERT_INT_EQ(ROWS, rowsread, "rows do not match action: add ")
+
+	// UPDATE
+	// now publish update
+	command = "update " + TABLE + " set col2 = val2"
+	ASSERT_EXECUTE(publisher, command, "failed to publish update")
+	// read updated data
+	rowsread = 0
+	for rowsread < ROWS {
+		ASSERT_TRUE(subscriber.WaitForPubSub(1))
+		ASSERT_STR_EQ(pubsubid, subscriber.PubSubId(), "pubsubids should match")
+		ASSERT_ACTION(subscriber, "update")
+		for subscriber.NextRecord() {
+			ASSERT_STR_EQ("val2", subscriber.Value("col2"), "update failed")
+			rowsread++
+		}
+		ASSERT_OK(subscriber, "NextRecord failed")
+	}
+
+	subscriber.Disconnect()
+	publisher.Disconnect()
 }

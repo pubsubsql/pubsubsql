@@ -242,7 +242,8 @@ func (this *client) NextRecord() bool {
 			return false
 		}
 		// should not happen but check anyway
-		if header.RequestId != this.requestId {
+		// when RequestId is 0 it means we are reading published data
+		if header.RequestId > 0 && header.RequestId != this.requestId {
 			this.setErrorString("protocol error")
 			return false
 		}
@@ -273,22 +274,26 @@ func (this *client) Columns() []string {
 }
 
 func (this *client) WaitForPubSub(timeout int64) bool {
-	// process backlog first	
 	var bytes []byte
-	if element := this.backlog.Front(); element != nil {
-		bytes = element.Value.([]byte)
-		this.backlog.Remove(element)
-	}
-	if len(bytes) == 0 {
-		header, temp, success, timedout := this.readTimeout(timeout)
-		bytes = temp
-		if !success || timedout {
-			return false
+	for {
+		this.reset()
+		// process backlog first	
+		if element := this.backlog.Front(); element != nil {
+			bytes = element.Value.([]byte)
+			this.backlog.Remove(element)
+			break
 		}
-		// this is not pubsub message
-		if header.RequestId != 0 {
-			this.setErrorString("WaitForPubSub failed. Protocol error request id should be 0")
-			return false
+		if len(bytes) == 0 {
+			header, temp, success, timedout := this.readTimeout(timeout)
+			bytes = temp
+			if !success || timedout {
+				return false
+			}
+			if header.RequestId == 0 {
+				break
+			}
+			// this is not pubsub message; are we reading abandoned cursor?
+			// ignore and keep trying
 		}
 	}
 	return this.unmarshalJSON(bytes)
