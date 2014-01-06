@@ -713,7 +713,6 @@ func (this *table) onRemove(pubsubs []*pubsub, rec *record) {
 		}
 		return sub.sender.send(r)
 	}
-	this.pubsub.visit(visitor)
 	for _, pubsub := range pubsubs {
 		pubsub.visit(visitor)
 	}
