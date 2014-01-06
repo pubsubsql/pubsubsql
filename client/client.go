@@ -72,11 +72,10 @@ type Client interface {
 	// If column does not exist in current result set it returns empty string.	
 	Value(column string) string
 
-	// Determines if column exist in current result set.
+	// Determines if column exist in the current result set.
 	HasColumn(column string) bool
 
-	// Columns returns array of valid column names in the current result set. 		
-	// Columns names are sorted in ascending order.
+	// Columns returns an array of valid column names in the current result set. 		
 	Columns() []string
 
 	// WaitForPubSub waits until publish message is retreived or timeout expired
@@ -120,6 +119,7 @@ func (this *responseData) reset() {
 
 type client struct {
 	Client
+	address   string
 	rw        NetMessageReaderWriter
 	requestId uint32
 	err       string
@@ -130,8 +130,9 @@ type client struct {
 }
 
 func (this *client) Connect(address string) bool {
+	this.address = address		
 	this.Disconnect()
-	conn, err := net.Dial("tcp", address)
+	conn, err := net.Dial("tcp", this.address)
 	if err != nil {
 		this.setError(err)
 		return false
@@ -160,11 +161,11 @@ func (this *client) Error() string {
 }
 
 func (this *client) Execute(command string) bool {
-	this.reset()
 	ok := this.write(command)
 	var bytes []byte
 	var header *NetworkHeader
 	for ok {
+		this.reset()
 		header, bytes, ok = this.read()
 		if !ok {
 			break
@@ -176,9 +177,8 @@ func (this *client) Execute(command string) bool {
 			// pubsub action, save it and skip it for now
 		} else if header.RequestId < this.requestId {
 			// we did not read full result set from previous command ignore it or flag and error?
-			// TODO DECIDE
-			this.setErrorString("previous result was not fully read")
-			ok = false
+			// for now lets ignore it, continue reading until we hit our request id 
+			this.reset()
 		} else {
 			// this should never happen
 			this.setErrorString("protocol error invalid requestId")

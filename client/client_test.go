@@ -289,7 +289,20 @@ func TestValueAndColumns(t *testing.T) {
 				
 		i++
 	}
+	// since id is returned on select * 4 columns are expected
 	ASSERT_INT_EQ(len(client.Columns()), 4, "Columns failed")
 	client.Disconnect()
-	
 }
+
+func TestExecuteWithOpenCursor(t *testing.T) {
+	T = t
+	client := NewClient()
+	ASSERT_CONNECT(client)
+	command := "select * from " + TABLE	
+	ASSERT_EXECUTE(client, command, "select failed")
+	ASSERT_TRUE(client.NextRecord())			
+	// there are more records in the result set and the result set may come in batches
+	// execute of another command should work properly
+	ASSERT_EXECUTE(client, "status", "status failed") 
+}
+
