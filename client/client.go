@@ -72,9 +72,8 @@ type Client interface {
 	// If column does not exist in current result set it returns empty string.	
 	Value(column string) string
 
-	// ValueByOrdinal returns column value by column ordinal.
-	// If column ordinal does not exist in current result set it returns empty string.	
-	ValueByColumnOrdinal(ordinal int) string
+	// Determines if column exist in current result set.
+	HasColumn(column string) bool
 
 	// Columns returns array of valid column names in the current result set. 		
 	Columns() []string
@@ -246,12 +245,20 @@ func (this *client) NextRecord() bool {
 	return false
 }
 
-func (this * client) Value(column string) string {
+func (this *client) Value(column string) string {
 	if this.record > -1 && this.record < len(this.response.Data) {
 		rec := this.response.Data[this.record]	
 		return rec[column]
 	}
 	return ""
+}
+
+func (this *client) HasColumn(column string) bool {
+	hasColumn := false
+	if len(this.response.Data) > 0 {
+		_, hasColumn = this.response.Data[0][column]
+	}
+	return hasColumn
 }
 
 func (this *client) unmarshalJSON(bytes []byte) bool {

@@ -117,6 +117,12 @@ func ASSERT_VALUE(client Client, column string, value string) {
 	}
 }
 
+func ASSERT_COLUMN(client Client, column string) {
+	if !client.HasColumn(column) {
+		T.Error("Expexted column ", column)
+	}
+}
+
 func TestConnectDisconnect(t *testing.T) {
 	T = t
 	client := NewClient()
@@ -249,7 +255,7 @@ func TestSubscribeUnsubscribeCommand(t *testing.T) {
 	client.Disconnect()
 }
 
-func TestValue(t *testing.T) {
+func TestValueAndColumns(t *testing.T) {
 	T = t
 	client := NewClient()
 	ASSERT_CONNECT(client)
@@ -271,10 +277,13 @@ func TestValue(t *testing.T) {
 	i := 0
 	for client.NextRecord() {
 		val1 := "1:" + strconv.Itoa(i)
+		ASSERT_COLUMN(client, "col1")
 		ASSERT_VALUE(client, "col1", val1)
 		val2 := "2:" + strconv.Itoa(i)
+		ASSERT_COLUMN(client, "col2")
 		ASSERT_VALUE(client, "col2", val2)
 		val3 := "3:" + strconv.Itoa(i)
+		ASSERT_COLUMN(client, "col3")
 		ASSERT_VALUE(client, "col3", val3)
 		ASSERT_VALUE(client, "invalid_column", "")
 			
