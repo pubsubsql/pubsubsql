@@ -317,6 +317,7 @@ func TestExecuteWithOpenCursor(t *testing.T) {
 	// there are more records in the result set and the result set may come in batches
 	// execute of another command should work properly
 	ASSERT_EXECUTE(client, "status", "status failed")
+	client.Disconnect()
 }
 
 func TestWaitPubSub(t *testing.T) {
@@ -352,6 +353,7 @@ func TestWaitPubSub(t *testing.T) {
 	// read updated data
 	rowsread = 0
 	for rowsread < ROWS {
+		// updates are not batched
 		ASSERT_TRUE(subscriber.WaitForPubSub(1))
 		ASSERT_STR_EQ(pubsubid, subscriber.PubSubId(), "pubsubids should match")
 		ASSERT_ACTION(subscriber, "update")
@@ -362,6 +364,43 @@ func TestWaitPubSub(t *testing.T) {
 		ASSERT_OK(subscriber, "NextRecord failed")
 	}
 
+	// INSERT
+	command = "insert into " + TABLE + " (col1, col2, col3) values (col1_A, col2_A, col3_A) "
+	ASSERT_EXECUTE(publisher, command, "failed to insert")
+	command = "insert into " + TABLE + " (col1, col2, col3) values (col1_B, col2_B, col3_B) "
+	ASSERT_EXECUTE(publisher, command, "failed to insert")
+	// read updated data
+	rowsread = 0
+	for rowsread < 2 {
+		// inserts are not batched
+		ASSERT_TRUE(subscriber.WaitForPubSub(1))
+		ASSERT_STR_EQ(pubsubid, subscriber.PubSubId(), "pubsubids should match")
+		ASSERT_ACTION(subscriber, "insert")
+		for subscriber.NextRecord() {
+			rowsread++
+		}
+		ASSERT_OK(subscriber, "NextRecord failed")
+	}
+
+	// DELETE
+	command = "delete from " + TABLE
+	ASSERT_EXECUTE(publisher, command, "failed to delete")
+	rowsread = 0
+	// we just inserted 2 rows
+	for rowsread < ROWS+2 {
+		ASSERT_TRUE(subscriber.WaitForPubSub(1))
+		ASSERT_ACTION(subscriber, "delete")
+		ASSERT_ID(subscriber)
+		rowsread++
+	}
+
+	// TIMEOUT
+	ASSERT_FALSE(subscriber.WaitForPubSub(-1))
+	ASSERT_FALSE(subscriber.WaitForPubSub(0))
+	ASSERT_FALSE(subscriber.WaitForPubSub(1))
+	ASSERT_TRUE(subscriber.Ok())
+
+	//
 	subscriber.Disconnect()
 	publisher.Disconnect()
 }

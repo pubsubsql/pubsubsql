@@ -352,9 +352,7 @@ func (this *client) readTimeout(timeout int64) (*NetworkHeader, []byte, bool, bo
 		this.setErrorString("Not connected")
 		return nil, nil, false, false
 	}
-	// 3 minutes
-	var MAX_READ_TIMEOUT_MILLISECONDS int64 = 1000 * 60 * 3
-	header, bytes, err, timedout := this.rw.ReadMessageTimeout(MAX_READ_TIMEOUT_MILLISECONDS)
+	header, bytes, err, timedout := this.rw.ReadMessageTimeout(timeout)
 	if timedout {
 		return nil, nil, true, true
 	}
