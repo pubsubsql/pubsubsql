@@ -20,6 +20,7 @@ import (
 	"strconv"
 	"testing"
 	"time"
+	"fmt"
 )
 
 func generateTableName() string {
@@ -107,6 +108,12 @@ func ASSERT_NOPUBSUBID(client Client) {
 func ASSERT_RECORD_COUNT(client Client, count int) {
 	if client.RecordCount() != count {
 		T.Error("Expected record count ", count, "but got", client.RecordCount())
+	}
+}
+
+func ASSERT_VALUE(client Client, column string, value string) {
+	if client.Value(column) != value {
+		T.Error("Expected value ", value, "but got", client.Value(column))
 	}
 }
 
@@ -242,3 +249,36 @@ func TestSubscribeUnsubscribeCommand(t *testing.T) {
 	client.Disconnect()
 }
 
+func TestValue(t *testing.T) {
+	T = t
+	client := NewClient()
+	ASSERT_CONNECT(client)
+	// subscribe
+	command := "delete from " + TABLE 
+	// clear the table first
+	ASSERT_EXECUTE(client, command, "delete failed")
+	// insert values
+	for i := 0; i < ROWS; i++ {
+		val1 := "1:" + strconv.Itoa(i)
+		val2 := "2:" + strconv.Itoa(i)
+		val3 := "3:" + strconv.Itoa(i)
+		command := fmt.Sprintf("insert into %s (col1, col2, col3) values (%s, %s, %s)", TABLE, val1, val2, val3)
+		ASSERT_EXECUTE(client, command, "insert failed")
+	}	
+	// test value	
+	command = "select * from " + TABLE	
+	ASSERT_EXECUTE(client, command, "select failed")
+	i := 0
+	for client.NextRecord() {
+		val1 := "1:" + strconv.Itoa(i)
+		ASSERT_VALUE(client, "col1", val1)
+		val2 := "2:" + strconv.Itoa(i)
+		ASSERT_VALUE(client, "col2", val2)
+		val3 := "3:" + strconv.Itoa(i)
+		ASSERT_VALUE(client, "col3", val3)
+		ASSERT_VALUE(client, "invalid_column", "")
+			
+		i++
+	}
+	
+}

@@ -68,9 +68,6 @@ type Client interface {
 	// Must be called initially to position cursor to the first record. 
 	NextRecord() bool
 
-	// JSONRecord returns current record in JSON format.
-	JSONRecord() string
-
 	// Value returns column value by column name.
 	// If column does not exist in current result set it returns empty string.	
 	Value(column string) string
@@ -79,14 +76,13 @@ type Client interface {
 	// If column ordinal does not exist in current result set it returns empty string.	
 	ValueByColumnOrdinal(ordinal int) string
 
-	// Columns returns array of valid column names returned by last operation. 		
+	// Columns returns array of valid column names in the current result set. 		
 	Columns() []string
 
-	// ColumnCount returns number of valid columns
+	// ColumnCount returns number of valid columns in the current result set.
 	ColumnCount() int
 
-	// WaitForPubSub waits until publish message is retreived or
-	// timeout expired.
+	// WaitForPubSub waits until publish message is retreived or timeout expired
 	// Returns false on timeout.
 	WaitForPubSub(timeout int) bool
 }
@@ -248,6 +244,14 @@ func (this *client) NextRecord() bool {
 		this.unmarshalJSON(bytes)
 	}
 	return false
+}
+
+func (this * client) Value(column string) string {
+	if this.record > -1 && this.record < len(this.response.Data) {
+		rec := this.response.Data[this.record]	
+		return rec[column]
+	}
+	return ""
 }
 
 func (this *client) unmarshalJSON(bytes []byte) bool {
