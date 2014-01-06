@@ -409,10 +409,7 @@ func (this *sqlActionRemoveResponse) toNetworkReadyJSON() ([]byte, bool) {
 
 // sqlActionUpdateResponse
 type sqlActionUpdateResponse struct {
-	response
-	pubsubid uint64
-	cols     []*column
-	rec      *record
+	sqlActionDataResponse
 }
 
 func (this *sqlActionUpdateResponse) setRequestId(requestId uint32) {
@@ -420,38 +417,14 @@ func (this *sqlActionUpdateResponse) setRequestId(requestId uint32) {
 }
 
 func (this *sqlActionUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {
-	builder := networkReadyJSONBuilder()
-	builder.beginObject()
-	ok(builder)
-	builder.valueSeparator()
-	action(builder, "update")
-	builder.valueSeparator()
-	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
-	builder.valueSeparator()
-
-	builder.string("data")
-	builder.nameSeparator()
-	builder.beginArray()
-	row(builder, this.cols, this.rec)
-	builder.endArray()
-
-	builder.endObject()
-	return builder.getNetworkBytes(0), false
+	return this.toNetworkReadyJSONHelper("update")
 }
 
 func newSqlActionUpdateResponse(pubsubid uint64, cols []*column, rec *record) *sqlActionUpdateResponse {
-	res := sqlActionUpdateResponse{
-		pubsubid: pubsubid,
-		cols:     cols,
-	}
-	// copy updated data
-	l := len(cols)
-	res.rec = &record{
-		values: make([]string, l, l),
-	}
-	for idx, col := range cols {
-		res.rec.setValue(idx, rec.getValue(col.ordinal))
-	}
+	var res sqlActionUpdateResponse
+	res.columns = cols
+	res.pubsubid = pubsubid
+	res.copyRecordData(rec)
 	return &res
 }
 
