@@ -181,6 +181,20 @@ func row(builder *JSONBuilder, columns []*column, rec *record) {
 }
 
 func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
+	// write the columns first
+	builder.string("columns")
+	builder.nameSeparator()
+	builder.beginArray()
+	for colIndex, col := range this.columns {
+		// another row
+		if colIndex != 0 {
+			builder.valueSeparator()
+		}
+		builder.string(col.name)
+	}
+	builder.endArray()	
+	builder.objectSeparator()
+	// now write data (records)	
 	if !this.init {
 		this.init = true
 		this.rows = len(this.records)

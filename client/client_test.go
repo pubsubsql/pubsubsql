@@ -286,8 +286,10 @@ func TestValueAndColumns(t *testing.T) {
 		ASSERT_COLUMN(client, "col3")
 		ASSERT_VALUE(client, "col3", val3)
 		ASSERT_VALUE(client, "invalid_column", "")
-			
+				
 		i++
 	}
+	ASSERT_INT_EQ(len(client.Columns()), 4, "Columns failed")
+	client.Disconnect()
 	
 }

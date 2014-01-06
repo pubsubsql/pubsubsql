@@ -63,7 +63,7 @@ type Client interface {
 	// RecordCount returns number of records in the returned result set.
 	RecordCount() int
 
-	// NextRecord move cusrsor to the next data record of the returned result set.    
+	// NextRecord moves cusrsor to the next data record of the returned result set.    
 	// Returns false when all records are read.
 	// Must be called initially to position cursor to the first record. 
 	NextRecord() bool
@@ -76,10 +76,8 @@ type Client interface {
 	HasColumn(column string) bool
 
 	// Columns returns array of valid column names in the current result set. 		
+	// Columns names are sorted in ascending order.
 	Columns() []string
-
-	// ColumnCount returns number of valid columns in the current result set.
-	ColumnCount() int
 
 	// WaitForPubSub waits until publish message is retreived or timeout expired
 	// Returns false on timeout.
@@ -103,6 +101,7 @@ type responseData struct {
 	Rows     int
 	Fromrow  int
 	Torow    int
+	Columns  []string
 	Data     []map[string]string
 }
 
@@ -115,6 +114,7 @@ func (this *responseData) reset() {
 	this.Rows = 0
 	this.Fromrow = 0
 	this.Torow = 0
+	this.Columns = nil
 	this.Data = nil
 }
 
@@ -260,6 +260,10 @@ func (this *client) HasColumn(column string) bool {
 	}
 	return hasColumn
 }
+
+func (this *client) Columns() []string {
+	return this.response.Columns
+} 
 
 func (this *client) unmarshalJSON(bytes []byte) bool {
 	this.rawjson = bytes
