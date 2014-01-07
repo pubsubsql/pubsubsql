@@ -45,13 +45,13 @@ func NewNetworkHeader(messageSize uint32, requestId uint32) *NetworkHeader {
 }
 
 func (this *NetworkHeader) ReadFrom(bytes []byte) {
-	this.MessageSize = binary.LittleEndian.Uint32(bytes)
-	this.RequestId = binary.LittleEndian.Uint32(bytes[4:])
+	this.MessageSize = binary.BigEndian.Uint32(bytes)
+	this.RequestId = binary.BigEndian.Uint32(bytes[4:])
 }
 
 func (this *NetworkHeader) WriteTo(bytes []byte) {
-	binary.LittleEndian.PutUint32(bytes, this.MessageSize)
-	binary.LittleEndian.PutUint32(bytes[4:], this.RequestId)
+	binary.BigEndian.PutUint32(bytes, this.MessageSize)
+	binary.BigEndian.PutUint32(bytes[4:], this.RequestId)
 }
 
 func (this *NetworkHeader) GetBytes() []byte {
