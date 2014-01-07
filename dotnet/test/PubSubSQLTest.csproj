@@ -51,7 +51,7 @@
   </Choose>
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
-    <Compile Include="NetworkHeaderTest.cs" />
+    <Compile Include="NetHeaderTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

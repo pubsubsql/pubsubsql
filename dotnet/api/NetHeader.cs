@@ -29,13 +29,13 @@ using System.Text;
 
 namespace PubSubSQL
 {
-    public struct NetworkHeader
+    public struct NetHeader
     {
         public static readonly int HEADER_SIZE = sizeof(UInt32) + sizeof(UInt32);
         public UInt32 MessageSize;
         public UInt32 RequestId;
 
-        public NetworkHeader(UInt32 messageSize, UInt32 requestId)
+        public NetHeader(UInt32 messageSize, UInt32 requestId)
         {
             MessageSize = messageSize;
             RequestId = requestId;

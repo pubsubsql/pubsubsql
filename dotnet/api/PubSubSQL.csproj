@@ -40,7 +40,8 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="Client.cs" />
-    <Compile Include="NetworkHeader.cs" />
+    <Compile Include="NetHeader.cs" />
+    <Compile Include="NetHelper.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

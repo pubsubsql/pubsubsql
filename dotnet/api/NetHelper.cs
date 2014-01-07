@@ -1,0 +1,102 @@
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using System.Net.Sockets;
+
+namespace PubSubSQL
+{
+    class NetHelper
+    {
+        Socket socket;
+        byte[] recvBytes;
+
+        public void Set(Socket socket, int bufferSize)
+        {
+            this.socket = socket;
+            this.recvBytes = new byte[bufferSize];
+        }
+
+        public void Close()
+        {
+            if (socket != null)
+            {
+                try
+                {
+                    socket.Shutdown(SocketShutdown.Both);
+                    socket.Close();
+                    socket = null;
+                }
+                catch (Exception )
+                {
+                    // ignore
+                }
+            }
+        }
+
+        public bool Valid()
+        {
+            return this.socket != null;
+        }
+
+        public void Write(byte[] bytes)
+        {
+            int written = 0;
+            while (bytes.Length > written)
+            {
+                written += socket.Send(bytes, written, bytes.Length - written, SocketFlags.None);
+            }
+        }
+
+        public void WriteWithHeader(UInt32 requestId, byte[] bytes)
+        {
+            NetHeader header = new NetHeader((UInt32)bytes.Length, requestId);
+            Write(header.GetBytes());
+            Write(bytes);
+        }
+
+        public bool ReadTimeout(int timeout, ref NetHeader header, out byte[] bytes)
+        {
+            bytes = null;
+            try
+            {
+                socket.ReceiveTimeout = timeout;
+                Read(ref header, out bytes);
+                return true;
+            }
+            catch (SocketException e)
+            {
+                if (e.SocketErrorCode == SocketError.TimedOut)
+                {
+                    return false;
+                }
+                else
+                {
+                    throw e;
+                }
+            }
+        }
+
+        public void Read(ref NetHeader header, out byte[] bytes)
+        {
+            int read = socket.Receive(this.recvBytes, 0, NetHeader.HEADER_SIZE, SocketFlags.None);
+            if (read < NetHeader.HEADER_SIZE)
+            {
+                throw new Exception("Failed to read header.");
+            }
+            header.ReadFrom(recvBytes);
+            // make sure we have big enough recv buffer
+            if (header.MessageSize > recvBytes.Length)
+            {
+                recvBytes = new byte[header.MessageSize];
+            }
+            // read the rest of the message
+            read = 0;
+            while (recvBytes.Length > read)
+            {
+                read += socket.Receive(recvBytes, read, recvBytes.Length - read, SocketFlags.None);
+            }
+            bytes = this.recvBytes;
+        }
+    }
+}

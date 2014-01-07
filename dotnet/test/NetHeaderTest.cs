@@ -7,13 +7,23 @@ namespace PubSubSQLTest
     public class NetworkHeaderTest
     {
         [TestMethod]
-        public void Test()
+        public void TestWriteRead()
         {
-            UInt32 messageSize = 2389;
-            UInt32 requestId = 2;
-            PubSubSQL.NetworkHeader header1 = new PubSubSQL.NetworkHeader(messageSize, requestId);
+            PubSubSQL.NetHeader header1 = new PubSubSQL.NetHeader(32567, 9875235);
+            PubSubSQL.NetHeader header2 = new PubSubSQL.NetHeader();
+            byte[] bytes = new byte[100];
+            header1.WriteTo(bytes);
+            header2.ReadFrom(bytes);
+            Assert.AreEqual(header1, header2);
+        }
+
+        [TestMethod]
+        public void TestGetBytes()
+        {
+            PubSubSQL.NetHeader header1 = new PubSubSQL.NetHeader(32567, 9875235);
+            PubSubSQL.NetHeader header2 = new PubSubSQL.NetHeader();
             byte[] bytes = header1.GetBytes();
-            PubSubSQL.NetworkHeader header2 = new PubSubSQL.NetworkHeader();
+            header1.WriteTo(bytes);
             header2.ReadFrom(bytes);
             Assert.AreEqual(header1, header2);
         }
