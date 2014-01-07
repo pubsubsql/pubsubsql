@@ -29,7 +29,7 @@ using System.Text;
 
 namespace PubSubSQL
 {
-    struct NetworkHeader
+    public struct NetworkHeader
     {
         public static readonly int HEADER_SIZE = sizeof(UInt32) + sizeof(UInt32);
         public UInt32 MessageSize;
@@ -44,7 +44,7 @@ namespace PubSubSQL
         public void ReadFrom(byte[] bytes)
         {
             setEndianess(bytes); 
-            MessageSize = BitConverter.ToUInt32(bytes, sizeof(UInt32));
+            MessageSize = BitConverter.ToUInt32(bytes, 0);
             RequestId = BitConverter.ToUInt32(bytes, sizeof(UInt32));
         }
 
