@@ -4,7 +4,7 @@ using Microsoft.VisualStudio.TestTools.UnitTesting;
 namespace PubSubSQLTest
 {
     [TestClass]
-    public class NetworkHeaderTest
+    public class NetHeaderTest
     {
         [TestMethod]
         public void TestWriteRead()

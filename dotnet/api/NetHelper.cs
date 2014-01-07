@@ -6,7 +6,7 @@ using System.Net.Sockets;
 
 namespace PubSubSQL
 {
-    class NetHelper
+    public class NetHelper
     {
         Socket socket;
         byte[] recvBytes;
@@ -92,11 +92,21 @@ namespace PubSubSQL
             }
             // read the rest of the message
             read = 0;
-            while (recvBytes.Length > read)
+            while (header.MessageSize > read)
             {
-                read += socket.Receive(recvBytes, read, recvBytes.Length - read, SocketFlags.None);
+                read += socket.Receive(recvBytes, read, (int)header.MessageSize - read, SocketFlags.None);
             }
             bytes = this.recvBytes;
+        }
+
+        public static byte[] ToUTF8(string str)
+        {
+            return System.Text.Encoding.UTF8.GetBytes(str);
+        }
+
+        public static string FromUTF8(byte[] bytes)
+        {
+            return System.Text.Encoding.UTF8.GetString(bytes);
         }
     }
 }

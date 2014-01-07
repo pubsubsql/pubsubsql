@@ -52,6 +52,7 @@
   <ItemGroup>
     <Compile Include="AssemblyInfo.cs" />
     <Compile Include="NetHeaderTest.cs" />
+    <Compile Include="NetHelperTest.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />
