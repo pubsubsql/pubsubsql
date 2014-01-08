@@ -336,7 +336,7 @@ func TestWaitPubSub(t *testing.T) {
 	// ADD
 	// since we subscribed without skip symantics there is published data
 	// do not wait to timeout
-	ASSERT_TRUE(subscriber.WaitForPubSub(0))
+	ASSERT_TRUE(subscriber.WaitForPubSub(100))
 	ASSERT_STR_EQ(pubsubid, subscriber.PubSubId(), "pubsubids should match")
 	ASSERT_ACTION(subscriber, "add")
 	rowsread := 0
@@ -354,7 +354,7 @@ func TestWaitPubSub(t *testing.T) {
 	rowsread = 0
 	for rowsread < ROWS {
 		// updates are not batched
-		ASSERT_TRUE(subscriber.WaitForPubSub(1))
+		ASSERT_TRUE(subscriber.WaitForPubSub(100))
 		ASSERT_STR_EQ(pubsubid, subscriber.PubSubId(), "pubsubids should match")
 		ASSERT_ACTION(subscriber, "update")
 		for subscriber.NextRecord() {
@@ -373,7 +373,7 @@ func TestWaitPubSub(t *testing.T) {
 	rowsread = 0
 	for rowsread < 2 {
 		// inserts are not batched
-		ASSERT_TRUE(subscriber.WaitForPubSub(1))
+		ASSERT_TRUE(subscriber.WaitForPubSub(100))
 		ASSERT_STR_EQ(pubsubid, subscriber.PubSubId(), "pubsubids should match")
 		ASSERT_ACTION(subscriber, "insert")
 		for subscriber.NextRecord() {
@@ -404,3 +404,4 @@ func TestWaitPubSub(t *testing.T) {
 	subscriber.Disconnect()
 	publisher.Disconnect()
 }
+
