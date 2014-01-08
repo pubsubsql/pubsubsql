@@ -168,6 +168,7 @@ func (this *client) Error() string {
 }
 
 func (this *client) Execute(command string) bool {
+	this.reset()
 	ok := this.write(command)
 	var bytes []byte
 	var header *NetHeader

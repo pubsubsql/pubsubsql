@@ -85,11 +85,7 @@ namespace PubSubSQL
                 throw new Exception("Failed to read header.");
             }
             header.ReadFrom(recvBytes);
-            // make sure we have big enough recv buffer
-            if (header.MessageSize > recvBytes.Length)
-            {
-                recvBytes = new byte[header.MessageSize];
-            }
+            recvBytes = new byte[header.MessageSize];
             // read the rest of the message
             read = 0;
             while (header.MessageSize > read)

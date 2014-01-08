@@ -24,8 +24,20 @@ namespace PubSubSQLTest
             if (!client.Connect(ADDRESS))
             {
                 Assert.Fail("Connect failed " + client.Error());
+            }
+            ASSERT_TRUE(client.Ok());
+            ASSERT_FALSE(client.Failed());
+        }
+
+        public static void ASSERT_EXECUTE(Client client, string command, string err)
+        {
+            if (!client.Execute(command))
+            {
+                Assert.Fail("Execute failed " + client.Error() + " " + err);
+                Assert.Fail(client.JSON());
                 ASSERT_FALSE(client.Ok());
                 ASSERT_TRUE(client.Failed());
+                return;
             }
             ASSERT_TRUE(client.Ok());
             ASSERT_FALSE(client.Failed());

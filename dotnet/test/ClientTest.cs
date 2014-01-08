@@ -14,6 +14,16 @@ namespace PubSubSQLTest
             TestUtils.ASSERT_CONNECT(client);
             client.Disconnect();
         }
+
+        [TestMethod]
+        public void TestStatusCommand()
+        {
+            Client client = Factory.NewClient();
+            TestUtils.ASSERT_CONNECT(client);
+            TestUtils.ASSERT_EXECUTE(client, "status", "status failed");
+            client.Disconnect();
+
+        }
         
     }
 }

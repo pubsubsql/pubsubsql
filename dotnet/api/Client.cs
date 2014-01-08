@@ -58,15 +58,15 @@ namespace PubSubSQL
         [DataMember(Name = "pubsubid")]
         public string PubSubId { get; set; }
         [DataMember(Name = "rows")]
-        public string Rows { get; set; }
+        public int Rows { get; set; }
         [DataMember(Name = "fromrow")]
-        public string Fromrow { get; set; }
+        public int Fromrow { get; set; }
         [DataMember(Name = "torow")]
-        public string Torow { get; set; }
+        public int Torow { get; set; }
         [DataMember(Name = "columns")]
         public string[] columns { get; set; }
         //Data     []map[string]string
-        // TOBE DECIDED
+        // TOBE DECIDEDnil
     }
 
     public class Factory
@@ -87,6 +87,7 @@ namespace PubSubSQL
         byte[] rawjson;
         responseData response;
         int record;
+        List<byte[]> backlog = new List<byte[]>();
 
         const int CLIENT_DEFAULT_BUFFER_SIZE = 2048;
 
@@ -113,7 +114,7 @@ namespace PubSubSQL
             int sep = address.IndexOf(':');
             if (sep < 0)
             {
-                setErrorString("invalid network address");
+                setErrorString("Invalid network address");
                 return false;
             }
             // set host and port
@@ -129,7 +130,7 @@ namespace PubSubSQL
             }
             catch (Exception e)
             {
-                setError(e);
+                setError("Connect failed", e);
             }
             //
             return false;
@@ -137,6 +138,7 @@ namespace PubSubSQL
 
         public void Disconnect()
         {
+            backlog.Clear();
             write("close");
             // write may generate errro so we reset after instead
             reset();
@@ -160,13 +162,45 @@ namespace PubSubSQL
 
         public bool Execute(string command)
         {
-
-            return false;
+            reset();
+            bool ok = write(command);
+            NetHeader header = new NetHeader();
+            byte[] bytes;
+            while (ok)
+            {
+                reset();
+                ok = read(ref header, out bytes);
+                if (!ok) break;
+                if (header.RequestId == requestId) 
+                {
+                    // response we are waiting for
+                    return unmarshalJSON(bytes);
+                }
+                else if (header.RequestId == 0)
+                {
+                    // pubsub action, save it and skip it for now
+                    // will be proccesed next time WaitPubSub is called
+                    backlog.Add(bytes);
+                } 
+                else if (header.RequestId < this.requestId)
+                {
+                    // we did not read full result set from previous command ignore it or flag and error?
+                    // for now lets ignore it, continue reading until we hit our request id 
+                    reset();
+                } 
+                else
+                {
+                    // this should never happen
+                    setErrorString("protocol error invalid requestId");
+                    ok = false;
+                }       
+            }
+            return ok;
         }
 
         public string JSON()
         {
-            return "";
+            return System.Text.UTF8Encoding.UTF8.GetString(rawjson);
         }
 
         public string Action()
@@ -217,6 +251,9 @@ namespace PubSubSQL
         void reset()
         {
             err = string.Empty;
+            response = new responseData();
+            rawjson = null;
+            this.record = -1;
         }
 
         bool toPort(ref int port, string sport)
@@ -239,9 +276,9 @@ namespace PubSubSQL
             this.err = err;
         }
 
-        void setError(Exception e)
+        void setError(string prefix, Exception e)
         {
-            setErrorString(e.Message);
+            setErrorString(prefix + " " + e.Message);
         }
 
         bool write(string message)
@@ -254,7 +291,7 @@ namespace PubSubSQL
             }
             catch (Exception e)
             {
-                setError(e);
+                setError("write failed", e);
                 return false;
             }
             return true;
@@ -275,7 +312,7 @@ namespace PubSubSQL
             }
             catch (Exception e)
             {
-                setError(e);
+                setError("readTimeout failed", e);
             }
             return false;
         }
@@ -290,6 +327,23 @@ namespace PubSubSQL
                 setErrorString("Read timed out");
             }
             return timedout || err;
+        }
+
+        bool unmarshalJSON(byte[] bytes)
+        {
+            try
+            {
+                rawjson = bytes;
+                MemoryStream stream = new MemoryStream(bytes);
+                DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(responseData));
+                response = jsonSerializer.ReadObject(stream) as responseData;
+                return true;
+            }
+            catch (Exception e)
+            {
+                setError("unmarshal json failed", e);
+            }
+            return false;
         }
 
     }
