@@ -29,7 +29,7 @@ import (
 --------------------+--------------------
 */
 
-type NetworkHeader struct {
+type NetHeader struct {
 	MessageSize uint32
 	RequestId   uint32
 }
@@ -37,30 +37,30 @@ type NetworkHeader struct {
 var HEADER_SIZE = 8
 var EMPTY_HEADER = make([]byte, HEADER_SIZE, HEADER_SIZE)
 
-func NewNetworkHeader(messageSize uint32, requestId uint32) *NetworkHeader {
-	return &NetworkHeader{
+func NewNetHeader(messageSize uint32, requestId uint32) *NetHeader {
+	return &NetHeader{
 		MessageSize: messageSize,
 		RequestId:   requestId,
 	}
 }
 
-func (this *NetworkHeader) ReadFrom(bytes []byte) {
+func (this *NetHeader) ReadFrom(bytes []byte) {
 	this.MessageSize = binary.BigEndian.Uint32(bytes)
 	this.RequestId = binary.BigEndian.Uint32(bytes[4:])
 }
 
-func (this *NetworkHeader) WriteTo(bytes []byte) {
+func (this *NetHeader) WriteTo(bytes []byte) {
 	binary.BigEndian.PutUint32(bytes, this.MessageSize)
 	binary.BigEndian.PutUint32(bytes[4:], this.RequestId)
 }
 
-func (this *NetworkHeader) GetBytes() []byte {
+func (this *NetHeader) GetBytes() []byte {
 	bytes := make([]byte, HEADER_SIZE, HEADER_SIZE)
 	this.WriteTo(bytes)
 	return bytes
 }
 
-func (this *NetworkHeader) String() string {
+func (this *NetHeader) String() string {
 	bytes, _ := json.Marshal(this)
 	return string(bytes)
 }

@@ -67,14 +67,14 @@ func (this *NetMessageReaderWriter) WriteMessage(bytes []byte) error {
 }
 
 func (this *NetMessageReaderWriter) WriteHeaderAndMessage(requestId uint32, bytes []byte) error {
-	err := this.WriteMessage(NewNetworkHeader(uint32(len(bytes)), requestId).GetBytes())
+	err := this.WriteMessage(NewNetHeader(uint32(len(bytes)), requestId).GetBytes())
 	if err != nil {
 		return err
 	}
 	return this.WriteMessage(bytes)
 }
 
-func (this *NetMessageReaderWriter) ReadMessageTimeout(milliseconds int64) (*NetworkHeader, []byte, error, bool) {
+func (this *NetMessageReaderWriter) ReadMessageTimeout(milliseconds int64) (*NetHeader, []byte, error, bool) {
 	this.conn.SetReadDeadline(time.Now().Add(time.Duration(milliseconds) * time.Millisecond))
 	header, bytes, err := this.ReadMessage()
 	timedout := false
@@ -85,7 +85,7 @@ func (this *NetMessageReaderWriter) ReadMessageTimeout(milliseconds int64) (*Net
 	return header, bytes, err, timedout
 }
 
-func (this *NetMessageReaderWriter) ReadMessage() (*NetworkHeader, []byte, error) {
+func (this *NetMessageReaderWriter) ReadMessage() (*NetHeader, []byte, error) {
 	// header
 	read, err := this.conn.Read(this.bytes[0:HEADER_SIZE])
 	if err != nil {
@@ -95,7 +95,7 @@ func (this *NetMessageReaderWriter) ReadMessage() (*NetworkHeader, []byte, error
 		err = errors.New("Failed to read header.")
 		return nil, nil, err
 	}
-	var header NetworkHeader
+	var header NetHeader
 	header.ReadFrom(this.bytes)
 	// prepare buffer
 	if len(this.bytes) < int(header.MessageSize) {

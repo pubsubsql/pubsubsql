@@ -170,7 +170,7 @@ func (this *client) Error() string {
 func (this *client) Execute(command string) bool {
 	ok := this.write(command)
 	var bytes []byte
-	var header *NetworkHeader
+	var header *NetHeader
 	for ok {
 		this.reset()
 		header, bytes, ok = this.read()
@@ -349,7 +349,7 @@ func (this *client) write(message string) bool {
 	return true
 }
 
-func (this *client) readTimeout(timeout int64) (*NetworkHeader, []byte, bool, bool) {
+func (this *client) readTimeout(timeout int64) (*NetHeader, []byte, bool, bool) {
 	if !this.rw.Valid() {
 		this.setErrorString("Not connected")
 		return nil, nil, false, false
@@ -368,7 +368,7 @@ func (this *client) readTimeout(timeout int64) (*NetworkHeader, []byte, bool, bo
 
 }
 
-func (this *client) read() (*NetworkHeader, []byte, bool) {
+func (this *client) read() (*NetHeader, []byte, bool) {
 	var MAX_READ_TIMEOUT_MILLISECONDS int64 = 1000 * 60 * 3
 	header, bytes, success, timedout := this.readTimeout(MAX_READ_TIMEOUT_MILLISECONDS)
 	if timedout {
