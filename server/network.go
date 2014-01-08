@@ -229,7 +229,7 @@ func (this *networkConnection) read() {
 		this.route(header, req)
 	}
 	if err != nil && !this.Done() {
-		logerror("failed to read from client connection:", this.sender.connectionId, err.Error())
+		logwarn("failed to read from client connection:", this.sender.connectionId, err.Error())
 		// notify writer and sender that we are done
 		this.sender.quit.Quit(0)
 	}
@@ -255,7 +255,7 @@ func (this *networkConnection) write() {
 				err = writer.WriteMessage(msg)
 			}
 			if err != nil && !this.Done() {
-				logerror("failed to write to client connection:", this.sender.connectionId, err.Error())
+				logwarn("failed to write to client connection:", this.sender.connectionId, err.Error())
 				// notify reader and sender that we are done
 				this.sender.quit.Quit(0)
 				return
