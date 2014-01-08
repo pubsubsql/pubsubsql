@@ -152,6 +152,11 @@ func newTokens() *tokensProducerConsumer {
 	}
 }
 
+func (this *tokensProducerConsumer) reuse() {
+	this.idx = 0
+	this.tokens = this.tokens[0:0:cap(this.tokens)]
+}
+
 func (this *tokensProducerConsumer) Consume(tok *token) {
 	this.tokens = append(this.tokens, tok)
 }

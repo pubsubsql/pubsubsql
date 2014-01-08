@@ -212,6 +212,7 @@ func (this *networkConnection) read() {
 	var err error
 	var message []byte
 	var header *pubsubsql.NetHeader
+	tokens := newTokens()
 	for {
 		err = nil
 		if this.Done() {
@@ -221,8 +222,8 @@ func (this *networkConnection) read() {
 		if err != nil {
 			break
 		}
+		tokens.reuse()
 		// parse and route the message
-		tokens := newTokens()
 		lex(string(message), tokens)
 		req := parse(tokens)
 		this.route(header, req)
