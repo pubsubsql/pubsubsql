@@ -20,6 +20,7 @@ using System.Text;
 using System.Runtime.Serialization.Json;
 using System.Runtime.Serialization;
 using System.IO;
+using System.Net.Sockets;
 
 namespace PubSubSQL
 {
@@ -29,6 +30,7 @@ namespace PubSubSQL
         void Disconnect();
         bool Ok();
         bool Failed();
+        string Error();
         bool Execute(string command);
         string JSON();
         string Action();
@@ -67,8 +69,27 @@ namespace PubSubSQL
         // TOBE DECIDED
     }
 
+    public class Factory
+    {
+        public static Client NewClient()
+        {
+            return new client();
+        }
+    }
+
     class client : Client
     {
+        string host;
+        int port;
+        NetHelper rw = new NetHelper();
+        UInt32 requestId;
+        string err;
+        byte[] rawjson;
+        responseData response;
+        int record;
+
+        const int CLIENT_DEFAULT_BUFFER_SIZE = 2048;
+
         public void testColmpile()
         {
             string str = "{\"status\":\"ok\",\"columns\":[\"col1\",\"col2\"]}"; 
@@ -87,22 +108,54 @@ namespace PubSubSQL
 
         public bool Connect(string address)
         {
+            Disconnect();
+            // validate address
+            int sep = address.IndexOf(':');
+            if (sep < 0)
+            {
+                setErrorString("invalid network address");
+                return false;
+            }
+            // set host and port
+            host = address.Substring(0, sep);
+            if (!toPort(ref port, address.Substring(sep + 1))) return false;
+            // connect
+            try
+            {
+                Socket socket = new Socket(AddressFamily.InterNetwork, SocketType.Stream, ProtocolType.Tcp);
+                socket.Connect(host, port);
+                rw.Set(socket, CLIENT_DEFAULT_BUFFER_SIZE); 
+                return true;
+            }
+            catch (Exception e)
+            {
+                setError(e);
+            }
+            //
             return false;
         }
 
         public void Disconnect()
         {
-
+            write("close");
+            // write may generate errro so we reset after instead
+            reset();
+            rw.Close();
         }
 
         public bool Ok()
         {
-            return false;
+            return string.IsNullOrEmpty(err); 
         }
 
         public bool Failed()
         {
-            return true;
+            return !Ok(); 
+        }
+
+        public string Error()
+        {
+            return err;
         }
 
         public bool Execute(string command)
@@ -159,6 +212,57 @@ namespace PubSubSQL
         {
             return false;
         }
+
+        void reset()
+        {
+            err = string.Empty;
+        }
+
+        bool toPort(ref int port, string sport)
+        {
+            try
+            {
+                port = Convert.ToInt32(sport, 10);
+                return true;
+            }
+            catch (Exception )
+            {
+                setErrorString("Invalid port " + sport);
+            }
+            return false;
+        }
+
+        void setErrorString(string err)
+        {
+            reset();
+            this.err = err;
+        }
+
+        void setError(Exception e)
+        {
+            setErrorString(e.Message);
+        }
+
+        bool write(string message)
+        {
+            requestId++;
+            if (!rw.Valid())
+            {
+                setErrorString("Not connected");
+                return false;
+            }
+            try
+            {
+                rw.WriteWithHeader(requestId, NetHelper.ToUTF8(message));
+            }
+            catch (Exception e)
+            {
+                setError(e);
+                return false;
+            }
+            return true;
+        }
+
     }
 
 }
