@@ -16,7 +16,10 @@
 
 package pubsubsql
 
-import "strconv"
+import (
+	"strconv"
+	"sync/atomic"
+)
 
 // this function is purely for testing porposes
 func (this *table) getTagedColumnValuesCount(name string, val string) int {
@@ -31,6 +34,8 @@ func (this *table) getTagedColumnValuesCount(name string, val string) int {
 	return i
 }
 
+var subid uint64 = 0
+
 // table
 type table struct {
 	name         string
@@ -41,7 +46,6 @@ type table struct {
 	pubsub       pubsub
 	//
 	subscriptions mapSubscriptionByConnection
-	subid         uint64
 	//
 	requests chan *requestItem
 	quit     *Quitter
@@ -579,8 +583,8 @@ func (this *table) sqlTag(req *sqlTagRequest) response {
 // SUBSCRIBE sql statement
 
 func (this *table) newSubscription(sender *responseSender) *subscription {
-	this.subid++
-	sub := newSubscription(sender, this.subid)
+	val := atomic.AddUint64(&subid, 1)
+	sub := newSubscription(sender, val)
 	this.subscriptions.add(sender.connectionId, sub)
 	return sub
 }
