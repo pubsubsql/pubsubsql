@@ -64,7 +64,7 @@ namespace PubSubSQL
         [DataMember(Name = "torow")]
         public int Torow { get; set; }
         [DataMember(Name = "columns")]
-        public string[] columns { get; set; }
+        public List<string> columns { get; set; }
         //Data     []map[string]string
         // TOBE DECIDEDnil
     }
@@ -205,22 +205,22 @@ namespace PubSubSQL
 
         public string Action()
         {
-            return "";
+            return response.Action;
         }
 
         public string Id()
         {
-            return "";
+            return response.Id;
         }
 
         public string PubSubId()
         {
-            return "";
+            return response.PubSubId;
         }
 
         public int RecordCount()
         {
-            return 0;
+            return response.Rows;
         }
 
         public bool NextRecord()
@@ -240,7 +240,7 @@ namespace PubSubSQL
 
         public List<string> Columns()
         {
-            return null;
+            return response.columns;
         }
 
         public bool WaitForPubSub(Int64 timeout)

@@ -42,5 +42,13 @@ namespace PubSubSQLTest
             ASSERT_TRUE(client.Ok());
             ASSERT_FALSE(client.Failed());
         }
+
+        public static void ASSERT_ACTION(Client client, string action)
+        {
+            if (client.Action() != action)
+            {
+                Assert.Fail("Expected action " + action + " but got " + client.Action() + "\n" + client.JSON());
+            }
+        }
     }
 }
