@@ -160,6 +160,7 @@ namespace PubSubSQL
 
         public bool Execute(string command)
         {
+
             return false;
         }
 
@@ -245,14 +246,10 @@ namespace PubSubSQL
 
         bool write(string message)
         {
-            requestId++;
-            if (!rw.Valid())
-            {
-                setErrorString("Not connected");
-                return false;
-            }
             try
             {
+                if (!rw.Valid()) throw new Exception("Not connected");
+                requestId++;
                 rw.WriteWithHeader(requestId, NetHelper.ToUTF8(message));
             }
             catch (Exception e)
@@ -261,6 +258,38 @@ namespace PubSubSQL
                 return false;
             }
             return true;
+        }
+
+        bool readTimeout(int timeout, ref NetHeader header, out byte[] bytes, ref bool timedout)
+        {
+            timedout = false;
+            bytes = null;
+            try
+            {
+                if (!rw.Valid()) throw new Exception("Not connected");
+                if (!rw.ReadTimeout(timeout, ref header, out bytes))
+                {
+                    timedout = true;
+                }
+                return true;
+            }
+            catch (Exception e)
+            {
+                setError(e);
+            }
+            return false;
+        }
+
+        bool read(ref NetHeader header, out byte[] bytes)
+        {
+            const int MAX_READ_TIMEOUT_MILLISECONDS = 1000 * 60 * 3;
+            bool timedout = false;
+            bool err = readTimeout(MAX_READ_TIMEOUT_MILLISECONDS, ref header, out bytes, ref timedout);
+            if (timedout)
+            {
+                setErrorString("Read timed out");
+            }
+            return timedout || err;
         }
 
     }
