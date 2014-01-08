@@ -22,11 +22,11 @@ import (
 )
 
 func TestNetworkHeader(t *testing.T) {
-	header1 := NetworkHeader{
+	header1 := NetHeader{
 		MessageSize: 32567,
 		RequestId:   9875235,
 	}
-	var header2 NetworkHeader
+	var header2 NetHeader
 	bytes := make([]byte, 100, 100)
 	//
 	header1.WriteTo(bytes)

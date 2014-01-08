@@ -83,7 +83,7 @@ func (this *cli) runOnce(command string) {
 		return
 	}
 	this.requestId++
-	rw := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	rw := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	bytes := []byte(command)
 	err := rw.WriteHeaderAndMessage(this.requestId, bytes)
 	if err != nil {
@@ -179,7 +179,7 @@ func (this *cli) readInput() {
 func (this *cli) readMessages() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	reader := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	reader := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 LOOP:
 	for {
 		_, bytes, err := reader.ReadMessage()
@@ -201,7 +201,7 @@ LOOP:
 func (this *cli) writeMessages() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	writer := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	writer := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 LOOP:
 	for {
 		select {

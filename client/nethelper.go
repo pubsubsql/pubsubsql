@@ -23,34 +23,34 @@ import (
 )
 
 // message reader
-type NetMessageReaderWriter struct {
+type NetHelper struct {
 	conn  net.Conn
 	bytes []byte
 }
 
-func NewNetMessageReaderWriter(conn net.Conn, bufferSize int) *NetMessageReaderWriter {
-	var ret NetMessageReaderWriter
+func NewNetHelper(conn net.Conn, bufferSize int) *NetHelper {
+	var ret NetHelper
 	ret.Set(conn, bufferSize)
 	return &ret
 }
 
-func (this *NetMessageReaderWriter) Set(conn net.Conn, bufferSize int) {
+func (this *NetHelper) Set(conn net.Conn, bufferSize int) {
 	this.conn = conn
 	this.bytes = make([]byte, bufferSize, bufferSize)
 }
 
-func (this *NetMessageReaderWriter) Close() {
+func (this *NetHelper) Close() {
 	if this.conn != nil {
 		this.conn.Close()
 		this.conn = nil
 	}
 }
 
-func (this *NetMessageReaderWriter) Valid() bool {
+func (this *NetHelper) Valid() bool {
 	return this.conn != nil
 }
 
-func (this *NetMessageReaderWriter) WriteMessage(bytes []byte) error {
+func (this *NetHelper) WriteMessage(bytes []byte) error {
 	leftToWrite := len(bytes)
 	for {
 		written, err := this.conn.Write(bytes)
@@ -66,7 +66,7 @@ func (this *NetMessageReaderWriter) WriteMessage(bytes []byte) error {
 	return nil
 }
 
-func (this *NetMessageReaderWriter) WriteHeaderAndMessage(requestId uint32, bytes []byte) error {
+func (this *NetHelper) WriteHeaderAndMessage(requestId uint32, bytes []byte) error {
 	err := this.WriteMessage(NewNetHeader(uint32(len(bytes)), requestId).GetBytes())
 	if err != nil {
 		return err
@@ -74,7 +74,7 @@ func (this *NetMessageReaderWriter) WriteHeaderAndMessage(requestId uint32, byte
 	return this.WriteMessage(bytes)
 }
 
-func (this *NetMessageReaderWriter) ReadMessageTimeout(milliseconds int64) (*NetHeader, []byte, error, bool) {
+func (this *NetHelper) ReadMessageTimeout(milliseconds int64) (*NetHeader, []byte, error, bool) {
 	this.conn.SetReadDeadline(time.Now().Add(time.Duration(milliseconds) * time.Millisecond))
 	header, bytes, err := this.ReadMessage()
 	timedout := false
@@ -85,7 +85,7 @@ func (this *NetMessageReaderWriter) ReadMessageTimeout(milliseconds int64) (*Net
 	return header, bytes, err, timedout
 }
 
-func (this *NetMessageReaderWriter) ReadMessage() (*NetHeader, []byte, error) {
+func (this *NetHelper) ReadMessage() (*NetHeader, []byte, error) {
 	// header
 	read, err := this.conn.Read(this.bytes[0:HEADER_SIZE])
 	if err != nil {

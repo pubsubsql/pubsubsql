@@ -195,7 +195,7 @@ func (this *networkConnection) Done() bool {
 	return this.sender.quit.Done() || this.quit.Done()
 }
 
-func (c *networkConnection) route(header *pubsubsql.NetworkHeader, req request) {
+func (c *networkConnection) route(header *pubsubsql.NetHeader, req request) {
 	item := &requestItem{
 		header: header,
 		req:    req,
@@ -207,11 +207,11 @@ func (c *networkConnection) route(header *pubsubsql.NetworkHeader, req request) 
 func (this *networkConnection) read() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	reader := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	reader := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	//
 	var err error
 	var message []byte
-	var header *pubsubsql.NetworkHeader
+	var header *pubsubsql.NetHeader
 	for {
 		err = nil
 		if this.Done() {
@@ -237,7 +237,7 @@ func (this *networkConnection) read() {
 func (this *networkConnection) write() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	writer := pubsubsql.NewNetMessageReaderWriter(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	writer := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	var err error
 	for {
 		select {

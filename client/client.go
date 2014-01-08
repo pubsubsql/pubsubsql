@@ -124,7 +124,7 @@ func (this *responseData) reset() {
 type client struct {
 	Client
 	address   string
-	rw        NetMessageReaderWriter
+	rw        NetHelper
 	requestId uint32
 	err       string
 	rawjson   []byte
