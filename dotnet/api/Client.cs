@@ -64,9 +64,27 @@ namespace PubSubSQL
         [DataMember(Name = "torow")]
         public int Torow { get; set; }
         [DataMember(Name = "columns")]
-        public List<string> columns { get; set; }
+        public List<string> Columns { get; set; }
         //Data     []map[string]string
-        // TOBE DECIDEDnil
+        // TOBinsertE DECIDEDnil
+
+        public responseData()
+        {
+            Columns = new List<string>(10);
+        }
+
+        public void reset()
+        {
+            Status = string.Empty;
+            Msg = string.Empty;
+            Action = string.Empty;
+            Id = string.Empty;
+            PubSubId = string.Empty;
+            Rows = 0;
+            Fromrow = 0;
+            Torow = 0;
+            Columns.Clear();
+        }
     }
 
     public class Factory
@@ -85,26 +103,15 @@ namespace PubSubSQL
         UInt32 requestId;
         string err;
         byte[] rawjson;
-        responseData response;
+        responseData response = new responseData();
         int record;
         List<byte[]> backlog = new List<byte[]>();
 
         const int CLIENT_DEFAULT_BUFFER_SIZE = 2048;
 
-        public void testColmpile()
+        public client()
         {
-            string str = "{\"status\":\"ok\",\"columns\":[\"col1\",\"col2\"]}"; 
-            byte[] byteArray = Encoding.ASCII.GetBytes( str );
-            MemoryStream stream = new MemoryStream( byteArray );
-            DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(responseData));
-            object objResponse = jsonSerializer.ReadObject(stream);
-            responseData jsonResponse = objResponse as responseData;
-            System.Console.WriteLine(jsonResponse.Status);
-            System.Console.WriteLine(jsonResponse.Msg);
-            foreach (string s in jsonResponse.columns)
-            {
-                System.Console.WriteLine(s);
-            }
+            reset();
         }
 
         public bool Connect(string address)
@@ -240,7 +247,7 @@ namespace PubSubSQL
 
         public List<string> Columns()
         {
-            return response.columns;
+            return response.Columns;
         }
 
         public bool WaitForPubSub(Int64 timeout)

@@ -8,6 +8,13 @@ namespace PubSubSQLTest
     class TestUtils
     {
         static readonly string ADDRESS = "localhost:7777";
+        public static int ROWS = 300;
+        public static string TABLE = generateTableName(); 
+
+        public static string generateTableName()
+        {
+            return "T" + DateTime.Now.Ticks.ToString();
+        }
 
         public static void ASSERT_TRUE(bool b)
         {
@@ -48,6 +55,22 @@ namespace PubSubSQLTest
             if (client.Action() != action)
             {
                 Assert.Fail("Expected action " + action + " but got " + client.Action() + "\n" + client.JSON());
+            }
+        }
+
+        public static void ASSERT_ID(Client client)
+        {
+            if (string.IsNullOrEmpty(client.Id()))
+            {
+                Assert.Fail("Expected id but got empty string");
+            }
+        }
+
+        public static void ASSERT_COLUMNS(Client client, int count)
+        {
+            if (client.Columns().Count != count)
+            {
+                Assert.Fail("Expected columns count {0} but got {1}", count, client.Columns().Count);
             }
         }
     }
