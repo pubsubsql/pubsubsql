@@ -250,7 +250,7 @@ namespace PubSubSQL
         public string Value(string column)
         {
             int ordinal = -1;
-            if (record < 0 && record >= response.Values.Count) return string.Empty;
+            if (record < 0 || record >= response.Values.Count) return string.Empty;
             if (response.Values == null || !columns.TryGetValue(column, out ordinal)) return string.Empty;
             return response.Values[record][ordinal];
         }

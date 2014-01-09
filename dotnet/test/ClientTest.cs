@@ -185,7 +185,6 @@ namespace PubSubSQLTest
                 TestUtils.ASSERT_ACTION(client, "update");
                 TestUtils.ASSERT_PUBSUBID(client);
                 TestUtils.ASSERT_TRUE(pubsubid == client.PubSubId());
-                TestUtils.ASSERT_ACTION(client, "update");
                 TestUtils.ASSERT_COLUMNS(client, 2);
                 TestUtils.ASSERT_TRUE(client.NextRecord());
                 TestUtils.ASSERT_COLUMN(client, "id");
@@ -193,5 +192,96 @@ namespace PubSubSQLTest
             }
             client.Disconnect();
         }
+
+        [TestMethod]
+        public void TestWaitPubSubRemove()
+        {
+            Client client = Factory.NewClient();
+            TestUtils.ASSERT_CONNECT(client);
+            string val = "subscribedvalue";
+            // first update tag with the same value so that when we subscribe to the tag and update
+            // the tag with different value we will get pubsub remove action
+            string command = string.Format("update {0} set col2 = {1}", TestUtils.TABLE, val);
+            TestUtils.ASSERT_EXECUTE(client, command, "update failed");
+            command = string.Format("subscribe skip * from {0} where col2 = {1}", TestUtils.TABLE, val);
+            TestUtils.ASSERT_EXECUTE(client, command, "subscribe failed");
+            TestUtils.ASSERT_ACTION(client, "subscribe");
+            TestUtils.ASSERT_PUBSUBID(client);
+            string pubsubid = client.PubSubId();
+            // now update the tag and generate pubsub remove    
+            val = "newtagvalue";
+            command = string.Format("update {0} set col2 = {1}", TestUtils.TABLE, val);
+            TestUtils.ASSERT_EXECUTE(client, command, "update failed");
+            TestUtils.ASSERT_ACTION(client, "update");
+            for (int rows = 0; rows < TestUtils.ROWS; rows++ )
+            {
+                TestUtils.ASSERT_TRUE(client.WaitForPubSub(10));
+                TestUtils.ASSERT_ACTION(client, "remove");
+                TestUtils.ASSERT_PUBSUBID(client);
+                TestUtils.ASSERT_TRUE(pubsubid == client.PubSubId());
+                TestUtils.ASSERT_ID(client);
+            }
+            client.Disconnect();
+        }
+
+        [TestMethod]
+        public void TestWaitPubSubDelete()
+        {
+            Client client = Factory.NewClient();
+            TestUtils.ASSERT_CONNECT(client);
+            string command = string.Format("subscribe skip * from {0}", TestUtils.TABLE);
+            TestUtils.ASSERT_EXECUTE(client, command, "subscribe failed");
+            TestUtils.ASSERT_ACTION(client, "subscribe");
+            TestUtils.ASSERT_PUBSUBID(client);
+            string pubsubid = client.PubSubId();
+            command = string.Format("delete from {0} ", TestUtils.TABLE);
+            TestUtils.ASSERT_EXECUTE(client, command, "delete failed");
+            TestUtils.ASSERT_ACTION(client, "delete");
+            for (int rows = 0; rows < TestUtils.ROWS; rows++)
+            {
+                TestUtils.ASSERT_TRUE(client.WaitForPubSub(10));
+                TestUtils.ASSERT_ACTION(client, "delete");
+                TestUtils.ASSERT_PUBSUBID(client);
+                TestUtils.ASSERT_TRUE(pubsubid == client.PubSubId());
+                TestUtils.ASSERT_ID(client);
+            }
+            client.Disconnect();
+        }
+
+        [TestMethod]
+        public void TestWaitPubSubDelete2()
+        {
+            Client client = Factory.NewClient();
+            TestUtils.ASSERT_CONNECT(client);
+            string command = string.Format("subscribe * from {0}", TestUtils.TABLE);
+            TestUtils.ASSERT_EXECUTE(client, command, "subscribe failed");
+            TestUtils.ASSERT_ACTION(client, "subscribe");
+            TestUtils.ASSERT_PUBSUBID(client);
+            string pubsubid = client.PubSubId();
+            // insert record to generate pubsub insert
+            for (int row = 0; row < TestUtils.ROWS; row++)
+            {
+                command = string.Format("insert into {0} (col1, col2, col3) values ({1}, {1}, {1})", TestUtils.TABLE, row);
+                TestUtils.ASSERT_EXECUTE(client, command, "insert failed");
+                TestUtils.ASSERT_ACTION(client, "insert");
+                TestUtils.ASSERT_ID(client);
+            }
+            //
+            for (int rows = 0; rows < TestUtils.ROWS; rows++)
+            {
+                string val = rows.ToString();
+                TestUtils.ASSERT_TRUE(client.WaitForPubSub(10));
+                TestUtils.ASSERT_ACTION(client, "insert");
+                TestUtils.ASSERT_TRUE(pubsubid == client.PubSubId());
+                TestUtils.ASSERT_TRUE(client.NextRecord());
+                TestUtils.ASSERT_COLUMN(client, "id");
+                TestUtils.ASSERT_VALUE(client, "col1", val);
+                TestUtils.ASSERT_VALUE(client, "col2", val);
+                TestUtils.ASSERT_VALUE(client, "col3", val);
+            }
+            client.Disconnect();
+        }
+        
+
     }
 }
