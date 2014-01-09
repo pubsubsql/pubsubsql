@@ -54,13 +54,13 @@ namespace PubSubSQLTest
         {
             if (client.Action() != action)
             {
-                Assert.Fail("Expected action " + action + " but got " + client.Action() + "\n" + client.JSON());
+                Assert.Fail("Expected action {0} but got {1} ", action ,client.Action());
             }
         }
 
         public static void ASSERT_ID(Client client)
         {
-            if (string.IsNullOrEmpty(client.Id()))
+            if (client.Id() == string.Empty)
             {
                 Assert.Fail("Expected id but got empty string");
             }
@@ -71,6 +71,38 @@ namespace PubSubSQLTest
             if (client.Columns().Count != count)
             {
                 Assert.Fail("Expected columns count {0} but got {1}", count, client.Columns().Count);
+            }
+        }
+
+        public static void ASSERT_COLUMN(Client client, string column)
+        {
+            if (!client.HasColumn(column))
+            {
+                Assert.Fail("Expected column {0}", column);
+            }
+        }
+
+        public static void ASSERT_RECORD_COUNT(Client client, int count)
+        {
+            if (client.RecordCount() != count)
+            {
+                Assert.Fail("Expected records count {0} but got {1}", count, client.RecordCount());
+            }
+        }
+
+        public static void ASSERT_VALUE(Client client, string column, string value)
+        {
+            if (client.Value(column) != value)
+            {
+                Assert.Fail("Expected value {0} for column {1} but got {2}", value, column, client.Value(column));
+            }
+        }
+
+        public static void ASSERT_PUBSUBID(Client client)
+        {
+            if (client.PubSubId()== string.Empty)
+            {
+                Assert.Fail("Expected pubsubid but got empty string");
             }
         }
     }

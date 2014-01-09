@@ -38,8 +38,8 @@ namespace PubSubSQL
         string PubSubId();
         int RecordCount();
         bool NextRecord();
-        string Value();
-        bool HasColumn();
+        string Value(string column);
+        bool HasColumn(string column);
         List<string> Columns();
         bool WaitForPubSub(Int64 timeout);
     }
@@ -65,26 +65,8 @@ namespace PubSubSQL
         public int Torow { get; set; }
         [DataMember(Name = "columns")]
         public List<string> Columns { get; set; }
-        //Data     []map[string]string
-        // TOBinsertE DECIDEDnil
-
-        public responseData()
-        {
-            Columns = new List<string>(10);
-        }
-
-        public void reset()
-        {
-            Status = string.Empty;
-            Msg = string.Empty;
-            Action = string.Empty;
-            Id = string.Empty;
-            PubSubId = string.Empty;
-            Rows = 0;
-            Fromrow = 0;
-            Torow = 0;
-            Columns.Clear();
-        }
+        [DataMember(Name = "data")]
+        public List<List<string>> Values { get; set; }
     }
 
     public class Factory
@@ -104,6 +86,7 @@ namespace PubSubSQL
         string err;
         byte[] rawjson;
         responseData response = new responseData();
+        Dictionary<string, int> columns = new Dictionary<string, int>(10);
         int record;
         List<byte[]> backlog = new List<byte[]>();
 
@@ -198,7 +181,7 @@ namespace PubSubSQL
                 else
                 {
                     // this should never happen
-                    setErrorString("protocol error invalid requestId");
+                    setErrorString("Protocol error invalid requestId");
                     ok = false;
                 }       
             }
@@ -212,16 +195,19 @@ namespace PubSubSQL
 
         public string Action()
         {
+            if (response.Action == null) return string.Empty;
             return response.Action;
         }
 
         public string Id()
         {
+            if (response.Id == null) return string.Empty;
             return response.Id;
         }
 
         public string PubSubId()
         {
+            if (response.PubSubId == null) return string.Empty;
             return response.PubSubId;
         }
 
@@ -232,21 +218,56 @@ namespace PubSubSQL
 
         public bool NextRecord()
         {
+            while (Ok())
+            {
+                // no resulst set
+                if (response.Rows == 0) return false;
+                if (response.Fromrow == 0 || response.Torow == 0) return false;
+                // the current record is valid
+                record++;
+                if (record <= (response.Torow - response.Fromrow)) return true;
+                // we reached the end of the result set
+                if (response.Rows == response.Torow)
+                {
+                    record--;
+                    return false;
+                }
+                // if we are here there is another batch
+                reset();
+                NetHeader header = new NetHeader();
+                byte[] bytes = null;
+                if (!read(ref header, out bytes)) return false;
+                if (header.RequestId > 0 && header.RequestId != this.requestId)
+                {
+                    protocolError();
+                    return false;
+                }
+                unmarshalJSON(bytes);
+            }
             return false;
         }
 
-        public string Value()
+        public string Value(string column)
         {
-            return "";
+            int ordinal = -1;
+            if (response.Values != null && columns.TryGetValue(column, out ordinal))
+            {
+                return response.Values[record][ordinal];
+            }
+            return string.Empty;
         }
 
-        public bool HasColumn()
+        public bool HasColumn(string column)
         {
-            return false;
+            return columns.ContainsKey(column);
         }
 
         public List<string> Columns()
         {
+            if (response.Columns == null)
+            {
+                return new List<string>();
+            }
             return response.Columns;
         }
 
@@ -259,6 +280,7 @@ namespace PubSubSQL
         {
             err = string.Empty;
             response = new responseData();
+            columns.Clear();
             rawjson = null;
             this.record = -1;
         }
@@ -275,6 +297,12 @@ namespace PubSubSQL
                 setErrorString("Invalid port " + sport);
             }
             return false;
+        }
+
+        void protocolError()
+        {
+            Disconnect();
+            setErrorString("Protocol error");
         }
 
         void setErrorString(string err)
@@ -344,6 +372,7 @@ namespace PubSubSQL
                 MemoryStream stream = new MemoryStream(bytes);
                 DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(responseData));
                 response = jsonSerializer.ReadObject(stream) as responseData;
+                setColumns();
                 return true;
             }
             catch (Exception e)
@@ -352,6 +381,20 @@ namespace PubSubSQL
             }
             return false;
         }
+
+        void setColumns()
+        {
+            if (response.Columns != null)
+            {
+                int index = 0; 
+                foreach (string column in response.Columns) 
+                {
+                    columns[column] = index;
+                    index++;
+                }
+            }
+        }
+
 
     }
 
