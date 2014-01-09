@@ -169,15 +169,15 @@ type sqlSelectResponse struct {
 }
 
 func row(builder *JSONBuilder, columns []*column, rec *record) {
-	builder.beginObject()
+	builder.beginArray()
 	// columns and values
-	for colIndex, col := range columns {
+	for colIndex, _ := range columns {
 		if colIndex != 0 {
 			builder.valueSeparator()
 		}
-		builder.nameValue(col.name, rec.getValue(colIndex))
+		builder.string(rec.getValue(colIndex))
 	}
-	builder.endObject()
+	builder.endArray()
 }
 
 func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
@@ -228,10 +228,12 @@ func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
 	for recIndex, rec := range records {
 		// another row
 		if recIndex != 0 {
-			builder.objectSeparator()
+			builder.valueSeparator()
 		}
+		builder.newLine()	
 		row(builder, this.columns, rec)
 	}
+	builder.newLine()	
 	builder.endArray()
 	return more
 }

@@ -125,6 +125,10 @@ func (this *JSONBuilder) nameValue(name string, value string) {
 	this.string(value)
 }
 
+func (this *JSONBuilder) newLine() {
+	this.WriteByte('\n')
+}
+
 func (this *JSONBuilder) nameIntValue(name string, val int) {
 	this.string(name)
 	this.nameSeparator()
