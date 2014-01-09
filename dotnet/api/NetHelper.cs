@@ -9,12 +9,12 @@ namespace PubSubSQL
     public class NetHelper
     {
         Socket socket;
-        byte[] recvBytes;
+        byte[] headerBytes;
 
         public void Set(Socket socket, int bufferSize)
         {
             this.socket = socket;
-            this.recvBytes = new byte[bufferSize];
+            this.headerBytes = new byte[NetHeader.HEADER_SIZE];
         }
 
         public void Close()
@@ -79,20 +79,19 @@ namespace PubSubSQL
 
         public void Read(ref NetHeader header, out byte[] bytes)
         {
-            int read = socket.Receive(this.recvBytes, 0, NetHeader.HEADER_SIZE, SocketFlags.None);
+            int read = socket.Receive(headerBytes, 0, NetHeader.HEADER_SIZE, SocketFlags.None);
             if (read < NetHeader.HEADER_SIZE)
             {
                 throw new Exception("Failed to read header.");
             }
-            header.ReadFrom(recvBytes);
-            recvBytes = new byte[header.MessageSize];
+            header.ReadFrom(headerBytes);
+            bytes = new byte[header.MessageSize];
             // read the rest of the message
             read = 0;
             while (header.MessageSize > read)
             {
-                read += socket.Receive(recvBytes, read, (int)header.MessageSize - read, SocketFlags.None);
+                read += socket.Receive(bytes, read, (int)header.MessageSize - read, SocketFlags.None);
             }
-            bytes = this.recvBytes;
         }
 
         public static byte[] ToUTF8(string str)

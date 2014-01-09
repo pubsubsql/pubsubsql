@@ -149,18 +149,49 @@ namespace PubSubSQLTest
             TestUtils.ASSERT_ACTION(client, "add");
             TestUtils.ASSERT_PUBSUBID(client);
             TestUtils.ASSERT_TRUE(pubsubid == client.PubSubId());
+            TestUtils.ASSERT_COLUMNS(client, 4);
             int rows = 0;
-            while (rows < TestUtils.ROWS)
+            for (rows = 0; rows < TestUtils.ROWS; rows++ )
             {
                 TestUtils.ASSERT_TRUE(client.NextRecord());
                 string val = rows.ToString();
+                TestUtils.ASSERT_COLUMN(client, "id");
                 TestUtils.ASSERT_VALUE(client, "col1", val);
                 TestUtils.ASSERT_VALUE(client, "col2", val);
                 TestUtils.ASSERT_VALUE(client, "col3", val);
-                rows++;
             }
             client.Disconnect();
         }
 
+        [TestMethod]
+        public void TestWaitPubSubUpdate()
+        {
+            Client client = Factory.NewClient();
+            TestUtils.ASSERT_CONNECT(client);
+            string command = "subscribe skip * from " + TestUtils.TABLE;
+            TestUtils.ASSERT_EXECUTE(client, command, "subscribe failed");
+            TestUtils.ASSERT_ACTION(client, "subscribe");
+            TestUtils.ASSERT_PUBSUBID(client);
+            string pubsubid = client.PubSubId();
+            // generate pubsub update action
+            string val = "updatedvalue";
+            command = string.Format("update {0} set col3 = {1}", TestUtils.TABLE, val); 
+            TestUtils.ASSERT_EXECUTE(client, command, "update failed");
+            TestUtils.ASSERT_ACTION(client, "update");
+            //
+            for (int rows = 0; rows < TestUtils.ROWS; rows++ )
+            {
+                TestUtils.ASSERT_TRUE(client.WaitForPubSub(10));
+                TestUtils.ASSERT_ACTION(client, "update");
+                TestUtils.ASSERT_PUBSUBID(client);
+                TestUtils.ASSERT_TRUE(pubsubid == client.PubSubId());
+                TestUtils.ASSERT_ACTION(client, "update");
+                TestUtils.ASSERT_COLUMNS(client, 2);
+                TestUtils.ASSERT_TRUE(client.NextRecord());
+                TestUtils.ASSERT_COLUMN(client, "id");
+                TestUtils.ASSERT_VALUE(client, "col3", val);
+            }
+            client.Disconnect();
+        }
     }
 }

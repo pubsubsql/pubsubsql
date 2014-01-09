@@ -88,7 +88,7 @@ namespace PubSubSQL
         responseData response = new responseData();
         Dictionary<string, int> columns = new Dictionary<string, int>(10);
         int record;
-        List<byte[]> backlog = new List<byte[]>();
+        Queue<byte[]> backlog = new Queue<byte[]>();
 
         const int CLIENT_DEFAULT_BUFFER_SIZE = 2048;
 
@@ -155,9 +155,9 @@ namespace PubSubSQL
             reset();
             bool ok = write(command);
             NetHeader header = new NetHeader();
-            byte[] bytes;
             while (ok)
             {
+                byte[] bytes = null;
                 reset();
                 ok = read(ref header, out bytes);
                 if (!ok) break;
@@ -170,7 +170,7 @@ namespace PubSubSQL
                 {
                     // pubsub action, save it and skip it for now
                     // will be proccesed next time WaitPubSub is called
-                    backlog.Add(bytes);
+                    backlog.Enqueue(bytes);
                 } 
                 else if (header.RequestId < this.requestId)
                 {
@@ -250,11 +250,9 @@ namespace PubSubSQL
         public string Value(string column)
         {
             int ordinal = -1;
-            if (response.Values != null && columns.TryGetValue(column, out ordinal))
-            {
-                return response.Values[record][ordinal];
-            }
-            return string.Empty;
+            if (record < 0 && record >= response.Values.Count) return string.Empty;
+            if (response.Values == null || !columns.TryGetValue(column, out ordinal)) return string.Empty;
+            return response.Values[record][ordinal];
         }
 
         public bool HasColumn(string column)
@@ -282,8 +280,7 @@ namespace PubSubSQL
             reset();
             if (backlog.Count > 0)
             {
-                byte[] bytes = backlog[0];
-                backlog.RemoveAt(0);
+                byte[] bytes = backlog.Dequeue();
                 return unmarshalJSON(bytes);
             }
             for (;;)
@@ -402,6 +399,11 @@ namespace PubSubSQL
                 MemoryStream stream = new MemoryStream(bytes);
                 DataContractJsonSerializer jsonSerializer = new DataContractJsonSerializer(typeof(responseData));
                 response = jsonSerializer.ReadObject(stream) as responseData;
+                if (response != null && response.Status != "ok")
+                {
+                    setErrorString(response.Msg);
+                    return false;
+                }
                 setColumns();
                 return true;
             }
