@@ -105,7 +105,7 @@ type responseData struct {
 	Fromrow  int
 	Torow    int
 	Columns  []string
-	Data     []map[string]string
+	Data     [][]string
 }
 
 func (this *responseData) reset() {
@@ -131,6 +131,7 @@ type client struct {
 	//
 	response responseData
 	record   int
+	columns map[string]int
 
 	// pubsub back log
 	backlog list.List
@@ -257,19 +258,15 @@ func (this *client) NextRecord() bool {
 }
 
 func (this *client) Value(column string) string {
-	if this.record > -1 && this.record < len(this.response.Data) {
-		rec := this.response.Data[this.record]
-		return rec[column]
-	}
-	return ""
+	if this.record < 0  || this.record >= len(this.response.Data) { return "" }
+	ordinal, ok := this.columns[column]			
+	if !ok { return "" }
+	return 	this.response.Data[this.record][ordinal]
 }
 
 func (this *client) HasColumn(column string) bool {
-	hasColumn := false
-	if len(this.response.Data) > 0 {
-		_, hasColumn = this.response.Data[0][column]
-	}
-	return hasColumn
+	_, ok := this.columns[column]			
+	return ok
 }
 
 func (this *client) Columns() []string {
@@ -313,7 +310,18 @@ func (this *client) unmarshalJSON(bytes []byte) bool {
 		this.setErrorString(this.response.Msg)
 		return false
 	}
+	this.setColumns()
 	return true
+}
+
+func (this *client) setColumns() {
+	if len(this.response.Columns)  == 0 {
+		return;	
+	}
+	this.columns = make(map[string]int, cap(this.response.Columns));
+	for ordinal, column := range this.response.Columns {
+		this.columns[column] = ordinal;	
+	}
 }
 
 func (this *client) reset() {
