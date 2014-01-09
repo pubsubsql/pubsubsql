@@ -139,7 +139,27 @@ namespace PubSubSQLTest
         [TestMethod]
         public void TestWaitPubSubAdd()
         {
-            
+            Client client = Factory.NewClient();
+            TestUtils.ASSERT_CONNECT(client);
+            string command = "subscribe * from " + TestUtils.TABLE;
+            TestUtils.ASSERT_EXECUTE(client, command, "subscribe failed");
+            TestUtils.ASSERT_PUBSUBID(client);
+            string pubsubid = client.PubSubId();
+            TestUtils.ASSERT_TRUE(client.WaitForPubSub(100));
+            TestUtils.ASSERT_ACTION(client, "add");
+            TestUtils.ASSERT_PUBSUBID(client);
+            TestUtils.ASSERT_TRUE(pubsubid == client.PubSubId());
+            int rows = 0;
+            while (rows < TestUtils.ROWS)
+            {
+                TestUtils.ASSERT_TRUE(client.NextRecord());
+                string val = rows.ToString();
+                TestUtils.ASSERT_VALUE(client, "col1", val);
+                TestUtils.ASSERT_VALUE(client, "col2", val);
+                TestUtils.ASSERT_VALUE(client, "col3", val);
+                rows++;
+            }
+            client.Disconnect();
         }
 
     }

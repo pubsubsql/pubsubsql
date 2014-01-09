@@ -41,7 +41,7 @@ namespace PubSubSQL
         string Value(string column);
         bool HasColumn(string column);
         List<string> Columns();
-        bool WaitForPubSub(Int64 timeout);
+        bool WaitForPubSub(int timeout);
     }
 
     [DataContract]
@@ -271,9 +271,39 @@ namespace PubSubSQL
             return response.Columns;
         }
 
-        public bool WaitForPubSub(Int64 timeout)
+        public bool WaitForPubSub(int timeout)
         {
-            return false;
+            // timed out
+            if (timeout <= 0)
+            {
+                return false;
+            }
+            // process backlog first
+            reset();
+            if (backlog.Count > 0)
+            {
+                byte[] bytes = backlog[0];
+                backlog.RemoveAt(0);
+                return unmarshalJSON(bytes);
+            }
+            for (;;)
+            {
+                byte[] bytes = null;
+                NetHeader header = new NetHeader();
+                bool timedout = false;
+                // return on error
+                if (!readTimeout(timeout, ref header, out bytes, ref timedout)) return false;
+                // timedout
+                if (timedout) return false;
+                // we got what we were looking for
+                if (header.RequestId == 0)
+                {
+                    return unmarshalJSON(bytes);
+                }
+                // this is not pubsub message; are we reading abandoned result set 
+                // ignore and continue reading do we want to adjust time out value here?
+                // TODO?
+            }
         }
 
         void reset()
