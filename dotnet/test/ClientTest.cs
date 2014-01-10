@@ -33,7 +33,7 @@ namespace PubSubSQLTest
             TestUtils.ASSERT_CONNECT(client);
             for (int i = 0; i < TestUtils.ROWS; i++)
             {
-                string command = "insert into " + TestUtils.TABLE + " (col1, col2, col3) values ( val1, val2, val3 ) ";
+                string command = string.Format("insert into {0} (col1, col2, col3) values ( val1, val2, val3 ) ", TestUtils.TABLE);
                 TestUtils.ASSERT_EXECUTE(client, command, "insert failed");
                 TestUtils.ASSERT_ACTION(client, "insert");
                 TestUtils.ASSERT_ID(client);
@@ -46,7 +46,7 @@ namespace PubSubSQLTest
         {
             Client client = Factory.NewClient();
             TestUtils.ASSERT_CONNECT(client);
-            string command = "select * from " + TestUtils.TABLE;
+            string command = string.Format("select * from {0} ", TestUtils.TABLE);
             TestUtils.ASSERT_EXECUTE(client, command, "select failed");
             TestUtils.ASSERT_ACTION(client, "select");
             TestUtils.ASSERT_COLUMNS(client, 4);
@@ -71,7 +71,7 @@ namespace PubSubSQLTest
         {
             Client client = Factory.NewClient();
             TestUtils.ASSERT_CONNECT(client);
-            string command = "update " + TestUtils.TABLE + " set col1 = val1updated, col2 = val2updated, col3 = val3updated ";
+            string command = string.Format("update {0} set col1 = val1updated, col2 = val2updated, col3 = val3updated ", TestUtils.TABLE);
             TestUtils.ASSERT_EXECUTE(client, command, "update failed");
             TestUtils.ASSERT_RECORD_COUNT(client, TestUtils.ROWS);
             client.Disconnect();  
@@ -82,7 +82,7 @@ namespace PubSubSQLTest
         {
             Client client = Factory.NewClient();
             TestUtils.ASSERT_CONNECT(client);
-            string command = "delete from " + TestUtils.TABLE;
+            string command = string.Format("delete from {0} ", TestUtils.TABLE);
             TestUtils.ASSERT_EXECUTE(client, command, "delete failed");
             TestUtils.ASSERT_RECORD_COUNT(client, TestUtils.ROWS);
             client.Disconnect();  
@@ -93,7 +93,7 @@ namespace PubSubSQLTest
         {
             Client client = Factory.NewClient();
             TestUtils.ASSERT_CONNECT(client);
-            string command = "key " + TestUtils.TABLE + " col1 ";
+            string command = string.Format("key {0} col1 ", TestUtils.TABLE);
             TestUtils.ASSERT_EXECUTE(client, command, "key failed");
             client.Disconnect();  
         }
@@ -103,7 +103,7 @@ namespace PubSubSQLTest
         {
             Client client = Factory.NewClient();
             TestUtils.ASSERT_CONNECT(client);
-            string command = "tag " + TestUtils.TABLE + " col2 ";
+            string command = string.Format("tag {0} col2 ", TestUtils.TABLE);
             TestUtils.ASSERT_EXECUTE(client, command, "tag failed");
             client.Disconnect();  
         }
@@ -128,7 +128,7 @@ namespace PubSubSQLTest
         {
             Client client = Factory.NewClient();
             TestUtils.ASSERT_CONNECT(client);
-            string command = "subscribe * from " + TestUtils.TABLE;
+            string command = string.Format("subscribe * from {0}", TestUtils.TABLE);
             TestUtils.ASSERT_EXECUTE(client, command, "subscribe failed");
             TestUtils.ASSERT_PUBSUBID(client);
             command = string.Format("unsubscribe from {0} where pubsubid = {1}", TestUtils.TABLE, client.PubSubId());
@@ -141,7 +141,7 @@ namespace PubSubSQLTest
         {
             Client client = Factory.NewClient();
             TestUtils.ASSERT_CONNECT(client);
-            string command = "subscribe * from " + TestUtils.TABLE;
+            string command = string.Format("subscribe * from {0} ", TestUtils.TABLE);
             TestUtils.ASSERT_EXECUTE(client, command, "subscribe failed");
             TestUtils.ASSERT_PUBSUBID(client);
             string pubsubid = client.PubSubId();
@@ -168,7 +168,7 @@ namespace PubSubSQLTest
         {
             Client client = Factory.NewClient();
             TestUtils.ASSERT_CONNECT(client);
-            string command = "subscribe skip * from " + TestUtils.TABLE;
+            string command = string.Format("subscribe skip * from {0} ", TestUtils.TABLE);
             TestUtils.ASSERT_EXECUTE(client, command, "subscribe failed");
             TestUtils.ASSERT_ACTION(client, "subscribe");
             TestUtils.ASSERT_PUBSUBID(client);
@@ -249,7 +249,7 @@ namespace PubSubSQLTest
         }
 
         [TestMethod]
-        public void TestWaitPubSubDelete2()
+        public void TestWaitPubSubInsert()
         {
             Client client = Factory.NewClient();
             TestUtils.ASSERT_CONNECT(client);
