@@ -14,39 +14,65 @@ namespace PubSubSQLGUI
         public MainForm()
         {
             InitializeComponent();
+            // set up gui events
+            newMenu.Click += new_;
+            newButton.Click += new_;
+            exitMenu.Click += exit;
+            connectLocalMenu.Click += connectLocal;     
+            connectLocalButton.Click += connectLocal;     
+            connectMenu.Click += connect;
+            connectButton.Click += connect;
+            disconnectMenu.Click += disconnect;
+            disconnectButton.Click += disconnect;
+            executeMenu.Click += execute;
+            executeButton.Click += execute;
+            nextPaneMenu.Click += nextPane;
+            aboutMenu.Click += about;
         }
 
-        private void customToolStripMenuItem_Click(object sender, EventArgs e)
+        // gui events
+
+        private void new_(object sender, EventArgs e)
+        {
+            
+        }
+
+        private void exit(object sender, EventArgs e)
+        {
+            this.Close();
+        }
+
+        private void connectLocal(object sender, EventArgs e)
         {
 
         }
 
-        private void localhost7777ToolStripMenuItem_Click(object sender, EventArgs e)
+        private void connect(object sender, EventArgs e)
         {
 
         }
 
-        private void toolStripButton4_Click(object sender, EventArgs e)
+        private void disconnect(object sender, EventArgs e)
         {
 
         }
 
-        private void newToolStripMenuItem_Click(object sender, EventArgs e)
+        private void execute(object sender, EventArgs e)
         {
 
         }
 
-        private void toolStripButton6_Click(object sender, EventArgs e)
+        private void cancelExecute(object sender, EventArgs e)
         {
 
         }
 
-        private void connectLocalMenu_Click(object sender, EventArgs e)
+        private void nextPane(object sender, EventArgs e)
         {
 
         }
 
-        private void splitContainer1_Panel1_Paint(object sender, PaintEventArgs e)
+        private void about(object sender, EventArgs e)
         {
 
         }

@@ -34,6 +34,10 @@
             this.newMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStripSeparator1 = new System.Windows.Forms.ToolStripSeparator();
             this.exitMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.connectionMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.connectLocalMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.connectMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.disconnectMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.queryMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.customToolStripMenuItem = new System.Windows.Forms.ToolStripSeparator();
             this.executeMenu = new System.Windows.Forms.ToolStripMenuItem();
@@ -42,19 +46,15 @@
             this.nextPaneMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.helpMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutMenu = new System.Windows.Forms.ToolStripMenuItem();
-            this.toolStrip1 = new System.Windows.Forms.ToolStrip();
-            this.connectButton = new System.Windows.Forms.ToolStripButton();
-            this.connectLocalButton = new System.Windows.Forms.ToolStripButton();
-            this.disconnectButton = new System.Windows.Forms.ToolStripButton();
+            this.toolStrip = new System.Windows.Forms.ToolStrip();
             this.newButton = new System.Windows.Forms.ToolStripButton();
             this.separator1 = new System.Windows.Forms.ToolStripSeparator();
+            this.connectLocalButton = new System.Windows.Forms.ToolStripButton();
+            this.connectButton = new System.Windows.Forms.ToolStripButton();
+            this.disconnectButton = new System.Windows.Forms.ToolStripButton();
             this.separator2 = new System.Windows.Forms.ToolStripSeparator();
             this.executeButton = new System.Windows.Forms.ToolStripButton();
             this.cancelButton = new System.Windows.Forms.ToolStripButton();
-            this.connectionMenu = new System.Windows.Forms.ToolStripMenuItem();
-            this.connectLocalMenu = new System.Windows.Forms.ToolStripMenuItem();
-            this.connectMenu = new System.Windows.Forms.ToolStripMenuItem();
-            this.disconnectMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.splitContainer = new System.Windows.Forms.SplitContainer();
             this.queryText = new System.Windows.Forms.TextBox();
             this.resultsTabContainer = new System.Windows.Forms.TabControl();
@@ -62,7 +62,7 @@
             this.statusTab = new System.Windows.Forms.TabPage();
             this.rawDataTab = new System.Windows.Forms.TabPage();
             this.menuStrip.SuspendLayout();
-            this.toolStrip1.SuspendLayout();
+            this.toolStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
             this.splitContainer.Panel1.SuspendLayout();
             this.splitContainer.Panel2.SuspendLayout();
@@ -99,7 +99,6 @@
             this.newMenu.Name = "newMenu";
             this.newMenu.Size = new System.Drawing.Size(152, 22);
             this.newMenu.Text = "New";
-            this.newMenu.Click += new System.EventHandler(this.newToolStripMenuItem_Click);
             // 
             // toolStripSeparator1
             // 
@@ -111,6 +110,34 @@
             this.exitMenu.Name = "exitMenu";
             this.exitMenu.Size = new System.Drawing.Size(152, 22);
             this.exitMenu.Text = "Exit";
+            // 
+            // connectionMenu
+            // 
+            this.connectionMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.connectLocalMenu,
+            this.connectMenu,
+            this.disconnectMenu});
+            this.connectionMenu.Name = "connectionMenu";
+            this.connectionMenu.Size = new System.Drawing.Size(81, 20);
+            this.connectionMenu.Text = "Connection";
+            // 
+            // connectLocalMenu
+            // 
+            this.connectLocalMenu.Name = "connectLocalMenu";
+            this.connectLocalMenu.Size = new System.Drawing.Size(211, 22);
+            this.connectLocalMenu.Text = "Connect to localhost:7777";
+            // 
+            // connectMenu
+            // 
+            this.connectMenu.Name = "connectMenu";
+            this.connectMenu.Size = new System.Drawing.Size(211, 22);
+            this.connectMenu.Text = "Connect...";
+            // 
+            // disconnectMenu
+            // 
+            this.disconnectMenu.Name = "disconnectMenu";
+            this.disconnectMenu.Size = new System.Drawing.Size(211, 22);
+            this.disconnectMenu.Text = "Disconnect";
             // 
             // queryMenu
             // 
@@ -126,7 +153,6 @@
             // 
             this.customToolStripMenuItem.Name = "customToolStripMenuItem";
             this.customToolStripMenuItem.Size = new System.Drawing.Size(196, 6);
-            this.customToolStripMenuItem.Click += new System.EventHandler(this.customToolStripMenuItem_Click);
             // 
             // executeMenu
             // 
@@ -168,9 +194,9 @@
             this.aboutMenu.Size = new System.Drawing.Size(152, 22);
             this.aboutMenu.Text = "About";
             // 
-            // toolStrip1
+            // toolStrip
             // 
-            this.toolStrip1.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
+            this.toolStrip.Items.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.newButton,
             this.separator1,
             this.connectLocalButton,
@@ -179,38 +205,11 @@
             this.separator2,
             this.executeButton,
             this.cancelButton});
-            this.toolStrip1.Location = new System.Drawing.Point(0, 24);
-            this.toolStrip1.Name = "toolStrip1";
-            this.toolStrip1.Size = new System.Drawing.Size(778, 25);
-            this.toolStrip1.TabIndex = 1;
-            this.toolStrip1.Text = "toolStrip1";
-            // 
-            // connectButton
-            // 
-            this.connectButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.connectButton.Image = ((System.Drawing.Image)(resources.GetObject("connectButton.Image")));
-            this.connectButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.connectButton.Name = "connectButton";
-            this.connectButton.Size = new System.Drawing.Size(23, 22);
-            this.connectButton.Text = "Connect to remote server";
-            // 
-            // connectLocalButton
-            // 
-            this.connectLocalButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.connectLocalButton.Image = ((System.Drawing.Image)(resources.GetObject("connectLocalButton.Image")));
-            this.connectLocalButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.connectLocalButton.Name = "connectLocalButton";
-            this.connectLocalButton.Size = new System.Drawing.Size(23, 22);
-            this.connectLocalButton.Text = "Connect to localhost:7777";
-            // 
-            // disconnectButton
-            // 
-            this.disconnectButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
-            this.disconnectButton.Image = ((System.Drawing.Image)(resources.GetObject("disconnectButton.Image")));
-            this.disconnectButton.ImageTransparentColor = System.Drawing.Color.Magenta;
-            this.disconnectButton.Name = "disconnectButton";
-            this.disconnectButton.Size = new System.Drawing.Size(23, 22);
-            this.disconnectButton.Text = "Disconnect";
+            this.toolStrip.Location = new System.Drawing.Point(0, 24);
+            this.toolStrip.Name = "toolStrip";
+            this.toolStrip.Size = new System.Drawing.Size(778, 25);
+            this.toolStrip.TabIndex = 1;
+            this.toolStrip.Text = "toolStrip1";
             // 
             // newButton
             // 
@@ -225,6 +224,33 @@
             // 
             this.separator1.Name = "separator1";
             this.separator1.Size = new System.Drawing.Size(6, 25);
+            // 
+            // connectLocalButton
+            // 
+            this.connectLocalButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.connectLocalButton.Image = ((System.Drawing.Image)(resources.GetObject("connectLocalButton.Image")));
+            this.connectLocalButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.connectLocalButton.Name = "connectLocalButton";
+            this.connectLocalButton.Size = new System.Drawing.Size(23, 22);
+            this.connectLocalButton.Text = "Connect to localhost:7777";
+            // 
+            // connectButton
+            // 
+            this.connectButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.connectButton.Image = ((System.Drawing.Image)(resources.GetObject("connectButton.Image")));
+            this.connectButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.connectButton.Name = "connectButton";
+            this.connectButton.Size = new System.Drawing.Size(23, 22);
+            this.connectButton.Text = "Connect to remote server";
+            // 
+            // disconnectButton
+            // 
+            this.disconnectButton.DisplayStyle = System.Windows.Forms.ToolStripItemDisplayStyle.Image;
+            this.disconnectButton.Image = ((System.Drawing.Image)(resources.GetObject("disconnectButton.Image")));
+            this.disconnectButton.ImageTransparentColor = System.Drawing.Color.Magenta;
+            this.disconnectButton.Name = "disconnectButton";
+            this.disconnectButton.Size = new System.Drawing.Size(23, 22);
+            this.disconnectButton.Text = "Disconnect";
             // 
             // separator2
             // 
@@ -246,35 +272,6 @@
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(23, 22);
             this.cancelButton.ToolTipText = "Cancel Executing Query";
-            this.cancelButton.Click += new System.EventHandler(this.toolStripButton6_Click);
-            // 
-            // connectionMenu
-            // 
-            this.connectionMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.connectLocalMenu,
-            this.connectMenu,
-            this.disconnectMenu});
-            this.connectionMenu.Name = "connectionMenu";
-            this.connectionMenu.Size = new System.Drawing.Size(81, 20);
-            this.connectionMenu.Text = "Connection";
-            // 
-            // connectLocalMenu
-            // 
-            this.connectLocalMenu.Name = "connectLocalMenu";
-            this.connectLocalMenu.Size = new System.Drawing.Size(211, 22);
-            this.connectLocalMenu.Text = "Connect to localhost:7777";
-            // 
-            // connectMenu
-            // 
-            this.connectMenu.Name = "connectMenu";
-            this.connectMenu.Size = new System.Drawing.Size(211, 22);
-            this.connectMenu.Text = "Connect...";
-            // 
-            // disconnectMenu
-            // 
-            this.disconnectMenu.Name = "disconnectMenu";
-            this.disconnectMenu.Size = new System.Drawing.Size(211, 22);
-            this.disconnectMenu.Text = "Disconnect";
             // 
             // splitContainer
             // 
@@ -286,7 +283,6 @@
             // splitContainer.Panel1
             // 
             this.splitContainer.Panel1.Controls.Add(this.queryText);
-            this.splitContainer.Panel1.Paint += new System.Windows.Forms.PaintEventHandler(this.splitContainer1_Panel1_Paint);
             // 
             // splitContainer.Panel2
             // 
@@ -353,15 +349,15 @@
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
             this.ClientSize = new System.Drawing.Size(778, 565);
             this.Controls.Add(this.splitContainer);
-            this.Controls.Add(this.toolStrip1);
+            this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.menuStrip);
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "PubSubSQL Interactive Query";
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
-            this.toolStrip1.ResumeLayout(false);
-            this.toolStrip1.PerformLayout();
+            this.toolStrip.ResumeLayout(false);
+            this.toolStrip.PerformLayout();
             this.splitContainer.Panel1.ResumeLayout(false);
             this.splitContainer.Panel1.PerformLayout();
             this.splitContainer.Panel2.ResumeLayout(false);
@@ -388,7 +384,7 @@
         private System.Windows.Forms.ToolStripMenuItem nextPaneMenu;
         private System.Windows.Forms.ToolStripMenuItem helpMenu;
         private System.Windows.Forms.ToolStripMenuItem aboutMenu;
-        private System.Windows.Forms.ToolStrip toolStrip1;
+        private System.Windows.Forms.ToolStrip toolStrip;
         private System.Windows.Forms.ToolStripButton connectButton;
         private System.Windows.Forms.ToolStripButton connectLocalButton;
         private System.Windows.Forms.ToolStripButton disconnectButton;
