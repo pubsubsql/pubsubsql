@@ -58,10 +58,11 @@
             this.splitContainer = new System.Windows.Forms.SplitContainer();
             this.queryText = new System.Windows.Forms.TextBox();
             this.resultsTabContainer = new System.Windows.Forms.TabControl();
-            this.tabResults = new System.Windows.Forms.TabPage();
+            this.resultsTab = new System.Windows.Forms.TabPage();
+            this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.statusTab = new System.Windows.Forms.TabPage();
-            this.rawDataTab = new System.Windows.Forms.TabPage();
             this.statusText = new System.Windows.Forms.TextBox();
+            this.rawDataTab = new System.Windows.Forms.TabPage();
             this.rawdataText = new System.Windows.Forms.TextBox();
             this.menuStrip.SuspendLayout();
             this.toolStrip.SuspendLayout();
@@ -70,6 +71,7 @@
             this.splitContainer.Panel2.SuspendLayout();
             this.splitContainer.SuspendLayout();
             this.resultsTabContainer.SuspendLayout();
+            this.resultsTab.SuspendLayout();
             this.statusTab.SuspendLayout();
             this.rawDataTab.SuspendLayout();
             this.SuspendLayout();
@@ -101,18 +103,18 @@
             // newMenu
             // 
             this.newMenu.Name = "newMenu";
-            this.newMenu.Size = new System.Drawing.Size(152, 22);
+            this.newMenu.Size = new System.Drawing.Size(98, 22);
             this.newMenu.Text = "New";
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(95, 6);
             // 
             // exitMenu
             // 
             this.exitMenu.Name = "exitMenu";
-            this.exitMenu.Size = new System.Drawing.Size(152, 22);
+            this.exitMenu.Size = new System.Drawing.Size(98, 22);
             this.exitMenu.Text = "Exit";
             // 
             // connectionMenu
@@ -181,7 +183,7 @@
             // nextPaneMenu
             // 
             this.nextPaneMenu.Name = "nextPaneMenu";
-            this.nextPaneMenu.Size = new System.Drawing.Size(152, 22);
+            this.nextPaneMenu.Size = new System.Drawing.Size(127, 22);
             this.nextPaneMenu.Text = "Next Pane";
             // 
             // helpMenu
@@ -195,7 +197,7 @@
             // aboutMenu
             // 
             this.aboutMenu.Name = "aboutMenu";
-            this.aboutMenu.Size = new System.Drawing.Size(152, 22);
+            this.aboutMenu.Size = new System.Drawing.Size(107, 22);
             this.aboutMenu.Text = "About";
             // 
             // toolStrip
@@ -307,7 +309,7 @@
             // 
             // resultsTabContainer
             // 
-            this.resultsTabContainer.Controls.Add(this.tabResults);
+            this.resultsTabContainer.Controls.Add(this.resultsTab);
             this.resultsTabContainer.Controls.Add(this.statusTab);
             this.resultsTabContainer.Controls.Add(this.rawDataTab);
             this.resultsTabContainer.Dock = System.Windows.Forms.DockStyle.Fill;
@@ -317,15 +319,33 @@
             this.resultsTabContainer.Size = new System.Drawing.Size(778, 379);
             this.resultsTabContainer.TabIndex = 0;
             // 
-            // tabResults
+            // resultsTab
             // 
-            this.tabResults.Location = new System.Drawing.Point(4, 22);
-            this.tabResults.Name = "tabResults";
-            this.tabResults.Padding = new System.Windows.Forms.Padding(3);
-            this.tabResults.Size = new System.Drawing.Size(770, 353);
-            this.tabResults.TabIndex = 0;
-            this.tabResults.Text = "Results";
-            this.tabResults.UseVisualStyleBackColor = true;
+            this.resultsTab.Controls.Add(this.listView);
+            this.resultsTab.Location = new System.Drawing.Point(4, 22);
+            this.resultsTab.Name = "resultsTab";
+            this.resultsTab.Padding = new System.Windows.Forms.Padding(3);
+            this.resultsTab.Size = new System.Drawing.Size(770, 353);
+            this.resultsTab.TabIndex = 0;
+            this.resultsTab.Text = "Results";
+            this.resultsTab.UseVisualStyleBackColor = true;
+            // 
+            // listView
+            // 
+            this.listView.Activation = System.Windows.Forms.ItemActivation.OneClick;
+            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listView.GridLines = true;
+            this.listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+            this.listView.HoverSelection = true;
+            this.listView.Location = new System.Drawing.Point(3, 3);
+            this.listView.MultiSelect = false;
+            this.listView.Name = "listView";
+            this.listView.Size = new System.Drawing.Size(764, 347);
+            this.listView.TabIndex = 0;
+            this.listView.UseCompatibleStateImageBehavior = false;
+            this.listView.View = System.Windows.Forms.View.Details;
+            this.listView.VirtualMode = true;
+            this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
             // 
             // statusTab
             // 
@@ -338,17 +358,6 @@
             this.statusTab.Text = "Status";
             this.statusTab.UseVisualStyleBackColor = true;
             // 
-            // rawDataTab
-            // 
-            this.rawDataTab.Controls.Add(this.rawdataText);
-            this.rawDataTab.Location = new System.Drawing.Point(4, 22);
-            this.rawDataTab.Name = "rawDataTab";
-            this.rawDataTab.Padding = new System.Windows.Forms.Padding(3);
-            this.rawDataTab.Size = new System.Drawing.Size(770, 353);
-            this.rawDataTab.TabIndex = 2;
-            this.rawDataTab.Text = "Raw Data";
-            this.rawDataTab.UseVisualStyleBackColor = true;
-            // 
             // statusText
             // 
             this.statusText.BackColor = System.Drawing.SystemColors.ControlLightLight;
@@ -360,6 +369,17 @@
             this.statusText.ReadOnly = true;
             this.statusText.Size = new System.Drawing.Size(764, 347);
             this.statusText.TabIndex = 0;
+            // 
+            // rawDataTab
+            // 
+            this.rawDataTab.Controls.Add(this.rawdataText);
+            this.rawDataTab.Location = new System.Drawing.Point(4, 22);
+            this.rawDataTab.Name = "rawDataTab";
+            this.rawDataTab.Padding = new System.Windows.Forms.Padding(3);
+            this.rawDataTab.Size = new System.Drawing.Size(770, 353);
+            this.rawDataTab.TabIndex = 2;
+            this.rawDataTab.Text = "JSON Response";
+            this.rawDataTab.UseVisualStyleBackColor = true;
             // 
             // rawdataText
             // 
@@ -392,6 +412,7 @@
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).EndInit();
             this.splitContainer.ResumeLayout(false);
             this.resultsTabContainer.ResumeLayout(false);
+            this.resultsTab.ResumeLayout(false);
             this.statusTab.ResumeLayout(false);
             this.statusTab.PerformLayout();
             this.rawDataTab.ResumeLayout(false);
@@ -432,11 +453,12 @@
         private System.Windows.Forms.SplitContainer splitContainer;
         private System.Windows.Forms.TextBox queryText;
         private System.Windows.Forms.TabControl resultsTabContainer;
-        private System.Windows.Forms.TabPage tabResults;
+        private System.Windows.Forms.TabPage resultsTab;
         private System.Windows.Forms.TabPage statusTab;
         private System.Windows.Forms.TabPage rawDataTab;
         private System.Windows.Forms.TextBox statusText;
         private System.Windows.Forms.TextBox rawdataText;
+        private ListViewDoubleBuffered listView;
     }
 }
 

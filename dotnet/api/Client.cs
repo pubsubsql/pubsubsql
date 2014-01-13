@@ -40,7 +40,9 @@ namespace PubSubSQL
         bool NextRecord();
         string Value(string column);
         bool HasColumn(string column);
-        List<string> Columns();
+        IEnumerable<string> Columns();
+        int ColumnCount();
+        string Column(int index);
         bool WaitForPubSub(int timeout);
     }
 
@@ -261,13 +263,30 @@ namespace PubSubSQL
             return columns.ContainsKey(column);
         }
 
-        public List<string> Columns()
+        public IEnumerable<string> Columns()
         {
             if (response.Columns == null)
             {
                 return new List<string>();
             }
             return response.Columns;
+        }
+
+        public int ColumnCount()
+        {
+            if (response.Columns == null) return 0;
+            return response.Columns.Count;
+        }
+
+        public string Column(int index)
+        {
+            if (index < ColumnCount())
+            {
+                return response.Columns[index];
+            }
+            return string.Empty;
+
+            
         }
 
         public bool WaitForPubSub(int timeout)

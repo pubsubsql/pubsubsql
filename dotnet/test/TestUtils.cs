@@ -68,9 +68,9 @@ namespace PubSubSQLTest
 
         public static void ASSERT_COLUMNS(Client client, int count)
         {
-            if (client.Columns().Count != count)
+            if (client.ColumnCount() != count)
             {
-                Assert.Fail("Expected columns count {0} but got {1}", count, client.Columns().Count);
+                Assert.Fail("Expected columns count {0} but got {1}", count, client.ColumnCount());
             }
         }
 

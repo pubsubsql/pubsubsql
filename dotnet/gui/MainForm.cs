@@ -11,9 +11,12 @@ namespace PubSubSQLGUI
 {
     public partial class MainForm : Form
     {
-        private PubSubSQL.Client client = PubSubSQL.Factory.NewClient();
         private string DEFAULT_ADDRESS = "localhost:7777";
+        private int PUBSUB_TIMEOUT = 15;
+        private PubSubSQL.Client client = PubSubSQL.Factory.NewClient();
         private bool cancelExecuteFlag = false;
+        private string connectedAddress = string.Empty;
+        private ListViewDataset dataset = new ListViewDataset();
 
         public MainForm()
         {
@@ -35,6 +38,7 @@ namespace PubSubSQLGUI
             aboutMenu.Click += about;
 
             setTitle(string.Empty);
+            resultsTabContainer.SelectedTab = statusTab;
         }
 
         private void setControls(ToolStripButton button, ToolStripMenuItem menu, EventHandler click)
@@ -69,7 +73,10 @@ namespace PubSubSQLGUI
         private void connect(string address)
         {
             clear();
-            if (client.Connect(address)) setTitle(address);
+            if (client.Connect(address))
+            {
+                setTitle(address);
+            }
             setStatus();
         }
 
@@ -78,6 +85,7 @@ namespace PubSubSQLGUI
             setTitle(string.Empty);
             clear();
             client.Disconnect();
+            connectedAddress = string.Empty;
         }
 
         private void execute(object sender, EventArgs e)
@@ -89,11 +97,22 @@ namespace PubSubSQLGUI
                 string command = queryText.Text.Trim();
                 if (string.IsNullOrEmpty(command)) return;
                 client.Execute(queryText.Text);
-                processResults();
+                processResponse();
             }
             finally
             {
                 doneExecuting();
+                // we were stoped in the middle
+                if (cancelExecuteFlag)
+                {
+                    // lets make it simple and just reconnect
+                    // done in order to ignore possible pubsub event or not fully read result set
+                    if (!string.IsNullOrEmpty(connectedAddress))
+                    {
+                        connect(connectedAddress);
+                        clear();
+                    }
+                }
             }
         }
 
@@ -116,6 +135,8 @@ namespace PubSubSQLGUI
 
         private void clear()
         {
+            listView.Columns.Clear();
+            listView.VirtualListSize = 0;
             statusText.Text = "";
             rawdataText.Text = "";
         }
@@ -142,10 +163,12 @@ namespace PubSubSQLGUI
         private void setTitle(string address)
         {
             Text = "PubSubSQL Interactive Query " + address;
+            connectedAddress = address;
         }
 
         private void executing()
         {        
+            clear();
             queryText.Enabled = false;
             executeButton.Enabled = false;
             executeMenu.Enabled = false;
@@ -162,10 +185,89 @@ namespace PubSubSQLGUI
             cancelMenu.Enabled = false;
         }
 
-        private void processResults()
+        private void processResponse()
         {
             setStatus();
             setRawData();
+            dataset.Reset();
+            if (client.Failed()) return;
+            // determine if we just subscribed  
+            if (client.PubSubId() != string.Empty && client.Action() == "subscribe")
+            {
+                waitForPubSubEvent();
+                return;
+            }
+
+            setupColumns();
+            processResults();
+        }
+
+        private void setupColumns()
+        {
+            int countToAdd = client.ColumnCount() - listView.Columns.Count;
+            for (int i = 0; i < countToAdd; i++)
+            {
+                string col = client.Column(i);
+                listView.Columns.Add(col);
+                listView.Columns[i].Width = 100;
+                //listView.Columns[i].AutoResize(ColumnHeaderAutoResizeStyle.ColumnContent);
+            }
+        }
+
+        private void waitForPubSubEvent()
+        {
+            while (client.Ok() && !cancelExecuteFlag)
+            {
+                Application.DoEvents();
+                if (client.WaitForPubSub(PUBSUB_TIMEOUT) && client.Ok())
+                {
+                    setStatus();
+                    setRawData();
+                    processResults();
+                }
+            }
+        }
+
+        private void processResults()
+        {
+            setRawData();
+            bool results = false;
+            // check if it is result set
+            if (client.RecordCount() > 0 && client.ColumnCount() > 0)
+            {
+                results = true;
+                dataset.AddRowsCapacity(client.RecordCount());
+                while (client.NextRecord() && !cancelExecuteFlag)
+                {
+                    dataset.ProcessRow(client);
+                    listView.VirtualListSize = dataset.RowCount;        
+                    Application.DoEvents();
+                }
+            }
+            // something bad happened
+            if (client.Failed())
+            {
+                setStatus();
+                setRawData();
+            }
+            else
+            {
+                if (results) resultsTabContainer.SelectedTab = resultsTab;
+            }
+        }
+
+        private void listView_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
+        {
+            List<string> row = dataset.GetRow(e.ItemIndex);
+            ListViewItem item = new ListViewItem();
+            for (int i = 0; i < listView.Columns.Count; i++)
+            {
+                string str = string.Empty;
+                if (i < row.Count) str = row[i];
+                if (i == 0) item.Text = str;
+                else item.SubItems.Add(str);
+            }
+            e.Item = item;
         }
     }
 }
