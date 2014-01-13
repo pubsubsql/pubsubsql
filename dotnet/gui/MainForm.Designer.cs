@@ -61,6 +61,7 @@
             this.tabResults = new System.Windows.Forms.TabPage();
             this.statusTab = new System.Windows.Forms.TabPage();
             this.rawDataTab = new System.Windows.Forms.TabPage();
+            this.statusText = new System.Windows.Forms.TextBox();
             this.menuStrip.SuspendLayout();
             this.toolStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
@@ -68,6 +69,7 @@
             this.splitContainer.Panel2.SuspendLayout();
             this.splitContainer.SuspendLayout();
             this.resultsTabContainer.SuspendLayout();
+            this.statusTab.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip
@@ -325,6 +327,7 @@
             // 
             // statusTab
             // 
+            this.statusTab.Controls.Add(this.statusText);
             this.statusTab.Location = new System.Drawing.Point(4, 22);
             this.statusTab.Name = "statusTab";
             this.statusTab.Padding = new System.Windows.Forms.Padding(3);
@@ -342,6 +345,18 @@
             this.rawDataTab.TabIndex = 2;
             this.rawDataTab.Text = "Raw Data";
             this.rawDataTab.UseVisualStyleBackColor = true;
+            // 
+            // statusText
+            // 
+            this.statusText.BackColor = System.Drawing.SystemColors.ControlLightLight;
+            this.statusText.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.statusText.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            this.statusText.Location = new System.Drawing.Point(3, 3);
+            this.statusText.Multiline = true;
+            this.statusText.Name = "statusText";
+            this.statusText.ReadOnly = true;
+            this.statusText.Size = new System.Drawing.Size(764, 347);
+            this.statusText.TabIndex = 0;
             // 
             // MainForm
             // 
@@ -364,6 +379,8 @@
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).EndInit();
             this.splitContainer.ResumeLayout(false);
             this.resultsTabContainer.ResumeLayout(false);
+            this.statusTab.ResumeLayout(false);
+            this.statusTab.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -403,6 +420,7 @@
         private System.Windows.Forms.TabPage tabResults;
         private System.Windows.Forms.TabPage statusTab;
         private System.Windows.Forms.TabPage rawDataTab;
+        private System.Windows.Forms.TextBox statusText;
     }
 }
 
