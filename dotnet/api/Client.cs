@@ -190,6 +190,7 @@ namespace PubSubSQL
 
         public string JSON()
         {
+            if (rawjson == null) return string.Empty;
             return System.Text.UTF8Encoding.UTF8.GetString(rawjson);
         }
 

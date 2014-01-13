@@ -62,6 +62,7 @@
             this.statusTab = new System.Windows.Forms.TabPage();
             this.rawDataTab = new System.Windows.Forms.TabPage();
             this.statusText = new System.Windows.Forms.TextBox();
+            this.rawdataText = new System.Windows.Forms.TextBox();
             this.menuStrip.SuspendLayout();
             this.toolStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
@@ -70,6 +71,7 @@
             this.splitContainer.SuspendLayout();
             this.resultsTabContainer.SuspendLayout();
             this.statusTab.SuspendLayout();
+            this.rawDataTab.SuspendLayout();
             this.SuspendLayout();
             // 
             // menuStrip
@@ -338,6 +340,7 @@
             // 
             // rawDataTab
             // 
+            this.rawDataTab.Controls.Add(this.rawdataText);
             this.rawDataTab.Location = new System.Drawing.Point(4, 22);
             this.rawDataTab.Name = "rawDataTab";
             this.rawDataTab.Padding = new System.Windows.Forms.Padding(3);
@@ -357,6 +360,16 @@
             this.statusText.ReadOnly = true;
             this.statusText.Size = new System.Drawing.Size(764, 347);
             this.statusText.TabIndex = 0;
+            // 
+            // rawdataText
+            // 
+            this.rawdataText.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.rawdataText.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.rawdataText.Location = new System.Drawing.Point(3, 3);
+            this.rawdataText.Multiline = true;
+            this.rawdataText.Name = "rawdataText";
+            this.rawdataText.Size = new System.Drawing.Size(764, 347);
+            this.rawdataText.TabIndex = 0;
             // 
             // MainForm
             // 
@@ -381,6 +394,8 @@
             this.resultsTabContainer.ResumeLayout(false);
             this.statusTab.ResumeLayout(false);
             this.statusTab.PerformLayout();
+            this.rawDataTab.ResumeLayout(false);
+            this.rawDataTab.PerformLayout();
             this.ResumeLayout(false);
             this.PerformLayout();
 
@@ -421,6 +436,7 @@
         private System.Windows.Forms.TabPage statusTab;
         private System.Windows.Forms.TabPage rawDataTab;
         private System.Windows.Forms.TextBox statusText;
+        private System.Windows.Forms.TextBox rawdataText;
     }
 }
 

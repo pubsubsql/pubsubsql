@@ -13,6 +13,7 @@ namespace PubSubSQLGUI
     {
         private PubSubSQL.Client client = PubSubSQL.Factory.NewClient();
         private string DEFAULT_ADDRESS = "localhost:7777";
+        private bool cancelExecuteFlag = false;
 
         public MainForm()
         {
@@ -29,9 +30,11 @@ namespace PubSubSQLGUI
             setControls(disconnectButton, disconnectMenu, disconnect);
             setControls(executeButton, executeMenu, execute);
             setControls(cancelButton, cancelMenu, cancelExecute);
-
+            
             nextPaneMenu.Click += nextPane;
             aboutMenu.Click += about;
+
+            setTitle(string.Empty);
         }
 
         private void setControls(ToolStripButton button, ToolStripMenuItem menu, EventHandler click)
@@ -66,29 +69,42 @@ namespace PubSubSQLGUI
         private void connect(string address)
         {
             clear();
-            client.Connect(address);
+            if (client.Connect(address)) setTitle(address);
             setStatus();
         }
 
         private void disconnect(object sender, EventArgs e)
         {
+            setTitle(string.Empty);
             clear();
             client.Disconnect();
         }
 
         private void execute(object sender, EventArgs e)
         {
-
+            try
+            {
+                executing();
+                cancelExecuteFlag = false;
+                string command = queryText.Text.Trim();
+                if (string.IsNullOrEmpty(command)) return;
+                client.Execute(queryText.Text);
+                processResults();
+            }
+            finally
+            {
+                doneExecuting();
+            }
         }
 
         private void cancelExecute(object sender, EventArgs e)
         {
-
+            cancelExecuteFlag = true;
         }
 
         private void nextPane(object sender, EventArgs e)
         {
-
+         
         }
 
         private void about(object sender, EventArgs e)
@@ -101,6 +117,7 @@ namespace PubSubSQLGUI
         private void clear()
         {
             statusText.Text = "";
+            rawdataText.Text = "";
         }
 
         private bool setStatus()
@@ -115,6 +132,40 @@ namespace PubSubSQLGUI
             statusText.ForeColor = Color.Red;
             statusText.Text = "error\r\n" + client.Error();
             return false;
+        }
+
+        private void setRawData()
+        {
+            rawdataText.Text = client.JSON();
+        }
+
+        private void setTitle(string address)
+        {
+            Text = "PubSubSQL Interactive Query " + address;
+        }
+
+        private void executing()
+        {        
+            queryText.Enabled = false;
+            executeButton.Enabled = false;
+            executeMenu.Enabled = false;
+            cancelButton.Enabled = true;
+            cancelMenu.Enabled = true;
+        }
+
+        private void doneExecuting()
+        {
+            queryText.Enabled = true;
+            executeButton.Enabled = true;
+            executeMenu.Enabled = true;
+            cancelButton.Enabled = false;
+            cancelMenu.Enabled = false;
+        }
+
+        private void processResults()
+        {
+            setStatus();
+            setRawData();
         }
     }
 }
