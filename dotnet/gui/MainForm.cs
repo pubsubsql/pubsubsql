@@ -197,20 +197,16 @@ namespace PubSubSQLGUI
                 waitForPubSubEvent();
                 return;
             }
-
-            setupColumns();
             processResults();
         }
 
-        private void setupColumns()
+        private void syncColumns()
         {
-            int countToAdd = client.ColumnCount() - listView.Columns.Count;
-            for (int i = 0; i < countToAdd; i++)
+            for (int i = listView.Columns.Count; i < dataset.ColumnCount; i++)
             {
-                string col = client.Column(i);
+                string col = dataset.Column(i); 
                 listView.Columns.Add(col);
                 listView.Columns[i].Width = 100;
-                //listView.Columns[i].AutoResize(ColumnHeaderAutoResizeStyle.ColumnContent);
             }
         }
 
@@ -235,6 +231,9 @@ namespace PubSubSQLGUI
             // check if it is result set
             if (client.RecordCount() > 0 && client.ColumnCount() > 0)
             {
+                // inside dataset
+                dataset.SyncColumns(client);
+                syncColumns();
                 results = true;
                 dataset.AddRowsCapacity(client.RecordCount());
                 while (client.NextRecord() && !cancelExecuteFlag)
@@ -244,7 +243,6 @@ namespace PubSubSQLGUI
                     Application.DoEvents();
                 }
             }
-            // something bad happened
             if (client.Failed())
             {
                 setStatus();

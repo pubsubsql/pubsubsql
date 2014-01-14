@@ -29,38 +29,35 @@ namespace PubSubSQLGUI
             }
         }
 
+        public void SyncColumns(PubSubSQL.Client client)
+        {
+            foreach (string col in client.Columns())
+            {
+                if (!columnOrdinals.ContainsKey(col))
+                {
+                    int ordinal = columns.Count;
+                    columnOrdinals[col] = ordinal;
+                    columns.Add(col);
+                }
+            }
+        }
+
         public void ProcessRow(PubSubSQL.Client client)
         {
-            if (client.Action() == "select")
+            switch (client.Action())
             {
-                // lazy add columns
-                if (columns.Count == 0)
-                {
-                    columns = new List<string>(client.ColumnCount());
-                    foreach (string col in client.Columns())
+                case "select":
+                case "add":
+                case "insert":
+                    // add row
+                    List<string> row = new List<string>(columns.Count);
+                    // for select operations columns are always in the same order
+                    foreach(string col in columns)
                     {
-                        columns.Add(col);
+                        row.Add(client.Value(col));
                     }
-                }
-                // add row
-                List<string> row = new List<string>(columns.Count);
-                foreach(string col in columns)
-                {
-                    row.Add(client.Value(col));
-                }
-                rows.Add(row);
-            }
-            else if (client.Action() == "add" || client.Action() == "insert")
-            {
-                
-            }
-            else if (client.Action() == "update")
-            {
-    
-            }
-            else if (client.Action() == "delete")
-            {
-
+                    rows.Add(row);
+                    break;
             }
         }
 
@@ -78,17 +75,18 @@ namespace PubSubSQLGUI
             get {return rows.Count;}
         }
 
-        int ColumnCount
+        public int ColumnCount
         {
             get { return columns.Count; }
         }
 
-        List<string> Columns
+        public string Column(int index)
         {
-            get { return columns; }
+            if (index < columns.Count)
+            {
+                return columns[index];
+            }
+            return string.Empty;
         }
-
-
-
     }
 }
