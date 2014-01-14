@@ -12,7 +12,7 @@ namespace PubSubSQLGUI
     public partial class MainForm : Form
     {
         private string DEFAULT_ADDRESS = "localhost:7777";
-        private int PUBSUB_TIMEOUT = 15;
+        private int PUBSUB_TIMEOUT = 5;
         private PubSubSQL.Client client = PubSubSQL.Factory.NewClient();
         private bool cancelExecuteFlag = false;
         private string connectedAddress = string.Empty;
@@ -143,7 +143,6 @@ namespace PubSubSQLGUI
 
         private bool setStatus()
         {
-            resultsTabContainer.SelectedTab = statusTab;
             if (client.Ok())
             {
                 statusText.ForeColor = Color.Black;
@@ -247,10 +246,21 @@ namespace PubSubSQLGUI
             {
                 setStatus();
                 setRawData();
+                resultsTabContainer.SelectedTab = statusTab;
             }
             else
             {
-                if (results) resultsTabContainer.SelectedTab = resultsTab;
+                if (results)
+                {
+                    resultsTabContainer.SelectedTab = resultsTab;
+                    listView.BeginUpdate();
+                    listView.EndUpdate();
+                    Application.DoEvents();
+                }
+                else
+                {
+                    resultsTabContainer.SelectedTab = statusTab;
+                }
             }
         }
 
@@ -266,6 +276,11 @@ namespace PubSubSQLGUI
                 else item.SubItems.Add(str);
             }
             e.Item = item;
+        }
+
+        private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
+        {
+            cancelExecuteFlag = true;
         }
     }
 }

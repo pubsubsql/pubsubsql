@@ -44,19 +44,48 @@ namespace PubSubSQLGUI
 
         public void ProcessRow(PubSubSQL.Client client)
         {
+            string id = client.Value("id");
+            List<string> row = null;
             switch (client.Action())
             {
                 case "select":
                 case "add":
                 case "insert":
                     // add row
-                    List<string> row = new List<string>(columns.Count);
+                    row = new List<string>(columns.Count);
                     // for select operations columns are always in the same order
                     foreach(string col in columns)
                     {
                         row.Add(client.Value(col));
                     }
                     rows.Add(row);
+                    if (!string.IsNullOrEmpty(id))
+                    {
+                        idsToRows[id] = row;                
+                    }
+                    break;
+                case "update":
+                    if (idsToRows.TryGetValue(id, out row))
+                    {
+                        foreach (string col in client.Columns())
+                        {
+                            int ordinal = columnOrdinals[col];
+                            // auto expand row
+                            for (int i = row.Count; i <= ordinal; i++)
+                            {
+                                row.Add(string.Empty);
+                            }
+                            row[ordinal] = client.Value(col);
+                        }
+                    }
+                    break;
+                case "delete":
+                case "remove":
+                    if (idsToRows.TryGetValue(id, out row))
+                    {
+                        idsToRows.Remove(id);
+                        rows.Remove(row);
+                    }
                     break;
             }
         }
