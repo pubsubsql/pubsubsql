@@ -30,6 +30,7 @@ type response interface {
 	getResponseStatus() responseStatusType
 	toNetworkReadyJSON() ([]byte, bool)
 	setRequestId(requestId uint32)
+	merge(res response) bool
 }
 
 type requestIdResponse struct {
@@ -39,6 +40,10 @@ type requestIdResponse struct {
 
 func (this *requestIdResponse) setRequestId(requestId uint32) {
 	this.requestId = requestId
+}
+
+func (this *requestIdResponse) merge(res response) bool {		
+	return false
 }
 
 // json helper functions
@@ -373,6 +378,22 @@ type sqlActionUpdateResponse struct {
 
 func (this *sqlActionUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("update")
+}
+
+func (this *sqlActionUpdateResponse) merge(res response) bool {		
+	switch res.(type) {
+	case *sqlActionUpdateResponse:
+		source := res.(*sqlActionUpdateResponse)
+		if (this.pubsubid != source.pubsubid) {
+			return false
+		}
+		if (len(this.columns) != len(source.columns)) {
+			return false
+		}
+		this.records = append(this.records, source.records...)
+		return true;
+	}
+	return false
 }
 
 func newSqlActionUpdateResponse(pubsubid uint64, cols []*column, rec *record) *sqlActionUpdateResponse {

@@ -244,6 +244,11 @@ func (this *networkConnection) write() {
 		select {
 		case res := <-this.sender.sender:
 			debug("response is ready to be send over tcp")
+			// merge responses if applicable
+			nextRes := this.sender.tryRecv();
+			for nextRes != nil && res.merge(nextRes) {
+				nextRes = this.sender.tryRecv();
+			}
 			// write messages in batches if applicable
 			var msg []byte
 			more := true
@@ -253,6 +258,14 @@ func (this *networkConnection) write() {
 				}
 				msg, more = res.toNetworkReadyJSON()
 				err = writer.WriteMessage(msg)
+				if err != nil {
+					break
+				}
+				if !more && nextRes != nil {
+					res = nextRes
+					nextRes = nil			
+					more = true
+				}
 			}
 			if err != nil && !this.Done() {
 				logwarn("failed to write to client connection:", this.sender.connectionId, err.Error())
