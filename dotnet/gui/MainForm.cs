@@ -276,9 +276,9 @@ namespace PubSubSQLGUI
                 while (client.NextRecord() && !cancelExecuteFlag)
                 {
                     dataset.ProcessRow(client);
-                    listView.VirtualListSize = dataset.RowCount;        
-                    Application.DoEvents();
                 }
+                listView.VirtualListSize = dataset.RowCount;        
+                Application.DoEvents();
             }
             if (client.Failed())
             {
@@ -323,7 +323,6 @@ namespace PubSubSQLGUI
                 if (i == 0)
                 {
                     item.Text = str;
-                    item.BackColor = cellBackColor;
                 }
                 else
                 {
