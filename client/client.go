@@ -107,7 +107,6 @@ func (this *responseData) reset() {
 	this.Status = ""
 	this.Msg = ""
 	this.Action = ""
-	this.Id = ""
 	this.PubSubId = ""
 	this.Rows = 0
 	this.Fromrow = 0
@@ -200,10 +199,6 @@ func (this *client) JSON() string {
 
 func (this *client) Action() string {
 	return this.response.Action
-}
-
-func (this *client) Id() string {
-	return this.response.Id
 }
 
 func (this *client) PubSubId() string {
