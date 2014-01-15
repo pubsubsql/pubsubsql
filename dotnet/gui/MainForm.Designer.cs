@@ -57,11 +57,11 @@
             this.queryText = new System.Windows.Forms.TextBox();
             this.resultsTabContainer = new System.Windows.Forms.TabControl();
             this.resultsTab = new System.Windows.Forms.TabPage();
-            this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.statusTab = new System.Windows.Forms.TabPage();
             this.statusText = new System.Windows.Forms.TextBox();
             this.rawDataTab = new System.Windows.Forms.TabPage();
             this.rawdataText = new System.Windows.Forms.TextBox();
+            this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.menuStrip.SuspendLayout();
             this.toolStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
@@ -180,7 +180,7 @@
             // aboutMenu
             // 
             this.aboutMenu.Name = "aboutMenu";
-            this.aboutMenu.Size = new System.Drawing.Size(152, 22);
+            this.aboutMenu.Size = new System.Drawing.Size(107, 22);
             this.aboutMenu.Text = "About";
             // 
             // toolStrip
@@ -290,7 +290,7 @@
             this.queryText.Name = "queryText";
             this.queryText.Size = new System.Drawing.Size(778, 133);
             this.queryText.TabIndex = 0;
-            this.queryText.Text = "select * from Customers";
+            this.queryText.Text = "subscribe * from tbl1";
             // 
             // resultsTabContainer
             // 
@@ -314,23 +314,6 @@
             this.resultsTab.TabIndex = 0;
             this.resultsTab.Text = "Results";
             this.resultsTab.UseVisualStyleBackColor = true;
-            // 
-            // listView
-            // 
-            this.listView.Activation = System.Windows.Forms.ItemActivation.OneClick;
-            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.listView.GridLines = true;
-            this.listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
-            this.listView.HoverSelection = true;
-            this.listView.Location = new System.Drawing.Point(3, 3);
-            this.listView.MultiSelect = false;
-            this.listView.Name = "listView";
-            this.listView.Size = new System.Drawing.Size(764, 347);
-            this.listView.TabIndex = 0;
-            this.listView.UseCompatibleStateImageBehavior = false;
-            this.listView.View = System.Windows.Forms.View.Details;
-            this.listView.VirtualMode = true;
-            this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
             // 
             // statusTab
             // 
@@ -375,6 +358,23 @@
             this.rawdataText.Name = "rawdataText";
             this.rawdataText.Size = new System.Drawing.Size(764, 347);
             this.rawdataText.TabIndex = 0;
+            // 
+            // listView
+            // 
+            this.listView.Activation = System.Windows.Forms.ItemActivation.OneClick;
+            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listView.GridLines = true;
+            this.listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+            this.listView.HoverSelection = true;
+            this.listView.Location = new System.Drawing.Point(3, 3);
+            this.listView.MultiSelect = false;
+            this.listView.Name = "listView";
+            this.listView.Size = new System.Drawing.Size(764, 347);
+            this.listView.TabIndex = 0;
+            this.listView.UseCompatibleStateImageBehavior = false;
+            this.listView.View = System.Windows.Forms.View.Details;
+            this.listView.VirtualMode = true;
+            this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
             // 
             // MainForm
             // 

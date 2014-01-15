@@ -5,12 +5,24 @@ using System.Text;
 
 namespace PubSubSQLGUI
 {
+    class Cell
+    {
+        public string Value;
+        public long LastUpdated;
+
+        public Cell(string value)
+        {
+            Value = value;
+            LastUpdated = DateTime.Now.Ticks;
+        }
+    }
+
     class ListViewDataset
     {
         private List<string> columns = new List<string>();
         private Dictionary<string, int> columnOrdinals = new Dictionary<string, int>();
-        private List<List<string>> rows = new List<List<string>>();
-        private Dictionary<string, List<string>> idsToRows = new Dictionary<string, List<string>>();
+        private List<List<Cell>> rows = new List<List<Cell>>();
+        private Dictionary<string, List<Cell>> idsToRows = new Dictionary<string, List<Cell>>();
 
         public void Reset()
         {
@@ -45,18 +57,18 @@ namespace PubSubSQLGUI
         public void ProcessRow(PubSubSQL.Client client)
         {
             string id = client.Value("id");
-            List<string> row = null;
+            List<Cell> row = null;
             switch (client.Action())
             {
                 case "select":
                 case "add":
                 case "insert":
                     // add row
-                    row = new List<string>(columns.Count);
+                    row = new List<Cell>(columns.Count);
                     // for select operations columns are always in the same order
                     foreach(string col in columns)
                     {
-                        row.Add(client.Value(col));
+                        row.Add(new Cell(client.Value(col)));
                     }
                     rows.Add(row);
                     if (!string.IsNullOrEmpty(id))
@@ -73,9 +85,10 @@ namespace PubSubSQLGUI
                             // auto expand row
                             for (int i = row.Count; i <= ordinal; i++)
                             {
-                                row.Add(string.Empty);
+                                row.Add(new Cell(string.Empty));
                             }
-                            row[ordinal] = client.Value(col);
+                            row[ordinal].Value = client.Value(col);
+                            row[ordinal].LastUpdated = DateTime.Now.Ticks;
                         }
                     }
                     break;
@@ -90,13 +103,13 @@ namespace PubSubSQLGUI
             }
         }
 
-        public List<string> GetRow(int rowIndex)
+        public List<Cell> GetRow(int rowIndex)
         {
             if (rowIndex < rows.Count)
             {
                 return rows[rowIndex];     
             }
-            return new List<string>();
+            return new List<Cell>();
         }
 
         public int RowCount

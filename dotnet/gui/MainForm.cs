@@ -12,11 +12,15 @@ namespace PubSubSQLGUI
     public partial class MainForm : Form
     {
         private string DEFAULT_ADDRESS = "localhost:7777";
-        private int PUBSUB_TIMEOUT = 5;
+        private int PUBSUB_TIMEOUT = 5; // in milliseconds
+        private int FLASH_TIMER_INTERVAL = 150;
+        private long FLASH_TIMEOUT = 300 * 10000; // ticks converted to milliseconds
         private PubSubSQL.Client client = PubSubSQL.Factory.NewClient();
         private bool cancelExecuteFlag = false;
         private string connectedAddress = string.Empty;
         private ListViewDataset dataset = new ListViewDataset();
+        private bool useFlashColor = false;
+        private Timer flashTimer = new Timer();
 
         public MainForm()
         {
@@ -35,6 +39,10 @@ namespace PubSubSQLGUI
             setTitle(string.Empty);
             resultsTabContainer.SelectedTab = statusTab;
             enableDisableControls();
+
+            flashTimer.Interval = FLASH_TIMER_INTERVAL;
+            flashTimer.Enabled = false;
+            flashTimer.Tick += tick;
         }
 
         private void enableDisableControls()
@@ -139,6 +147,13 @@ namespace PubSubSQLGUI
 
         }
 
+        private void tick(object sender, EventArgs e)
+        {
+            listView.BeginUpdate();
+            listView.EndUpdate();
+            if (!useFlashColor) flashTimer.Enabled = false;
+        }
+
         // helper functions
 
         private void clear()
@@ -203,7 +218,16 @@ namespace PubSubSQLGUI
             // determine if we just subscribed  
             if (client.PubSubId() != string.Empty && client.Action() == "subscribe")
             {
-                waitForPubSubEvent();
+                try
+                {
+                    useFlashColor = true;
+                    flashTimer.Enabled = true;
+                    waitForPubSubEvent();
+                }
+                finally
+                {
+                    useFlashColor = false;
+                }
                 return;
             }
             processResults();
@@ -280,14 +304,31 @@ namespace PubSubSQLGUI
 
         private void listView_RetrieveVirtualItem(object sender, RetrieveVirtualItemEventArgs e)
         {
-            List<string> row = dataset.GetRow(e.ItemIndex);
+            List<Cell> row = dataset.GetRow(e.ItemIndex);
             ListViewItem item = new ListViewItem();
+            item.UseItemStyleForSubItems = false;
             for (int i = 0; i < listView.Columns.Count; i++)
             {
                 string str = string.Empty;
-                if (i < row.Count) str = row[i];
-                if (i == 0) item.Text = str;
-                else item.SubItems.Add(str);
+                Color cellBackColor = Color.White;
+                if (i < row.Count)
+                {
+                    Cell cell = row[i];
+                    str = cell.Value;
+                    if (useFlashColor && (DateTime.Now.Ticks - cell.LastUpdated) < FLASH_TIMEOUT)
+                    {
+                        cellBackColor = Color.HotPink;
+                    }
+                }
+                if (i == 0)
+                {
+                    item.Text = str;
+                    item.BackColor = cellBackColor;
+                }
+                else
+                {
+                    item.SubItems.Add(str).BackColor = cellBackColor;
+                }
             }
             e.Item = item;
         }
