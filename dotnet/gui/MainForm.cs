@@ -24,21 +24,32 @@ namespace PubSubSQLGUI
             // set up controls and events
             setControls(newButton, newMenu, new_);
             exitMenu.Click += exit;
-
             connectLocalButton.ToolTipText = "Connect to " + DEFAULT_ADDRESS;
             setControls(connectLocalButton, connectLocalMenu, connectLocal);
             connectLocalMenu.Text = connectLocalMenu.ToolTipText;
-
             setControls(connectButton, connectMenu, connect);
             setControls(disconnectButton, disconnectMenu, disconnect);
             setControls(executeButton, executeMenu, execute);
             setControls(cancelButton, cancelMenu, cancelExecute);
-            
-            nextPaneMenu.Click += nextPane;
             aboutMenu.Click += about;
-
             setTitle(string.Empty);
             resultsTabContainer.SelectedTab = statusTab;
+            enableDisableControls();
+        }
+
+        private void enableDisableControls()
+        {
+            bool connected = client.Connected();
+            connectLocalButton.Enabled = !connected;
+            connectLocalMenu.Enabled = !connected;
+            connectButton.Enabled = !connected;
+            connectMenu.Enabled = !connected;
+            disconnectButton.Enabled = connected;
+            disconnectMenu.Enabled = connected;
+            executeButton.Enabled = connected;
+            executeMenu.Enabled = connected;
+            cancelButton.Enabled = false;
+            cancelMenu.Enabled = false;
         }
 
         private void setControls(ToolStripButton button, ToolStripMenuItem menu, EventHandler click)
@@ -78,6 +89,7 @@ namespace PubSubSQLGUI
                 setTitle(address);
             }
             setStatus();
+            enableDisableControls();
         }
 
         private void disconnect(object sender, EventArgs e)
@@ -86,6 +98,7 @@ namespace PubSubSQLGUI
             clear();
             client.Disconnect();
             connectedAddress = string.Empty;
+            enableDisableControls();
         }
 
         private void execute(object sender, EventArgs e)
@@ -121,11 +134,6 @@ namespace PubSubSQLGUI
             cancelExecuteFlag = true;
         }
 
-        private void nextPane(object sender, EventArgs e)
-        {
-         
-        }
-
         private void about(object sender, EventArgs e)
         {
 
@@ -151,6 +159,7 @@ namespace PubSubSQLGUI
             }
             statusText.ForeColor = Color.Red;
             statusText.Text = "error\r\n" + client.Error();
+            enableDisableControls();
             return false;
         }
 
@@ -177,9 +186,10 @@ namespace PubSubSQLGUI
 
         private void doneExecuting()
         {
+            bool connected = client.Connected();
             queryText.Enabled = true;
-            executeButton.Enabled = true;
-            executeMenu.Enabled = true;
+            executeButton.Enabled = connected;
+            executeMenu.Enabled = connected;
             cancelButton.Enabled = false;
             cancelMenu.Enabled = false;
         }
@@ -220,6 +230,10 @@ namespace PubSubSQLGUI
                     setRawData();
                     processResults();
                 }
+            }
+            if (client.Failed())
+            {
+                setStatus();
             }
         }
 

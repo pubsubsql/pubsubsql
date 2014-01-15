@@ -28,6 +28,7 @@ namespace PubSubSQL
     {
         bool Connect(string address);
         void Disconnect();
+        bool Connected();
         bool Ok();
         bool Failed();
         string Error();
@@ -119,7 +120,7 @@ namespace PubSubSQL
             }
             catch (Exception e)
             {
-                setError("Connect failed", e);
+                setError(e);
             }
             //
             return false;
@@ -132,6 +133,11 @@ namespace PubSubSQL
             // write may generate errro so we reset after instead
             reset();
             rw.Close();
+        }
+
+        public bool Connected()
+        {
+            return rw.Valid();
         }
 
         public bool Ok()
@@ -349,9 +355,14 @@ namespace PubSubSQL
             this.err = err;
         }
 
+        void setError(Exception e)
+        {
+            setErrorString(e.Message);
+        }
+
         void setError(string prefix, Exception e)
         {
-            setErrorString(prefix + " " + e.Message);
+            setErrorString(prefix + "\r\n" + e.Message);
         }
 
         bool write(string message)
@@ -364,7 +375,8 @@ namespace PubSubSQL
             }
             catch (Exception e)
             {
-                setError("write failed", e);
+                hardDisconnect();
+                setError(e);
                 return false;
             }
             return true;
@@ -385,9 +397,17 @@ namespace PubSubSQL
             }
             catch (Exception e)
             {
-                setError("readTimeout failed", e);
+                hardDisconnect();
+                setError(e);
             }
             return false;
+        }
+
+        void hardDisconnect()
+        {
+            backlog.Clear();
+            rw.Close();
+            reset();
         }
 
         bool read(ref NetHeader header, out byte[] bytes)
@@ -420,7 +440,7 @@ namespace PubSubSQL
             }
             catch (Exception e)
             {
-                setError("unmarshal json failed", e);
+                setError(e);
             }
             return false;
         }
@@ -437,7 +457,6 @@ namespace PubSubSQL
                 }
             }
         }
-
 
     }
 

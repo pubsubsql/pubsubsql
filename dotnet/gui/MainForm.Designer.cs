@@ -42,8 +42,6 @@
             this.customToolStripMenuItem = new System.Windows.Forms.ToolStripSeparator();
             this.executeMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.cancelMenu = new System.Windows.Forms.ToolStripMenuItem();
-            this.windowMenu = new System.Windows.Forms.ToolStripMenuItem();
-            this.nextPaneMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.helpMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStrip = new System.Windows.Forms.ToolStrip();
@@ -82,7 +80,6 @@
             this.fileMenu,
             this.connectionMenu,
             this.queryMenu,
-            this.windowMenu,
             this.helpMenu});
             this.menuStrip.Location = new System.Drawing.Point(0, 0);
             this.menuStrip.Name = "menuStrip";
@@ -172,20 +169,6 @@
             this.cancelMenu.Size = new System.Drawing.Size(199, 22);
             this.cancelMenu.Text = "Cancel Executing Query";
             // 
-            // windowMenu
-            // 
-            this.windowMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
-            this.nextPaneMenu});
-            this.windowMenu.Name = "windowMenu";
-            this.windowMenu.Size = new System.Drawing.Size(63, 20);
-            this.windowMenu.Text = "Window";
-            // 
-            // nextPaneMenu
-            // 
-            this.nextPaneMenu.Name = "nextPaneMenu";
-            this.nextPaneMenu.Size = new System.Drawing.Size(127, 22);
-            this.nextPaneMenu.Text = "Next Pane";
-            // 
             // helpMenu
             // 
             this.helpMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -197,7 +180,7 @@
             // aboutMenu
             // 
             this.aboutMenu.Name = "aboutMenu";
-            this.aboutMenu.Size = new System.Drawing.Size(107, 22);
+            this.aboutMenu.Size = new System.Drawing.Size(152, 22);
             this.aboutMenu.Text = "About";
             // 
             // toolStrip
@@ -300,12 +283,14 @@
             // queryText
             // 
             this.queryText.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.queryText.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.queryText.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.queryText.ForeColor = System.Drawing.Color.MediumBlue;
             this.queryText.Location = new System.Drawing.Point(0, 0);
             this.queryText.Multiline = true;
             this.queryText.Name = "queryText";
             this.queryText.Size = new System.Drawing.Size(778, 133);
             this.queryText.TabIndex = 0;
+            this.queryText.Text = "select * from Customers";
             // 
             // resultsTabContainer
             // 
@@ -362,7 +347,7 @@
             // 
             this.statusText.BackColor = System.Drawing.SystemColors.ControlLightLight;
             this.statusText.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.statusText.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F);
+            this.statusText.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.statusText.Location = new System.Drawing.Point(3, 3);
             this.statusText.Multiline = true;
             this.statusText.Name = "statusText";
@@ -384,7 +369,7 @@
             // rawdataText
             // 
             this.rawdataText.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rawdataText.Font = new System.Drawing.Font("Microsoft Sans Serif", 12F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.rawdataText.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
             this.rawdataText.Location = new System.Drawing.Point(3, 3);
             this.rawdataText.Multiline = true;
             this.rawdataText.Name = "rawdataText";
@@ -434,8 +419,6 @@
         private System.Windows.Forms.ToolStripSeparator customToolStripMenuItem;
         private System.Windows.Forms.ToolStripMenuItem executeMenu;
         private System.Windows.Forms.ToolStripMenuItem cancelMenu;
-        private System.Windows.Forms.ToolStripMenuItem windowMenu;
-        private System.Windows.Forms.ToolStripMenuItem nextPaneMenu;
         private System.Windows.Forms.ToolStripMenuItem helpMenu;
         private System.Windows.Forms.ToolStripMenuItem aboutMenu;
         private System.Windows.Forms.ToolStrip toolStrip;
