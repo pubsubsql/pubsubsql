@@ -363,7 +363,7 @@ type sqlActionRemoveResponse struct {
 }
 
 func (this *sqlActionRemoveResponse) toNetworkReadyJSON() ([]byte, bool) {
-	return this.toNetworkReadyJSONHelper("delete")
+	return this.toNetworkReadyJSONHelper("remove")
 }
 
 // sqlActionUpdateResponse
