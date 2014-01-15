@@ -34,7 +34,6 @@ namespace PubSubSQL
         bool Execute(string command);
         string JSON();
         string Action();
-        string Id();
         string PubSubId();
         int RecordCount();
         bool NextRecord();
@@ -55,8 +54,6 @@ namespace PubSubSQL
         public string Msg { get; set; }
         [DataMember(Name = "action")]
         public string Action { get; set; }
-        [DataMember(Name = "id")]
-        public string Id { get; set; }
         [DataMember(Name = "pubsubid")]
         public string PubSubId { get; set; }
         [DataMember(Name = "rows")]
@@ -200,12 +197,6 @@ namespace PubSubSQL
         {
             if (response.Action == null) return string.Empty;
             return response.Action;
-        }
-
-        public string Id()
-        {
-            if (response.Id == null) return string.Empty;
-            return response.Id;
         }
 
         public string PubSubId()

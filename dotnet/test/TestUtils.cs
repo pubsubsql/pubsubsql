@@ -58,14 +58,6 @@ namespace PubSubSQLTest
             }
         }
 
-        public static void ASSERT_ID(Client client)
-        {
-            if (client.Id() == string.Empty)
-            {
-                Assert.Fail("Expected id but got empty string");
-            }
-        }
-
         public static void ASSERT_COLUMNS(Client client, int count)
         {
             if (client.ColumnCount() != count)

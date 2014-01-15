@@ -36,7 +36,6 @@ namespace PubSubSQLTest
                 string command = string.Format("insert into {0} (col1, col2, col3) values ( val1, val2, val3 ) ", TestUtils.TABLE);
                 TestUtils.ASSERT_EXECUTE(client, command, "insert failed");
                 TestUtils.ASSERT_ACTION(client, "insert");
-                TestUtils.ASSERT_ID(client);
             }
             client.Disconnect();  
         }
@@ -118,7 +117,6 @@ namespace PubSubSQLTest
                 string command = string.Format("insert into {0} (col1, col2, col3) values ( {1}, {2}, {3} ) ", TestUtils.TABLE, i, i, i );
                 TestUtils.ASSERT_EXECUTE(client, command, "insert failed");
                 TestUtils.ASSERT_ACTION(client, "insert");
-                TestUtils.ASSERT_ID(client);
             }
             client.Disconnect();  
         }
@@ -219,7 +217,6 @@ namespace PubSubSQLTest
                 TestUtils.ASSERT_ACTION(client, "remove");
                 TestUtils.ASSERT_PUBSUBID(client);
                 TestUtils.ASSERT_TRUE(pubsubid == client.PubSubId());
-                TestUtils.ASSERT_ID(client);
             }
             client.Disconnect();
         }
@@ -243,7 +240,6 @@ namespace PubSubSQLTest
                 TestUtils.ASSERT_ACTION(client, "delete");
                 TestUtils.ASSERT_PUBSUBID(client);
                 TestUtils.ASSERT_TRUE(pubsubid == client.PubSubId());
-                TestUtils.ASSERT_ID(client);
             }
             client.Disconnect();
         }
@@ -264,7 +260,6 @@ namespace PubSubSQLTest
                 command = string.Format("insert into {0} (col1, col2, col3) values ({1}, {1}, {1})", TestUtils.TABLE, row);
                 TestUtils.ASSERT_EXECUTE(client, command, "insert failed");
                 TestUtils.ASSERT_ACTION(client, "insert");
-                TestUtils.ASSERT_ID(client);
             }
             //
             for (int rows = 0; rows < TestUtils.ROWS; rows++)
