@@ -27,13 +27,10 @@ func validateTableRecordsCount(t *testing.T, tbl *table, expected int) {
 	}
 }
 
-func validateSqlInsertResponseId(t *testing.T, res response, expected string) {
+func validateSqlInsertResponse(t *testing.T, res response) {
 	switch typ := res.(type) {
 	case *sqlInsertResponse:
-		x := res.(*sqlInsertResponse)
-		if x.id != expected {
-			t.Errorf("table insert error: expected id:%s but got:%s", expected, x.id)
-		}
+		return
 	default:
 		t.Errorf("table insert error: invalid response type expected sqlInsertResponse but got %T", typ)
 	}
@@ -129,10 +126,10 @@ func TestTableSqlInsert(t *testing.T) {
 	tbl := newTable("stocks")
 	//
 	res := insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645)")
-	validateSqlInsertResponseId(t, res, "0")
+	validateSqlInsertResponse(t, res)
 	//
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (MSFT, 37, 38) ")
-	validateSqlInsertResponseId(t, res, "1")
+	validateSqlInsertResponse(t, res)
 }
 
 func BenchmarkTableSqlInser(b *testing.B) {
@@ -225,16 +222,16 @@ func TestTableSqlUpdate(t *testing.T) {
 	tbl := newTable("stocks")
 	// 1 record
 	res := insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.5645, sec1) ")
-	validateSqlInsertResponseId(t, res, "0")
+	validateSqlInsertResponse(t, res)
 	res = updateHelper(tbl, " update stocks set ticker = 'IBM', bid = 12, ask = 456.34")
 	validateSqlUpdate(t, res, 1)
 	// 3 records
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (MSFT, 12, 14.5645, sec1) ")
-	validateSqlInsertResponseId(t, res, "1")
+	validateSqlInsertResponse(t, res)
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (ORCL, 12, 14.5645, sec2) ")
-	validateSqlInsertResponseId(t, res, "2")
+	validateSqlInsertResponse(t, res)
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (C, 12, 14.5645, sec2) ")
-	validateSqlInsertResponseId(t, res, "3")
+	validateSqlInsertResponse(t, res)
 	//
 	res = updateHelper(tbl, " update stocks set bid = 12 ")
 	validateSqlUpdate(t, res, 4)
@@ -302,18 +299,18 @@ func TestTableSqlDelete(t *testing.T) {
 	tbl := newTable("stocks")
 	// 1 record
 	res := insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "0")
+	validateSqlInsertResponse(t, res)
 	res = deleteHelper(tbl, " delete from stocks ")
 	validateSqlDelete(t, res, 1)
 	res = selectHelper(tbl, " select * from stocks ")
 	validateSqlSelect(t, res, 0, 4)
 	// 3 records
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "1")
+	validateSqlInsertResponse(t, res)
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "2")
+	validateSqlInsertResponse(t, res)
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "3")
+	validateSqlInsertResponse(t, res)
 	res = deleteHelper(tbl, " delete from stocks ")
 	validateSqlDelete(t, res, 3)
 	res = selectHelper(tbl, " select * from stocks ")
@@ -336,7 +333,7 @@ func TestTableSqlKey(t *testing.T) {
 	validateOkResponse(t, res)
 	// insert record
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "0")
+	validateSqlInsertResponse(t, res)
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
 	validateSqlSelect(t, res, 1, 4)
 	// now define key for new column
@@ -347,7 +344,7 @@ func TestTableSqlKey(t *testing.T) {
 	validateErrorResponse(t, res)
 	// now create another record with valid sector
 	res = insertHelper(tbl, " insert into stocks (ticker, sector, bid, ask) values (MSFT, sec1, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "1")
+	validateSqlInsertResponse(t, res)
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
 	validateSqlSelect(t, res, 1, 5)
 	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
@@ -418,22 +415,22 @@ func TestTableSqlTag(t *testing.T) {
 	validateOkResponse(t, res)
 	// insert records
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "0")
+	validateSqlInsertResponse(t, res)
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
 	validateSqlSelect(t, res, 1, 4)
 
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "1")
+	validateSqlInsertResponse(t, res)
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
 	validateSqlSelect(t, res, 2, 4)
 
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (MSFT, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "2")
+	validateSqlInsertResponse(t, res)
 	res = selectHelper(tbl, " select * from stocks where ticker = MSFT")
 	validateSqlSelect(t, res, 1, 4)
 
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "3")
+	validateSqlInsertResponse(t, res)
 	res = selectHelper(tbl, " select * from stocks where ticker = IBM")
 	validateSqlSelect(t, res, 3, 4)
 
@@ -457,7 +454,7 @@ func TestTableSqlTag(t *testing.T) {
 	}
 	//
 	res = insertHelper(tbl, " insert into stocks (ticker, sector, bid, ask) values (IBM, 'TECH', 12, 14.5645) ")
-	validateSqlInsertResponseId(t, res, "4")
+	validateSqlInsertResponse(t, res)
 	if tbl.getTagedColumnValuesCount("sector", "") != 4 {
 		t.Errorf("invalid taged column values")
 	}
@@ -587,7 +584,7 @@ func TestTableSqlSubscribe1(t *testing.T) {
 	validateOkResponse(t, res)
 	// insert records
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
-	validateSqlInsertResponseId(t, res, "0")
+	validateSqlInsertResponse(t, res)
 	// SUBSCRIBE
 	// subscribe to table
 	var sender *responseSender
@@ -695,7 +692,7 @@ func TestTableActionInsert(t *testing.T) {
 
 	// insert record
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
-	validateSqlInsertResponseId(t, res, "0")
+	validateSqlInsertResponse(t, res)
 
 	// validate insert
 	validateActionInsert(t, senders)
@@ -716,7 +713,7 @@ func TestTableActionInsert(t *testing.T) {
 
 	// insert record
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (MSFT, 12, 14.56, FIN) ")
-	validateSqlInsertResponseId(t, res, "1")
+	validateSqlInsertResponse(t, res)
 
 	// validate insert
 	validateActionInsert(t, senders)
@@ -1077,7 +1074,7 @@ func TestTableSqlUnSubscribe1(t *testing.T) {
 	validateOkResponse(t, res)
 	// insert records
 	res = insertHelper(tbl, " insert into stocks (ticker, bid, ask, sector) values (IBM, 12, 14.56, TECH) ")
-	validateSqlInsertResponseId(t, res, "0")
+	validateSqlInsertResponse(t, res)
 	// SUBSCRIBE
 	// subscribe to table
 	var sender *responseSender

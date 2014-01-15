@@ -403,9 +403,10 @@ func (this *table) sqlInsert(req *sqlInsertRequest) response {
 	// ready to insert
 	this.bindRecord(cols, req.colVals, rec, id)
 	this.addNewRecord(rec)
-	res := *newSqlInsertResponse(rec.idAsString())
+	res := new(sqlInsertResponse)
+	this.copyRecordToSqlSelectResponse(&res.sqlSelectResponse, rec)
 	this.onInsert(rec)
-	return &res
+	return res
 }
 
 // SELECT sql statement
@@ -700,10 +701,9 @@ func publishActionInsert(this *table, sub *subscription, rec *record) bool {
 }
 
 func publishActionDelete(this *table, sub *subscription, rec *record) bool {
-	res := &sqlActionDeleteResponse{
-		id:       rec.idAsString(),
-		pubsubid: sub.id,
-	}
+	res := new(sqlActionDeleteResponse)
+	res.pubsubid = sub.id
+	this.copyRecordToSqlSelectResponse(&res.sqlSelectResponse, rec)
 	return sub.sender.send(res)
 }
 
@@ -717,11 +717,10 @@ func (this *table) onDelete(rec *record) {
 
 func (this *table) onRemove(pubsubs []*pubsub, rec *record) {
 	visitor := func(sub *subscription) bool {
-		r := &sqlActionRemoveResponse{
-			id:       rec.idAsString(),
-			pubsubid: sub.id,
-		}
-		return sub.sender.send(r)
+		res := new(sqlActionRemoveResponse)
+		res.pubsubid = sub.id
+		this.copyRecordToSqlSelectResponse(&res.sqlSelectResponse, rec)
+		return sub.sender.send(res)
 	}
 	for _, pubsub := range pubsubs {
 		pubsub.visit(visitor)
@@ -826,7 +825,8 @@ func (this *table) onSqlRequest(req request, sender *responseSender) {
 }
 
 func (this *table) onSqlInsert(req *sqlInsertRequest, sender *responseSender) {
-	this.send(sender, this.sqlInsert(req))
+	res := this.sqlInsert(req)
+	this.send(sender, res)
 }
 
 func (this *table) onSqlSelect(req *sqlSelectRequest, sender *responseSender) {

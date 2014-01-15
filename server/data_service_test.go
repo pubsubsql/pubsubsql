@@ -46,7 +46,7 @@ func TestDataService(t *testing.T) {
 	// insert
 	dataSrv.acceptRequest(sqlHelper("insert into stocks (ticker, bid, ask, sector) values (IBM, 123, 124, TECH) ", sender))
 	res := sender.testRecv()
-	validateSqlInsertResponseId(t, res, "0")
+	validateSqlInsertResponse(t, res)
 	// select
 	dataSrv.acceptRequest(sqlHelper(" select * from stocks ", sender))
 	res = sender.testRecv()

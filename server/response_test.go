@@ -42,7 +42,3 @@ func TestOkResponseJSON(t *testing.T) {
 	validateResponseJSON(t, res)
 }
 
-func TestSqlInsertResponseJSON(t *testing.T) {
-	res := &sqlInsertResponse{id: "1234567"}
-	validateResponseJSON(t, res)
-}

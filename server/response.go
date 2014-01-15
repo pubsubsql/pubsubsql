@@ -46,10 +46,6 @@ func ok(builder *JSONBuilder) {
 	builder.nameValue("status", "ok")
 }
 
-func id(builder *JSONBuilder, id string) {
-	builder.nameValue("id", id)
-}
-
 func action(builder *JSONBuilder, action string) {
 	builder.nameValue("action", action)
 }
@@ -130,14 +126,7 @@ func (this *cmdStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
 
 // sqlInsertResponse is a response for sql insert statement
 type sqlInsertResponse struct {
-	requestIdResponse
-	id string
-}
-
-func newSqlInsertResponse(id string) *sqlInsertResponse {
-	return &sqlInsertResponse{
-		id: id,
-	}
+	sqlSelectResponse
 }
 
 func (this *sqlInsertResponse) getResponsStatus() responseStatusType {
@@ -151,9 +140,9 @@ func (this *sqlInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	action(builder, "insert")
 	builder.valueSeparator()
-	id(builder, this.id)
+	more := this.data(builder)
 	builder.endObject()
-	return builder.getNetworkBytes(this.requestId), false
+	return builder.getNetworkBytes(this.requestId), more
 }
 
 // sqlSelectResponse is a response for sql select statement
@@ -361,61 +350,25 @@ func (this *sqlActionInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
 
 // sqlActonDeleteResponse
 type sqlActionDeleteResponse struct {
-	response
-	id       string
-	pubsubid uint64
-}
-
-func (this *sqlActionDeleteResponse) setRequestId(requestId uint32) {
-
+	sqlActionDataResponse
 }
 
 func (this *sqlActionDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
-	builder := networkReadyJSONBuilder()
-	builder.beginObject()
-	ok(builder)
-	builder.valueSeparator()
-	action(builder, "delete")
-	builder.valueSeparator()
-	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
-	builder.valueSeparator()
-	builder.nameValue("id", this.id)
-	builder.endObject()
-	return builder.getNetworkBytes(0), false
+	return this.toNetworkReadyJSONHelper("delete")
 }
 
 // sqlActionRemoveResponse
 type sqlActionRemoveResponse struct {
-	response
-	id       string
-	pubsubid uint64
-}
-
-func (this *sqlActionRemoveResponse) setRequestId(requestId uint32) {
-
+	sqlActionDataResponse
 }
 
 func (this *sqlActionRemoveResponse) toNetworkReadyJSON() ([]byte, bool) {
-	builder := networkReadyJSONBuilder()
-	builder.beginObject()
-	ok(builder)
-	builder.valueSeparator()
-	action(builder, "remove")
-	builder.valueSeparator()
-	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
-	builder.valueSeparator()
-	builder.nameValue("id", this.id)
-	builder.endObject()
-	return builder.getNetworkBytes(0), false
+	return this.toNetworkReadyJSONHelper("delete")
 }
 
 // sqlActionUpdateResponse
 type sqlActionUpdateResponse struct {
 	sqlActionDataResponse
-}
-
-func (this *sqlActionUpdateResponse) setRequestId(requestId uint32) {
-
 }
 
 func (this *sqlActionUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {

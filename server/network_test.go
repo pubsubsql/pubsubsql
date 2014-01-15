@@ -78,7 +78,7 @@ func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId ui
 		t.Error(err)
 	}
 	if header.RequestId != requestId {
-		t.Error("Request id does not match command:" + message)
+		t.Error("Expected requestid", requestId, "but got", header.RequestId, " command:", message)
 	}
 	debug(string(bytes))
 }
