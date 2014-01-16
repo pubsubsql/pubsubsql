@@ -265,15 +265,26 @@ namespace PubSubSQLGUI
 
         private void waitForPubSubEvent()
         {
-            while (client.Ok() && !cancelExecuteFlag)
+            long ticks = DateTime.Now.Ticks;
+            int times = 0;
+            while (!cancelExecuteFlag)
             {
-                Application.DoEvents();
-                if (client.WaitForPubSub(PUBSUB_TIMEOUT) && client.Ok())
+                bool timedout = !client.WaitForPubSub(PUBSUB_TIMEOUT);
+                if (client.Failed()) break;
+                if (!timedout) times += updateDataset();
+                if (!timedout && (DateTime.Now.Ticks - ticks) < PUBSUB_TIMEOUT * 10000) continue;  
+                setStatus();
+                setRawData();
+                if (times > 0)
                 {
-                    setStatus();
-                    setRawData();
-                    processResults();
+                    listView.VirtualListSize = dataset.RowCount;
+                    resultsTabContainer.SelectedTab = resultsTab;
+                    listView.BeginUpdate();
+                    listView.EndUpdate();
                 }
+                Application.DoEvents();
+                times = 0;
+                ticks = DateTime.Now.Ticks;
             }
             if (client.Failed())
             {
@@ -284,6 +295,7 @@ namespace PubSubSQLGUI
         private int updateDataset()
         {
             int times = 0;
+            if (!(client.RecordCount() > 0 && client.ColumnCount() > 0)) return 0;
             // inside dataset
             dataset.SyncColumns(client);
             syncColumns();
@@ -291,6 +303,7 @@ namespace PubSubSQLGUI
             while (client.NextRecord() && !cancelExecuteFlag)
             {
                 times++;
+                simulator.TotalConsumed++;
                 dataset.ProcessRow(client);
             }
             return times;

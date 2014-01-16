@@ -16,23 +16,38 @@ namespace PubSubSQLGUI
         private bool stopFlag = false;
         Thread thread = null;
 
+        public volatile int TotalPublished = 0;
+        public volatile int TotalConsumed = 0;
+
         private void Run()
         {
             try
             {
+                TotalPublished = 0;
+                TotalConsumed = 0;
+                Thread.Sleep(0);
                 if (!client.Connect(Address)) throw new Exception("Failed to connect");
                 if (!client.Execute(string.Format("key {0} col1", TableName))) throw new Exception(client.Error());
                 // first insert data
-                for (int row = 1; row <= Rows; row++)
+                for (int row = 1; row <= Rows && !stopFlag; row++)
                 {
                     string insert = generateInsert(row);
                     if (!client.Execute(insert)) throw new Exception("Failed to insert: " + insert);            
+                    while (TotalPublished - TotalConsumed > 2000 && !stopFlag)
+                    {
+                        Thread.Sleep(50);
+                    }
                 }
-                System.Windows.Forms.MessageBox.Show("INSERTED");
+                //System.Windows.Forms.MessageBox.Show("INSERTED");
                 while (!stopFlag)
                 {
                     string update = generateUpdate();
                     if (!client.Execute(update)) throw new Exception(client.Error());
+                    TotalPublished++;
+                    while (TotalPublished - TotalConsumed > 2000 && !stopFlag)
+                    {
+                        Thread.Sleep(50);
+                    }
                 }
             }
             catch (Exception e)

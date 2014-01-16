@@ -82,7 +82,7 @@
             // 
             this.rowsUpDown.Location = new System.Drawing.Point(127, 60);
             this.rowsUpDown.Maximum = new decimal(new int[] {
-            1000,
+            10000,
             0,
             0,
             0});
@@ -95,7 +95,7 @@
             this.rowsUpDown.Size = new System.Drawing.Size(94, 20);
             this.rowsUpDown.TabIndex = 3;
             this.rowsUpDown.Value = new decimal(new int[] {
-            10,
+            50,
             0,
             0,
             0});
@@ -133,6 +133,7 @@
             this.Controls.Add(this.columnsUpDown);
             this.Controls.Add(this.rowsLabel);
             this.Controls.Add(this.columnsLabel);
+            this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "SimulatorForm";
             this.Text = "Simulator";
             ((System.ComponentModel.ISupportInitialize)(this.columnsUpDown)).EndInit();

@@ -376,7 +376,6 @@ func (this *sqlActionInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
 func (this *sqlActionInsertResponse) merge(res response) bool {		
 	switch res.(type) {
 	case *sqlActionInsertResponse:
-		println("insert batch")
 		source := res.(*sqlActionInsertResponse)
 		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
 	}
