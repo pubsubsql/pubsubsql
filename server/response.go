@@ -376,6 +376,7 @@ func (this *sqlActionInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
 func (this *sqlActionInsertResponse) merge(res response) bool {		
 	switch res.(type) {
 	case *sqlActionInsertResponse:
+		println("insert batch")
 		source := res.(*sqlActionInsertResponse)
 		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
 	}
@@ -431,7 +432,20 @@ func (this *sqlActionUpdateResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionUpdateResponse:
 		source := res.(*sqlActionUpdateResponse)
-		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
+		if this.pubsubid != source.pubsubid {
+			return false;
+		}
+		if len(this.columns) != len(source.columns) {
+			return false;
+		}
+		// now check if columns are the same
+		for idx, col := range this.columns {
+			if col.ordinal != source.columns[idx].ordinal {
+				return false;
+			}			
+		}
+		this.records = append(this.records, source.records...)
+		return true;
 	}
 	return false
 }
