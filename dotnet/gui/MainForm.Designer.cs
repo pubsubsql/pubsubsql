@@ -61,6 +61,7 @@
             this.statusText = new System.Windows.Forms.TextBox();
             this.rawDataTab = new System.Windows.Forms.TabPage();
             this.rawdataText = new System.Windows.Forms.TextBox();
+            this.simulateMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.menuStrip.SuspendLayout();
             this.toolStrip.SuspendLayout();
@@ -147,7 +148,8 @@
             this.queryMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
             this.customToolStripMenuItem,
             this.executeMenu,
-            this.cancelMenu});
+            this.cancelMenu,
+            this.simulateMenu});
             this.queryMenu.Name = "queryMenu";
             this.queryMenu.Size = new System.Drawing.Size(51, 20);
             this.queryMenu.Text = "Query";
@@ -290,7 +292,6 @@
             this.queryText.Name = "queryText";
             this.queryText.Size = new System.Drawing.Size(778, 133);
             this.queryText.TabIndex = 0;
-            this.queryText.Text = "subscribe * from tbl1";
             // 
             // resultsTabContainer
             // 
@@ -359,6 +360,12 @@
             this.rawdataText.Size = new System.Drawing.Size(764, 347);
             this.rawdataText.TabIndex = 0;
             // 
+            // simulateMenu
+            // 
+            this.simulateMenu.Name = "simulateMenu";
+            this.simulateMenu.Size = new System.Drawing.Size(199, 22);
+            this.simulateMenu.Text = "Simulate";
+            // 
             // listView
             // 
             this.listView.Activation = System.Windows.Forms.ItemActivation.OneClick;
@@ -384,6 +391,7 @@
             this.Controls.Add(this.splitContainer);
             this.Controls.Add(this.toolStrip);
             this.Controls.Add(this.menuStrip);
+            this.Icon = ((System.Drawing.Icon)(resources.GetObject("$this.Icon")));
             this.MainMenuStrip = this.menuStrip;
             this.Name = "MainForm";
             this.Text = "PubSubSQL Interactive Query";
@@ -443,6 +451,7 @@
         private System.Windows.Forms.TextBox statusText;
         private System.Windows.Forms.TextBox rawdataText;
         private ListViewDoubleBuffered listView;
+        private System.Windows.Forms.ToolStripMenuItem simulateMenu;
     }
 }
 

@@ -21,6 +21,7 @@ namespace PubSubSQLGUI
         private ListViewDataset dataset = new ListViewDataset();
         private bool useFlashColor = false;
         private Timer flashTimer = new Timer();
+        private Simulator simulator = new Simulator();
 
         public MainForm()
         {
@@ -35,6 +36,7 @@ namespace PubSubSQLGUI
             setControls(disconnectButton, disconnectMenu, disconnect);
             setControls(executeButton, executeMenu, execute);
             setControls(cancelButton, cancelMenu, cancelExecute);
+            simulateMenu.Click += simulate;
             aboutMenu.Click += about;
             setTitle(string.Empty);
             resultsTabContainer.SelectedTab = statusTab;
@@ -56,6 +58,7 @@ namespace PubSubSQLGUI
             disconnectMenu.Enabled = connected;
             executeButton.Enabled = connected;
             executeMenu.Enabled = connected;
+            simulateMenu.Enabled = executeMenu.Enabled;
             cancelButton.Enabled = false;
             cancelMenu.Enabled = false;
         }
@@ -139,7 +142,24 @@ namespace PubSubSQLGUI
 
         private void cancelExecute(object sender, EventArgs e)
         {
+            simulator.Stop();
             cancelExecuteFlag = true;
+        }
+
+        private void simulate(object sender, EventArgs e)
+        {
+            SimulatorForm dlg = new SimulatorForm();
+            if (dlg.ShowDialog() == DialogResult.OK)
+            {
+                simulator.Stop();
+                simulator.Address = connectedAddress;
+                simulator.Columns = dlg.Columns;
+                simulator.Rows = dlg.Rows;
+                simulator.TableName = dlg.TableName;
+                simulator.Start();
+                queryText.Text = "subscribe * from " + dlg.TableName;
+                execute(sender, e);
+            }
         }
 
         private void about(object sender, EventArgs e)
@@ -261,6 +281,21 @@ namespace PubSubSQLGUI
             }
         }
 
+        private int updateDataset()
+        {
+            int times = 0;
+            // inside dataset
+            dataset.SyncColumns(client);
+            syncColumns();
+            dataset.AddRowsCapacity(client.RecordCount());
+            while (client.NextRecord() && !cancelExecuteFlag)
+            {
+                times++;
+                dataset.ProcessRow(client);
+            }
+            return times;
+        }
+
         private void processResults()
         {
             setRawData();
@@ -268,15 +303,8 @@ namespace PubSubSQLGUI
             // check if it is result set
             if (client.RecordCount() > 0 && client.ColumnCount() > 0)
             {
-                // inside dataset
-                dataset.SyncColumns(client);
-                syncColumns();
                 results = true;
-                dataset.AddRowsCapacity(client.RecordCount());
-                while (client.NextRecord() && !cancelExecuteFlag)
-                {
-                    dataset.ProcessRow(client);
-                }
+                updateDataset(); 
                 listView.VirtualListSize = dataset.RowCount;        
                 Application.DoEvents();
             }
@@ -335,6 +363,7 @@ namespace PubSubSQLGUI
         private void MainForm_FormClosing(object sender, FormClosingEventArgs e)
         {
             cancelExecuteFlag = true;
+            simulator.Stop();
         }
     }
 }
