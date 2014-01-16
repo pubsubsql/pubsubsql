@@ -335,6 +335,17 @@ func (this *sqlActionDataResponse) toNetworkReadyJSONHelper(act string) ([]byte,
 	return builder.getNetworkBytes(0), more
 }
 
+func mergeHelper(res1 *sqlActionDataResponse, res2 *sqlActionDataResponse) bool {
+	if (res1.pubsubid != res2.pubsubid) {
+		return false
+	}
+	if (len(res1.columns) != len(res2.columns)) {
+		return false
+	}
+	res1.records = append(res1.records, res2.records...)
+	return true;
+} 
+
 // sqlActionAddResponse
 type sqlActionAddResponse struct {
 	sqlActionDataResponse
@@ -342,6 +353,15 @@ type sqlActionAddResponse struct {
 
 func (this *sqlActionAddResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("add")
+}
+
+func (this *sqlActionAddResponse) merge(res response) bool {		
+	switch res.(type) {
+	case *sqlActionAddResponse:
+		source := res.(*sqlActionAddResponse)
+		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
+	}
+	return false
 }
 
 // sqlActionInsertResponse
@@ -353,6 +373,15 @@ func (this *sqlActionInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("insert")
 }
 
+func (this *sqlActionInsertResponse) merge(res response) bool {		
+	switch res.(type) {
+	case *sqlActionInsertResponse:
+		source := res.(*sqlActionInsertResponse)
+		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
+	}
+	return false
+}
+
 // sqlActonDeleteResponse
 type sqlActionDeleteResponse struct {
 	sqlActionDataResponse
@@ -362,6 +391,15 @@ func (this *sqlActionDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("delete")
 }
 
+func (this *sqlActionDeleteResponse) merge(res response) bool {		
+	switch res.(type) {
+	case *sqlActionDeleteResponse:
+		source := res.(*sqlActionDeleteResponse)
+		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
+	}
+	return false
+}
+
 // sqlActionRemoveResponse
 type sqlActionRemoveResponse struct {
 	sqlActionDataResponse
@@ -369,6 +407,15 @@ type sqlActionRemoveResponse struct {
 
 func (this *sqlActionRemoveResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("remove")
+}
+
+func (this *sqlActionRemoveResponse) merge(res response) bool {		
+	switch res.(type) {
+	case *sqlActionRemoveResponse:
+		source := res.(*sqlActionRemoveResponse)
+		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
+	}
+	return false
 }
 
 // sqlActionUpdateResponse
@@ -384,14 +431,7 @@ func (this *sqlActionUpdateResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionUpdateResponse:
 		source := res.(*sqlActionUpdateResponse)
-		if (this.pubsubid != source.pubsubid) {
-			return false
-		}
-		if (len(this.columns) != len(source.columns)) {
-			return false
-		}
-		this.records = append(this.records, source.records...)
-		return true;
+		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
 	}
 	return false
 }
