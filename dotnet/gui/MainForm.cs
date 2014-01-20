@@ -74,12 +74,17 @@ namespace PubSubSQLGUI
 
         private void new_(object sender, EventArgs e)
         {
-            this.Close();
+            System.Diagnostics.Process.Start(Application.ExecutablePath, connectedAddress); 
         }
 
         private void exit(object sender, EventArgs e)
         {
             this.Close();
+        }
+
+        private void closing(object sender, EventArgs e)
+        {
+
         }
 
         private void connectLocal(object sender, EventArgs e)
@@ -378,6 +383,16 @@ namespace PubSubSQLGUI
         {
             cancelExecuteFlag = true;
             simulator.Stop();
+            client.Disconnect();
+        }
+
+        private void MainForm_Load(object sender, EventArgs e)
+        {
+            string[] args = Environment.GetCommandLineArgs();
+            if (args.Length > 1)
+            {
+                connect(args[1]);
+            }
         }
 
     }

@@ -188,7 +188,7 @@
             // aboutMenu
             // 
             this.aboutMenu.Name = "aboutMenu";
-            this.aboutMenu.Size = new System.Drawing.Size(152, 22);
+            this.aboutMenu.Size = new System.Drawing.Size(107, 22);
             this.aboutMenu.Text = "About";
             // 
             // toolStrip
@@ -215,7 +215,7 @@
             this.newButton.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.newButton.Name = "newButton";
             this.newButton.Size = new System.Drawing.Size(23, 22);
-            this.newButton.ToolTipText = "New \"PubSubSQL Interactive Query\" window";
+            this.newButton.ToolTipText = "New PubSubSQL Interactive Query";
             // 
             // separator1
             // 
@@ -396,6 +396,7 @@
             this.Name = "MainForm";
             this.Text = "PubSubSQL Interactive Query";
             this.FormClosing += new System.Windows.Forms.FormClosingEventHandler(this.MainForm_FormClosing);
+            this.Load += new System.EventHandler(this.MainForm_Load);
             this.menuStrip.ResumeLayout(false);
             this.menuStrip.PerformLayout();
             this.toolStrip.ResumeLayout(false);
