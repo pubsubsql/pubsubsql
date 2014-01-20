@@ -94,7 +94,11 @@ namespace PubSubSQLGUI
 
         private void connect(object sender, EventArgs e)
         {
-            
+            ConnectForm dlg = new ConnectForm();
+            if (dlg.ShowDialog(this) == System.Windows.Forms.DialogResult.OK)
+            {
+                connect(dlg.Address);
+            }
         }
 
         private void connect(string address)
