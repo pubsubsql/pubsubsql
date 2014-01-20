@@ -19,7 +19,12 @@ namespace PubSubSQLGUI
             InitializeComponent();
         }
 
-        private void okButton_Click(object sender, EventArgs e)
+        private void SimulatorForm_Load(object sender, EventArgs e)
+        {
+            CenterToParent();
+        }
+
+        private void okButton_Click_1(object sender, EventArgs e)
         {
             Columns = Convert.ToInt32(columnsUpDown.Value);
             Rows = Convert.ToInt32(rowsUpDown.Value);

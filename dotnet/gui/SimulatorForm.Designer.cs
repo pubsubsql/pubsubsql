@@ -28,59 +28,66 @@
         /// </summary>
         private void InitializeComponent()
         {
-            this.columnsLabel = new System.Windows.Forms.Label();
-            this.rowsLabel = new System.Windows.Forms.Label();
-            this.columnsUpDown = new System.Windows.Forms.NumericUpDown();
-            this.rowsUpDown = new System.Windows.Forms.NumericUpDown();
-            this.okButton = new System.Windows.Forms.Button();
+            this.groupBox = new System.Windows.Forms.GroupBox();
+            this.line = new System.Windows.Forms.GroupBox();
             this.cancelButton = new System.Windows.Forms.Button();
-            ((System.ComponentModel.ISupportInitialize)(this.columnsUpDown)).BeginInit();
+            this.okButton = new System.Windows.Forms.Button();
+            this.rowsUpDown = new System.Windows.Forms.NumericUpDown();
+            this.columnsUpDown = new System.Windows.Forms.NumericUpDown();
+            this.rowsLabel = new System.Windows.Forms.Label();
+            this.columnsLabel = new System.Windows.Forms.Label();
+            this.groupBox.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.rowsUpDown)).BeginInit();
+            ((System.ComponentModel.ISupportInitialize)(this.columnsUpDown)).BeginInit();
             this.SuspendLayout();
             // 
-            // columnsLabel
+            // groupBox
             // 
-            this.columnsLabel.AutoSize = true;
-            this.columnsLabel.Location = new System.Drawing.Point(16, 22);
-            this.columnsLabel.Name = "columnsLabel";
-            this.columnsLabel.Size = new System.Drawing.Size(47, 13);
-            this.columnsLabel.TabIndex = 0;
-            this.columnsLabel.Text = "Columns";
+            this.groupBox.Controls.Add(this.line);
+            this.groupBox.Controls.Add(this.cancelButton);
+            this.groupBox.Controls.Add(this.okButton);
+            this.groupBox.Controls.Add(this.rowsUpDown);
+            this.groupBox.Controls.Add(this.columnsUpDown);
+            this.groupBox.Controls.Add(this.rowsLabel);
+            this.groupBox.Controls.Add(this.columnsLabel);
+            this.groupBox.Location = new System.Drawing.Point(5, -1);
+            this.groupBox.Name = "groupBox";
+            this.groupBox.Size = new System.Drawing.Size(227, 150);
+            this.groupBox.TabIndex = 27;
+            this.groupBox.TabStop = false;
             // 
-            // rowsLabel
+            // line
             // 
-            this.rowsLabel.AutoSize = true;
-            this.rowsLabel.Location = new System.Drawing.Point(16, 62);
-            this.rowsLabel.Name = "rowsLabel";
-            this.rowsLabel.Size = new System.Drawing.Size(34, 13);
-            this.rowsLabel.TabIndex = 1;
-            this.rowsLabel.Text = "Rows";
+            this.line.Location = new System.Drawing.Point(12, 108);
+            this.line.Name = "line";
+            this.line.Size = new System.Drawing.Size(204, 3);
+            this.line.TabIndex = 29;
+            this.line.TabStop = false;
             // 
-            // columnsUpDown
+            // cancelButton
             // 
-            this.columnsUpDown.Location = new System.Drawing.Point(127, 22);
-            this.columnsUpDown.Maximum = new decimal(new int[] {
-            25,
-            0,
-            0,
-            0});
-            this.columnsUpDown.Minimum = new decimal(new int[] {
-            2,
-            0,
-            0,
-            0});
-            this.columnsUpDown.Name = "columnsUpDown";
-            this.columnsUpDown.Size = new System.Drawing.Size(94, 20);
-            this.columnsUpDown.TabIndex = 2;
-            this.columnsUpDown.Value = new decimal(new int[] {
-            5,
-            0,
-            0,
-            0});
+            this.cancelButton.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
+            this.cancelButton.Location = new System.Drawing.Point(57, 119);
+            this.cancelButton.Name = "cancelButton";
+            this.cancelButton.Size = new System.Drawing.Size(75, 23);
+            this.cancelButton.TabIndex = 28;
+            this.cancelButton.Text = "Cancel";
+            // 
+            // okButton
+            // 
+            this.okButton.Anchor = System.Windows.Forms.AnchorStyles.None;
+            this.okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
+            this.okButton.Location = new System.Drawing.Point(141, 119);
+            this.okButton.Name = "okButton";
+            this.okButton.Size = new System.Drawing.Size(75, 23);
+            this.okButton.TabIndex = 27;
+            this.okButton.Text = "OK";
+            this.okButton.Click += new System.EventHandler(this.okButton_Click_1);
             // 
             // rowsUpDown
             // 
-            this.rowsUpDown.Location = new System.Drawing.Point(127, 60);
+            this.rowsUpDown.Location = new System.Drawing.Point(122, 47);
             this.rowsUpDown.Maximum = new decimal(new int[] {
             10000,
             0,
@@ -93,63 +100,82 @@
             0});
             this.rowsUpDown.Name = "rowsUpDown";
             this.rowsUpDown.Size = new System.Drawing.Size(94, 20);
-            this.rowsUpDown.TabIndex = 3;
+            this.rowsUpDown.TabIndex = 7;
             this.rowsUpDown.Value = new decimal(new int[] {
             50,
             0,
             0,
             0});
             // 
-            // okButton
+            // columnsUpDown
             // 
-            this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.okButton.Location = new System.Drawing.Point(146, 107);
-            this.okButton.Name = "okButton";
-            this.okButton.Size = new System.Drawing.Size(75, 23);
-            this.okButton.TabIndex = 25;
-            this.okButton.Text = "OK";
-            this.okButton.Click += new System.EventHandler(this.okButton_Click);
+            this.columnsUpDown.Location = new System.Drawing.Point(122, 19);
+            this.columnsUpDown.Maximum = new decimal(new int[] {
+            25,
+            0,
+            0,
+            0});
+            this.columnsUpDown.Minimum = new decimal(new int[] {
+            2,
+            0,
+            0,
+            0});
+            this.columnsUpDown.Name = "columnsUpDown";
+            this.columnsUpDown.Size = new System.Drawing.Size(94, 20);
+            this.columnsUpDown.TabIndex = 6;
+            this.columnsUpDown.Value = new decimal(new int[] {
+            5,
+            0,
+            0,
+            0});
             // 
-            // cancelButton
+            // rowsLabel
             // 
-            this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
-            this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(64, 107);
-            this.cancelButton.Name = "cancelButton";
-            this.cancelButton.Size = new System.Drawing.Size(75, 23);
-            this.cancelButton.TabIndex = 26;
-            this.cancelButton.Text = "Cancel";
+            this.rowsLabel.AutoSize = true;
+            this.rowsLabel.Location = new System.Drawing.Point(12, 47);
+            this.rowsLabel.Name = "rowsLabel";
+            this.rowsLabel.Size = new System.Drawing.Size(37, 13);
+            this.rowsLabel.TabIndex = 5;
+            this.rowsLabel.Text = "Rows:";
+            // 
+            // columnsLabel
+            // 
+            this.columnsLabel.AutoSize = true;
+            this.columnsLabel.Location = new System.Drawing.Point(12, 19);
+            this.columnsLabel.Name = "columnsLabel";
+            this.columnsLabel.Size = new System.Drawing.Size(50, 13);
+            this.columnsLabel.TabIndex = 4;
+            this.columnsLabel.Text = "Columns:";
             // 
             // SimulatorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(235, 143);
+            this.ClientSize = new System.Drawing.Size(237, 154);
             this.ControlBox = false;
-            this.Controls.Add(this.cancelButton);
-            this.Controls.Add(this.okButton);
-            this.Controls.Add(this.rowsUpDown);
-            this.Controls.Add(this.columnsUpDown);
-            this.Controls.Add(this.rowsLabel);
-            this.Controls.Add(this.columnsLabel);
+            this.Controls.Add(this.groupBox);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
             this.Name = "SimulatorForm";
             this.Text = "Simulator";
-            ((System.ComponentModel.ISupportInitialize)(this.columnsUpDown)).EndInit();
+            this.Load += new System.EventHandler(this.SimulatorForm_Load);
+            this.groupBox.ResumeLayout(false);
+            this.groupBox.PerformLayout();
             ((System.ComponentModel.ISupportInitialize)(this.rowsUpDown)).EndInit();
+            ((System.ComponentModel.ISupportInitialize)(this.columnsUpDown)).EndInit();
             this.ResumeLayout(false);
-            this.PerformLayout();
 
         }
 
         #endregion
 
-        private System.Windows.Forms.Label columnsLabel;
-        private System.Windows.Forms.Label rowsLabel;
-        private System.Windows.Forms.NumericUpDown columnsUpDown;
-        private System.Windows.Forms.NumericUpDown rowsUpDown;
-        private System.Windows.Forms.Button okButton;
+        private System.Windows.Forms.GroupBox groupBox;
+        private System.Windows.Forms.GroupBox line;
         private System.Windows.Forms.Button cancelButton;
+        private System.Windows.Forms.Button okButton;
+        private System.Windows.Forms.NumericUpDown rowsUpDown;
+        private System.Windows.Forms.NumericUpDown columnsUpDown;
+        private System.Windows.Forms.Label rowsLabel;
+        private System.Windows.Forms.Label columnsLabel;
+
     }
 }

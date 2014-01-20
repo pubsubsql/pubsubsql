@@ -149,7 +149,7 @@ namespace PubSubSQLGUI
         private void simulate(object sender, EventArgs e)
         {
             SimulatorForm dlg = new SimulatorForm();
-            if (dlg.ShowDialog() == DialogResult.OK)
+            if (dlg.ShowDialog(this) == DialogResult.OK)
             {
                 simulator.Stop();
                 simulator.Address = connectedAddress;
