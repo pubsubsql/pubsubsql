@@ -164,7 +164,8 @@ namespace PubSubSQLGUI
 
         private void about(object sender, EventArgs e)
         {
-
+            AboutForm dlg = new AboutForm();
+            dlg.ShowDialog(this);
         }
 
         private void tick(object sender, EventArgs e)
@@ -378,5 +379,6 @@ namespace PubSubSQLGUI
             cancelExecuteFlag = true;
             simulator.Stop();
         }
+
     }
 }

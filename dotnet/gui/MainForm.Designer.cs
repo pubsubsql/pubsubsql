@@ -42,6 +42,7 @@
             this.customToolStripMenuItem = new System.Windows.Forms.ToolStripSeparator();
             this.executeMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.cancelMenu = new System.Windows.Forms.ToolStripMenuItem();
+            this.simulateMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.helpMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.aboutMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.toolStrip = new System.Windows.Forms.ToolStrip();
@@ -61,7 +62,6 @@
             this.statusText = new System.Windows.Forms.TextBox();
             this.rawDataTab = new System.Windows.Forms.TabPage();
             this.rawdataText = new System.Windows.Forms.TextBox();
-            this.simulateMenu = new System.Windows.Forms.ToolStripMenuItem();
             this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.menuStrip.SuspendLayout();
             this.toolStrip.SuspendLayout();
@@ -171,6 +171,12 @@
             this.cancelMenu.Size = new System.Drawing.Size(199, 22);
             this.cancelMenu.Text = "Cancel Executing Query";
             // 
+            // simulateMenu
+            // 
+            this.simulateMenu.Name = "simulateMenu";
+            this.simulateMenu.Size = new System.Drawing.Size(199, 22);
+            this.simulateMenu.Text = "Simulate";
+            // 
             // helpMenu
             // 
             this.helpMenu.DropDownItems.AddRange(new System.Windows.Forms.ToolStripItem[] {
@@ -182,7 +188,7 @@
             // aboutMenu
             // 
             this.aboutMenu.Name = "aboutMenu";
-            this.aboutMenu.Size = new System.Drawing.Size(107, 22);
+            this.aboutMenu.Size = new System.Drawing.Size(152, 22);
             this.aboutMenu.Text = "About";
             // 
             // toolStrip
@@ -359,12 +365,6 @@
             this.rawdataText.Name = "rawdataText";
             this.rawdataText.Size = new System.Drawing.Size(764, 347);
             this.rawdataText.TabIndex = 0;
-            // 
-            // simulateMenu
-            // 
-            this.simulateMenu.Name = "simulateMenu";
-            this.simulateMenu.Size = new System.Drawing.Size(199, 22);
-            this.simulateMenu.Text = "Simulate";
             // 
             // listView
             // 

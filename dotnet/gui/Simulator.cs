@@ -15,6 +15,7 @@ namespace PubSubSQLGUI
         private PubSubSQL.Client client = PubSubSQL.Factory.NewClient();
         private bool stopFlag = false;
         Thread thread = null;
+        List<string> ids = new List<string>();
 
         public volatile int TotalPublished = 0;
         public volatile int TotalConsumed = 0;
@@ -27,18 +28,21 @@ namespace PubSubSQLGUI
                 TotalConsumed = 0;
                 Thread.Sleep(0);
                 if (!client.Connect(Address)) throw new Exception("Failed to connect");
-                if (!client.Execute(string.Format("key {0} col1", TableName))) throw new Exception(client.Error());
                 // first insert data
                 for (int row = 1; row <= Rows && !stopFlag; row++)
                 {
                     string insert = generateInsert(row);
-                    if (!client.Execute(insert)) throw new Exception("Failed to insert: " + insert);            
+                    if (!client.Execute(insert)) throw new Exception("Failed to insert: " + insert);
+                    if (!client.NextRecord()) throw new Exception("Failed to move to the first record");
+                    string id = client.Value("id");
+                    if (string.IsNullOrEmpty(id)) throw new Exception("id is empty");
+                    ids.Add(id);
                     while (TotalPublished - TotalConsumed > 2000 && !stopFlag)
                     {
                         Thread.Sleep(50);
                     }
                 }
-                //System.Windows.Forms.MessageBox.Show("INSERTED");
+                //
                 while (!stopFlag)
                 {
                     string update = generateUpdate();
@@ -46,6 +50,8 @@ namespace PubSubSQLGUI
                     TotalPublished++;
                     while (TotalPublished - TotalConsumed > 2000 && !stopFlag)
                     {
+                        // gui thread can not process that many messages from the server
+                        // slow down the updates
                         Thread.Sleep(50);
                     }
                 }
@@ -90,10 +96,11 @@ namespace PubSubSQLGUI
         Random rnd = new Random(DateTime.Now.Second);
         private string generateUpdate()
         {
-            int row = rnd.Next(1, Rows + 1);
-            int col = rnd.Next(2, Columns + 1);
+            int idIndex = rnd.Next(0, ids.Count);
+            string id = ids[idIndex];
+            int col = rnd.Next(1, Columns + 1);
             int value = rnd.Next(1, 1000000);
-            return string.Format("update {0} set col{1} = {2} where col1 = {3}", TableName, col, value, row); 
+            return string.Format("update {0} set col{1} = {2} where id = {3}", TableName, col, value, id); 
         }
 
         private string generateInsert(int row)
