@@ -49,8 +49,8 @@ public class PubSubSQLTest {
 		if (!client.Connect(ADDRESS)) {
 			fail("ASSERT_CONNECT failed " + client.Error());
 		}	
-		ASSERT_TRUE(client.Ok(), "client.Ok");
-		ASSERT_FALSE(client.Failed(), "client.Failed");
+		ASSERT_TRUE(client.Ok(), "client.Ok " + client.Error());
+		ASSERT_FALSE(client.Failed(), "client.Failed " + client.Error());
 	}
 
 	public static void main(String[] args) {

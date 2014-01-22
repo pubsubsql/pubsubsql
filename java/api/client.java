@@ -21,8 +21,9 @@ class client implements Client {
 	String host;
 	int port;
 	String err;
-	java.net.Socket socket;
+	NetHelper rw = new NetHelper();
 	int CONNECTION_TIMEOUT = 500;
+	int requestId = 1;
 
 	public boolean Connect(String address) {
 		Disconnect();
@@ -45,21 +46,23 @@ class client implements Client {
 			return false;
 		}
 		//
-		try
-		{
-			socket = new java.net.Socket();
+		try {
+			java.net.Socket socket = new java.net.Socket();
 			socket.connect(new java.net.InetSocketAddress(host, port), CONNECTION_TIMEOUT);
-			return socket.isConnected();
-		}
-		catch (Exception e)
-		{
+			rw.Set(socket);
+			return rw.Valid();
+		} catch (Exception e) {
 			setError(e);
 		}	
 		return false;
 	}
 
 	public void Disconnect() {
-		
+		//backlog.Clear();	
+		write("close");
+		// write may generate error so we reset after instead
+		reset();
+		rw.Close();
 	}
 
 	public boolean Connected() {
@@ -126,19 +129,36 @@ class client implements Client {
 	}
 
 	private int toPort(String port) {
-		try
-		{
+		try {
 			return Integer.parseInt(port); 	
-		}
-		catch (Exception e)
-		{
+		} catch (Exception e) {
 				
 		}
 		return 0;
 	}
 
 	private void reset() {
+		err = "";
+	}
 
+	private void hardDisconnect() {
+		//backlog.Clear();
+		rw.Close();
+		reset();
+	}
+
+	private boolean write(String message) {
+		try {
+			if (!rw.Valid()) throw new Exception("Not connected");
+			requestId++;
+			rw.WriteWithHeader(requestId, message.getBytes("UTF-8"));
+			return true;
+
+		} catch (Exception e) {
+			hardDisconnect();
+			setError(e);
+		}
+		return false;
 	}
 
 	private void setErrorString(String err) {
