@@ -16,7 +16,7 @@
 
 package pubsubsql; 
 
-interface Client {
+public interface Client {
 
 	boolean Connect(String address);
 	void Disconnect();

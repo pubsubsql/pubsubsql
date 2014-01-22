@@ -18,12 +18,48 @@ package pubsubsql;
 
 class client implements Client {
 
+	String host;
+	int port;
+	String err;
+	java.net.Socket socket;
+	int CONNECTION_TIMEOUT = 500;
+
 	public boolean Connect(String address) {
+		Disconnect();
+		// validate address
+		int sep = address.indexOf(':');	
+		if (sep < 0) {
+			setErrorString("Invalid network address");
+			return false;
+		}
+		// set host and port
+		host = address.substring(0, sep);	
+		int portIndex = sep + 1;
+		if (portIndex >= address.length()) {
+			setErrorString("Port is not provided");
+			return false;
+		}	
+		int port = toPort(address.substring(portIndex));
+		if (port == 0) {
+			setErrorString("Invalid port");
+			return false;
+		}
+		//
+		try
+		{
+			socket = new java.net.Socket();
+			socket.connect(new java.net.InetSocketAddress(host, port), CONNECTION_TIMEOUT);
+			return socket.isConnected();
+		}
+		catch (Exception e)
+		{
+			setError(e);
+		}	
 		return false;
 	}
 
 	public void Disconnect() {
-
+		
 	}
 
 	public boolean Connected() {
@@ -31,15 +67,15 @@ class client implements Client {
 	}
 
 	public boolean Ok() {
-		return false;
+		return IsNullOrEmpty(err);
 	}
 
 	public boolean Failed() {
-		return true;
+		return !Ok();
 	}
 
 	public String Error() {
-		return "";	
+		return err;	
 	}
 
 	public boolean Execute(String command) {
@@ -83,4 +119,34 @@ class client implements Client {
 		return false;
 	}
 
+	// helper functions
+
+	private boolean IsNullOrEmpty(String str) {
+		return (str == null || str.length() == 0);
+	}
+
+	private int toPort(String port) {
+		try
+		{
+			return Integer.parseInt(port); 	
+		}
+		catch (Exception e)
+		{
+				
+		}
+		return 0;
+	}
+
+	private void reset() {
+
+	}
+
+	private void setErrorString(String err) {
+		reset();
+		this.err = err;
+	}
+
+	private void setError(Exception err) {
+		setErrorString(err.getMessage());
+	}
 }
