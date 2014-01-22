@@ -1,2 +1,3 @@
 javac -d . api/NetHeader.java
-javac -d . -cp .;../ test/PubSubSQLTest.java
+jar cvf pubsubsql.jar pubsubsql/NetHeader.class
+javac -d . -cp pubsubsql.jar test/PubSubSQLTest.java
