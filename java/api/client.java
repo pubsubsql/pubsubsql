@@ -16,7 +16,7 @@
 
 package pubsubsql; 
 
-class client {
+class client implements Client {
 
 	public boolean Connect(String address) {
 		return false;
