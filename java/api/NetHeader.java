@@ -15,7 +15,9 @@
  * along with PubSubSQL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package pubsubsql;
+package pubsubsql; 
+
+import java.nio.ByteBuffer;
 
 /*
 --------------------+--------------------
@@ -27,6 +29,7 @@ package pubsubsql;
 
 public class NetHeader {
 
+	// JAVA VM always uses BIG ENDIAN to encode integer types so no conversion is nessasary
     public static final int HEADER_SIZE = 8;
     public int MessageSize;
     public int RequestId;
@@ -36,19 +39,19 @@ public class NetHeader {
 		MessageSize = messageSize;
 		RequestId = requestId;
     }
-/*
+
 	public void ReadFrom(byte[] bytes)
 	{
-		setEndianess(bytes); 
-		MessageSize = BitConverter.ToUInt32(bytes, 0);
-		RequestId = BitConverter.ToUInt32(bytes, sizeof(UInt32));
+		ByteBuffer buffer = ByteBuffer.wrap(bytes);
+		MessageSize = buffer.getInt(); 
+		RequestId = buffer.getInt();
 	}
 
 	public void WriteTo(byte[] bytes)
 	{
-		Array.Copy(BitConverter.GetBytes(MessageSize), 0, bytes, 0, sizeof(UInt32));
-		Array.Copy(BitConverter.GetBytes(RequestId), 0, bytes, sizeof(UInt32), sizeof(UInt32));
-		setEndianess(bytes); 
+		ByteBuffer buffer = ByteBuffer.wrap(bytes);
+		buffer.putInt(MessageSize);
+		buffer.putInt(RequestId);
 	}
 
 	public byte[] GetBytes()
@@ -58,13 +61,4 @@ public class NetHeader {
 		return bytes;
 	}
 
-	private void setEndianess(byte[] bytes)
-	{
-		if (BitConverter.IsLittleEndian)
-		{
-			Array.Reverse(bytes, 0, sizeof(UInt32));
-			Array.Reverse(bytes, sizeof(UInt32), sizeof(UInt32));
-		}
-	}
-*/
 }
