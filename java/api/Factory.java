@@ -19,7 +19,7 @@ package pubsubsql;
 public class Factory {
 
 	public static Client NewClient() {
-		return new client();								
+		return new ClientImpl();								
 	}
 
 }

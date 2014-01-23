@@ -16,7 +16,7 @@
 
 package pubsubsql; 
 
-class client implements Client {
+class ClientImpl implements Client {
 
 	String host;
 	int port;
