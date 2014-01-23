@@ -49,23 +49,23 @@ public class NetHelper {
 		stream.flush();
 	}
 	
-	public byte[] ReadTimeout(int timeout, NetHeader header)throws java.io.IOException {
+	public byte[] ReadTimeout(int timeout, NetHeader header) throws java.io.IOException, Exception {
 		try {
 			socket.setSoTimeout(timeout);
 			return Read(header);			
 		} 
 		catch (java.net.SocketTimeoutException te) {
-			// ignore	
-		}
+			// ignore we timed out	
+		} 
 		return null;
 	}
 
-	public byte[] Read(NetHeader header) throws java.io.IOException {
+	public byte[] Read(NetHeader header) throws java.io.IOException, Exception {
 		java.io.InputStream stream = socket.getInputStream();
 		int read = stream.read(headerBytes);
 		if (read < NetHeader.HEADER_SIZE) throw new Exception("Failed to read header");
 		header.ReadFrom(headerBytes);	
-		bytes = new byte[NetHeader.HEADER_SIZE];
+		byte[] bytes = new byte[header.MessageSize];
 		read = 0;
 		while (header.MessageSize > read) {
 			read +=  stream.read(bytes, read, header.MessageSize - read);
