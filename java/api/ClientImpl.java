@@ -86,7 +86,28 @@ class ClientImpl implements Client {
 	public boolean Execute(String command) {
 		reset();
 		boolean ok = write(command);
-		
+		NetHeader header = new NetHeader();
+		while (ok) {
+			reset();
+			byte[] bytes = readTimeout(0, header);
+			if (Failed()) return false;
+			if (bytes == null) {
+				setErrorString("Timed out");
+				return false;
+			}
+			//
+			if (header.RequestId == requestId) {
+				return unmarshallJSON(bytes);
+			} else if (header.RequestId == 0) {
+				//backlog
+			} else if (header.RequestId < requestId) {
+				// we did not read full result set from previous command irnore it
+				reset();
+			} else {
+				setErrorString("protocol error invalid requestId");
+				return false;
+			}
+		}
 		return false;
 	}
 
@@ -168,12 +189,31 @@ class ClientImpl implements Client {
 		return false;
 	}
 
+	private byte[] readTimeout(int timeout, NetHeader header) {
+		try {
+			if (!rw.Valid()) throw new Exception("Not connected");
+			return rw.ReadTimeout(timeout, header);
+		}		
+		catch (Exception e) {
+			hardDisconnect();
+			setError(e);
+		}
+		return null;
+	}
+
 	private void setErrorString(String err) {
 		reset();
 		this.err = err;
 	}
 
-	private void setError(Exception err) {
-		setErrorString(err.getMessage());
+	private void setError(Exception e) {
+		String err = e.getMessage();
+		if (IsNullOrEmpty(err)) err = "Unknown error";
+		setErrorString(err);
+	}
+
+	private boolean unmarshallJSON(byte[] bytes) {
+		setErrorString("Not Implemented");
+		return Ok();
 	}
 }

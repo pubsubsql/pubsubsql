@@ -33,6 +33,11 @@ public class NetHeader {
     public int MessageSize;
     public int RequestId;
 
+	public NetHeader() {
+		MessageSize = 0;
+		RequestId = 0;
+
+    }
 	public NetHeader(int messageSize, int requestId) {
 		MessageSize = messageSize;
 		RequestId = requestId;

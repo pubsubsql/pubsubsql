@@ -53,6 +53,14 @@ public class PubSubSQLTest {
 		ASSERT_FALSE(client.Failed(), "client.Failed " + client.Error());
 	}
 
+	public void ASSERT_EXECUTE(Client client, String command) {
+		if (!client.Execute(command)) {
+			fail("ASSERT_EXECUTE failed " + client.Error());
+		}
+	}
+
+	//
+
 	public static void main(String[] args) {
 		PubSubSQLTest test = new PubSubSQLTest();
 		test.TestNetHeader();		
@@ -95,6 +103,7 @@ public class PubSubSQLTest {
 	// Client
 	private void TestClient() {
 		TestConnectDisconnect();						
+		TestExecute();
 	}
 
 	private void TestConnectDisconnect() {
@@ -105,6 +114,14 @@ public class PubSubSQLTest {
 		ASSERT_FALSE(client.Connect("addresswithnoport"), "address with no port");
 		ASSERT_FALSE(client.Connect("addresswithnoport:"), "address with separator no port");
 		ASSERT_FALSE(client.Connect("localhost:7778"), "invalid address");
+	}
+
+	private void TestExecute() {
+		register("TestExecute");
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client);
+		ASSERT_EXECUTE(client, "status");
+		client.Disconnect();
 	}
 
 }
