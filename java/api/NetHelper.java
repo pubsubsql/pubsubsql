@@ -19,22 +19,19 @@ package pubsubsql;
 public class NetHelper {
 
 	java.net.Socket socket;
-	
-
-	public NetHelper() {
-    }
+	byte[] headerBytes = new byte[NetHeader.HEADER_SIZE];
 
 	public void Set(java.net.Socket socket) {
 		this.socket = socket;
 	}
 
 	public boolean Valid() {
-		return this.socket != null && this.socket.isConnected();
+		return this.socket != null && this.socket.isConnected();            
 	}	
 
 	public void Close() {
 		if (socket == null) return;
-		try {
+        try {
 			socket.shutdownOutput();
 			socket.close();
 			socket = null;
@@ -50,6 +47,30 @@ public class NetHelper {
 		stream.write(header.GetBytes());
 		stream.write(bytes);
 		stream.flush();
+	}
+	
+	public byte[] ReadTimeout(int timeout, NetHeader header)throws java.io.IOException {
+		try {
+			socket.setSoTimeout(timeout);
+			return Read(header);			
+		} 
+		catch (java.net.SocketTimeoutException te) {
+			// ignore	
+		}
+		return null;
+	}
+
+	public byte[] Read(NetHeader header) throws java.io.IOException {
+		java.io.InputStream stream = socket.getInputStream();
+		int read = stream.read(headerBytes);
+		if (read < NetHeader.HEADER_SIZE) throw new Exception("Failed to read header");
+		header.ReadFrom(headerBytes);	
+		bytes = new byte[NetHeader.HEADER_SIZE];
+		read = 0;
+		while (header.MessageSize > read) {
+			read +=  stream.read(bytes, read, header.MessageSize - read);
+		}
+		return bytes;
 	}
 }
 

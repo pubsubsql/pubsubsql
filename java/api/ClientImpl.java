@@ -45,13 +45,15 @@ class ClientImpl implements Client {
 			setErrorString("Invalid port");
 			return false;
 		}
+		
 		//
 		try {
 			java.net.Socket socket = new java.net.Socket();
 			socket.connect(new java.net.InetSocketAddress(host, port), CONNECTION_TIMEOUT);
 			rw.Set(socket);
 			return rw.Valid();
-		} catch (Exception e) {
+		} 
+		catch (Exception e) {
 			setError(e);
 		}	
 		return false;
@@ -82,6 +84,9 @@ class ClientImpl implements Client {
 	}
 
 	public boolean Execute(String command) {
+		reset();
+		boolean ok = write(command);
+		
 		return false;
 	}
 
@@ -106,7 +111,7 @@ class ClientImpl implements Client {
 	}
 
 	public boolean HasColumn(String column) {
-		return false;
+        return false;
 	}
 
 	// Columns();
@@ -131,7 +136,8 @@ class ClientImpl implements Client {
 	private int toPort(String port) {
 		try {
 			return Integer.parseInt(port); 	
-		} catch (Exception e) {
+		} 
+		catch (Exception e) {
 				
 		}
 		return 0;
@@ -154,7 +160,8 @@ class ClientImpl implements Client {
 			rw.WriteWithHeader(requestId, message.getBytes("UTF-8"));
 			return true;
 
-		} catch (Exception e) {
+		} 
+		catch (Exception e) {
 			hardDisconnect();
 			setError(e);
 		}
