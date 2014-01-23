@@ -18,6 +18,7 @@ package pubsubsql;
 
 import com.google.gson.Gson;
 import java.nio.charset.Charset;
+import java.util.*;
 
 class ClientImpl implements Client {
 
@@ -29,7 +30,11 @@ class ClientImpl implements Client {
 	String err;
 	NetHelper rw = new NetHelper();
 	ResponseData response = new ResponseData();
-
+	String rawjson = null;
+	int record = -1;
+	Hashtable<String, Integer> columns = new Hashtable<String, Integer>();
+	
+	
 	public boolean Connect(String address) {
 		Disconnect();
 		// validate address
@@ -171,6 +176,9 @@ class ClientImpl implements Client {
 
 	private void reset() {
 		err = "";
+		response = new ResponseData();
+		rawjson = null;
+		record = -1;
 	}
 
 	private void hardDisconnect() {
@@ -220,19 +228,26 @@ class ClientImpl implements Client {
 	private boolean unmarshallJSON(byte[] bytes) {
 		try {
 			Gson gson = new Gson();
-			String json = new String(bytes, UTF8_CHARSET);
-			ResponseData response = gson.fromJson(json, ResponseData.class);
-			if (!response.status.equals("ok")) {
-				setErrorString(response.msg);
-				return false;
-			}
-			//setColumns
+			rawjson = new String(bytes, UTF8_CHARSET);
+			response = gson.fromJson(rawjson, ResponseData.class);
+			if (!response.status.equals("ok")) throw new Exception(response.msg); 
+			setColumns();
 			return true;
 		}
 		catch (Exception e) {
 			setError(e);	
 		}
 		return false; 
+	}
+
+	void setColumns() {
+		if (response.columns != null) {
+			int index = 0;
+			for(String column : response.columns) {
+				columns.put(column, index);
+				index++;
+			}
+		}	
 	}
 }
 
