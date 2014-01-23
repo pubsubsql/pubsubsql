@@ -1,3 +1,3 @@
-javac -d . api/NetHeader.java api/Client.java api/ClientImpl.java api/Factory.java api/NetHelper.java
-jar cfv pubsubsql.jar pubsubsql/NetHeader.class pubsubsql/Client.class pubsubsql/ClientImpl.class pubsubsql/Factory.class pubsubsql/NetHelper.class
-javac -d . -cp pubsubsql.jar test/PubSubSQLTest.java
+javac -d . -cp .:lib/gson-2.2.4.jar api/NetHeader.java api/Client.java api/ClientImpl.java api/Factory.java api/NetHelper.java api/ResponseData.java 
+jar cfv lib/pubsubsql.jar pubsubsql/NetHeader.class pubsubsql/Client.class pubsubsql/ClientImpl.class pubsubsql/Factory.class pubsubsql/NetHelper.class pubsubsql/ResponseData.class
+javac -d . -cp .:lib/gson-2.2.4.jar:lib/pubsubsql.jar test/PubSubSQLTest.java

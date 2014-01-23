@@ -16,14 +16,19 @@
 
 package pubsubsql; 
 
+import com.google.gson.Gson;
+import java.nio.charset.Charset;
+
 class ClientImpl implements Client {
 
+	private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
+	int CONNECTION_TIMEOUT = 500;
+	int requestId = 1;
 	String host;
 	int port;
 	String err;
 	NetHelper rw = new NetHelper();
-	int CONNECTION_TIMEOUT = 500;
-	int requestId = 1;
+	ResponseData response = new ResponseData();
 
 	public boolean Connect(String address) {
 		Disconnect();
@@ -178,7 +183,7 @@ class ClientImpl implements Client {
 		try {
 			if (!rw.Valid()) throw new Exception("Not connected");
 			requestId++;
-			rw.WriteWithHeader(requestId, message.getBytes("UTF-8"));
+			rw.WriteWithHeader(requestId, message.getBytes(UTF8_CHARSET));
 			return true;
 
 		} 
@@ -213,7 +218,21 @@ class ClientImpl implements Client {
 	}
 
 	private boolean unmarshallJSON(byte[] bytes) {
-		setErrorString("Not Implemented");
-		return Ok();
+		try {
+			Gson gson = new Gson();
+			String json = new String(bytes, UTF8_CHARSET);
+			ResponseData response = gson.fromJson(json, ResponseData.class);
+			if (!response.status.equals("ok")) {
+				setErrorString(response.msg);
+				return false;
+			}
+			//setColumns
+			return true;
+		}
+		catch (Exception e) {
+			setError(e);	
+		}
+		return false; 
 	}
 }
+
