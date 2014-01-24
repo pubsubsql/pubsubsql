@@ -28,8 +28,8 @@ public interface Client {
 	String JSON();
 	String Action();
 	String PubSubId();
-	int RecordCount();
-	boolean NextRecord();
+	int RowCount();
+	boolean NextRow();
 	String Value(String column);
 	boolean HasColumn(String column);
 	// Columns();

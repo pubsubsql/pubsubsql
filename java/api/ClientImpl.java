@@ -134,11 +134,11 @@ class ClientImpl implements Client {
 		return NotNull(response.pubsubid);
 	}
 
-	public int RecordCount() {
+	public int RowCount() {
 		return response.rows;
 	}
 
-	public boolean NextRecord() {
+	public boolean NextRow() {
 		while (Ok()) {
 			// no result set
 			if (response.rows == 0) return false;
