@@ -16,12 +16,14 @@
  */
 
 import pubsubsql.Client;
+import java.util.*;
 
 public class PubSubSQLTest {
 
 	private int failCount = 0;
 	private String currentFunction = "";
 	private static final String ADDRESS = "localhost:7777";
+	private String TABLE = "T" + System.currentTimeMillis();
 
 	// simple test framework
 	private void fail(String message) {
@@ -47,7 +49,7 @@ public class PubSubSQLTest {
 
 	public void ASSERT_CONNECT(Client client) {
 		if (!client.Connect(ADDRESS)) {
-			fail("ASSERT_CONNECT failed " + client.Error());
+			fail("ASSERT_CONNECT failed: " + client.Error());
 		}	
 		ASSERT_TRUE(client.Ok(), "client.Ok " + client.Error());
 		ASSERT_FALSE(client.Failed(), "client.Failed " + client.Error());
@@ -55,7 +57,19 @@ public class PubSubSQLTest {
 
 	public void ASSERT_EXECUTE(Client client, String command) {
 		if (!client.Execute(command)) {
-			fail("ASSERT_EXECUTE failed " + client.Error());
+			fail("ASSERT_EXECUTE failed: " + client.Error());
+		}
+	}
+
+	public void ASSERT_ACTION(Client client, String action) {
+		if (!client.Action().equals(action)) {
+			fail("ASSERT_ACTION failed: expected " + action + " but got " + client.Action());
+		}
+	}
+
+	public void ASSERT_RECORD_COUNT(Client client, int recordCount) {
+		if (client.RecordCount() != recordCount) {
+			fail(String.format("ASSERT_RECORD_COUNT failed: expected %s but got %s", recordCount, client.RecordCount()));
 		}
 	}
 
@@ -104,6 +118,7 @@ public class PubSubSQLTest {
 	private void TestClient() {
 		TestConnectDisconnect();						
 		TestExecute();
+		TestInsert();
 	}
 
 	private void TestConnectDisconnect() {
@@ -121,6 +136,18 @@ public class PubSubSQLTest {
 		Client client = pubsubsql.Factory.NewClient();
 		ASSERT_CONNECT(client);
 		ASSERT_EXECUTE(client, "status");
+		ASSERT_ACTION(client, "status");
+		client.Disconnect();
+	}
+
+	private void TestInsert() {
+		register("TestExecute");
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client);
+		String command = String.format("insert into %s (col1, col2, col3) values (1, 1, 1)", TABLE);
+		ASSERT_EXECUTE(client, command);
+		ASSERT_ACTION(client, "insert");
+		ASSERT_RECORD_COUNT(client, 1);
 		client.Disconnect();
 	}
 

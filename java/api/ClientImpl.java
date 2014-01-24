@@ -126,11 +126,12 @@ class ClientImpl implements Client {
 	}
 
 	public String Action() {
-		return "";
+		if (IsNullOrEmpty(response.action)) return "";
+		return response.action;
 	}
 
 	public int RecordCount() {
-		return 0;
+		return response.rows;
 	}
 
 	public boolean NextRecord() {
