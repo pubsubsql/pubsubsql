@@ -24,7 +24,7 @@ public class PubSubSQLTest {
 	private String currentFunction = "";
 	private static final String ADDRESS = "localhost:7777";
 	private String TABLE = "T" + System.currentTimeMillis();
-	private int ROWS = 10;
+	private int ROWS = 1000;
 
 	// simple test framework
 
@@ -139,6 +139,20 @@ public class PubSubSQLTest {
 		}
 	}
 
+	public void ASSERT_COLUMN_COUNT(Client client, int expected) {
+		int got = client.ColumnCount();
+		if (expected != got) {
+			fail(String.format("ASSERT_COLUMN_COUNT failed: expected %s but got %s", expected, got));
+		}
+	}
+
+	public void ASSERT_HAS_COLUMN(Client client, String column, boolean expected) {
+		boolean got = client.HasColumn(column);
+		if (expected != got) {
+			fail(String.format("ASSERT_HAS_COLUMN failed: expected %s but got %s", expected, got));
+		}
+	}
+
 	//
 
 	public static void main(String[] args) {
@@ -189,6 +203,10 @@ public class PubSubSQLTest {
 		TestInsertManyRows();
 		TestSelectOneRow();
 		TestSelectManyRows();
+		TestUpdateOneRow();
+		TestUpdateManyRows();
+		TestDeleteOneRow();
+		TestDeleteManyRows();
 	}
 
 	private void TestConnectDisconnect() {
@@ -247,6 +265,10 @@ public class PubSubSQLTest {
 		ASSERT_VALUE(client, "col1", "1:col1");
 		ASSERT_VALUE(client, "col2", "1:col2");
 		ASSERT_VALUE(client, "col3", "1:col3");
+		ASSERT_HAS_COLUMN(client, "col1", true);
+		ASSERT_HAS_COLUMN(client, "col2", true);
+		ASSERT_HAS_COLUMN(client, "col3", true);
+		ASSERT_COLUMN_COUNT(client, 4); // including id
 		//
 		ASSERT_NEXT_ROW(client, false);
 		ASSERT_DISCONNECT(client);
@@ -268,6 +290,10 @@ public class PubSubSQLTest {
 			ASSERT_VALUE(client, "col1", "1:col1");
 			ASSERT_VALUE(client, "col2", "1:col2");
 			ASSERT_VALUE(client, "col3", "1:col3");
+			ASSERT_HAS_COLUMN(client, "col1", true);
+			ASSERT_HAS_COLUMN(client, "col2", true);
+			ASSERT_HAS_COLUMN(client, "col3", true);
+			ASSERT_COLUMN_COUNT(client, 4); // including id
 			//
 			ASSERT_NEXT_ROW(client, false);
 		}
@@ -293,22 +319,26 @@ public class PubSubSQLTest {
 		ASSERT_VALUE(client, "col1", "1:col1");
 		ASSERT_VALUE(client, "col2", "1:col2");
 		ASSERT_VALUE(client, "col3", "1:col3");
+		ASSERT_HAS_COLUMN(client, "col1", true);
+		ASSERT_HAS_COLUMN(client, "col2", true);
+		ASSERT_HAS_COLUMN(client, "col3", true);
+		ASSERT_COLUMN_COUNT(client, 4); // including id
 		//
 		ASSERT_NEXT_ROW(client, false);
 	}
 
 	private void TestSelectManyRows() {
-		register("TestSelectOneRow");
+		register("TestSelectRow");
 		newtable();
 		Client client = pubsubsql.Factory.NewClient();
 		ASSERT_CONNECT(client, ADDRESS, true);
 		String command;
-		// first insert rows
+		// 
 		for (int row = 0; row < ROWS; row++) {	
 			command = String.format("insert into %s (col1, col2, col3) values (%s:col1, %s:col2, %s:col3)", TABLE, row, row, row);
 			ASSERT_EXECUTE(client, command, true);
 		}
-		// select one row
+		// 
 		command = String.format("select * from %s", TABLE);
 		ASSERT_EXECUTE(client, command, true);
 		ASSERT_ACTION(client, "select");
@@ -319,8 +349,87 @@ public class PubSubSQLTest {
 			ASSERT_VALUE(client, "col1", row + ":col1");
 			ASSERT_VALUE(client, "col2", row + ":col2");
 			ASSERT_VALUE(client, "col3", row + ":col3");
+			ASSERT_HAS_COLUMN(client, "col1", true);
+			ASSERT_HAS_COLUMN(client, "col2", true);
+			ASSERT_HAS_COLUMN(client, "col3", true);
+			ASSERT_COLUMN_COUNT(client, 4); // including id
 		}
 		//
+		ASSERT_NEXT_ROW(client, false);
+	}
+
+	private void TestUpdateOneRow() {
+		register("TestUpdateOneRow");
+		newtable();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		// 
+		String command = String.format("insert into %s (col1, col2, col3) values (1:col1, 1:col2, 1:col3)", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		// 
+		command = String.format("update %s set col1 = newvalue", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "update");
+		ASSERT_ROW_COUNT(client, 1);
+		ASSERT_COLUMN_COUNT(client, 0); 
+		ASSERT_NEXT_ROW(client, false);
+	}
+
+	private void TestUpdateManyRows() {
+		register("TestUpdateManyRow");
+		newtable();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		//
+		String command;
+		for (int row = 0; row < ROWS; row++) {
+			command = String.format("insert into %s (col1, col2, col3) values (1:col1, 1:col2, 1:col3)", TABLE);
+			ASSERT_EXECUTE(client, command, true);
+		}
+		//
+		command = String.format("update %s set col1 = newvalue", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "update");
+		ASSERT_ROW_COUNT(client, ROWS);
+		ASSERT_COLUMN_COUNT(client, 0); 
+		ASSERT_NEXT_ROW(client, false);
+	}
+
+	private void TestDeleteOneRow() {
+		register("TestDeleteOneRow");
+		newtable();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		// 
+		String command = String.format("insert into %s (col1, col2, col3) values (1:col1, 1:col2, 1:col3)", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		// 
+		command = String.format("delete from %s", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "delete");
+		ASSERT_ROW_COUNT(client, 1);
+		ASSERT_COLUMN_COUNT(client, 0); 
+		ASSERT_NEXT_ROW(client, false);
+
+	}
+
+	private void TestDeleteManyRows() {
+		register("TestDeleteManyRow");
+		newtable();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		//
+		String command;
+		for (int row = 0; row < ROWS; row++) {
+			command = String.format("insert into %s (col1, col2, col3) values (1:col1, 1:col2, 1:col3)", TABLE);
+			ASSERT_EXECUTE(client, command, true);
+		}
+		//
+		command = String.format("delete from %s ", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "delete");
+		ASSERT_ROW_COUNT(client, ROWS);
+		ASSERT_COLUMN_COUNT(client, 0); 
 		ASSERT_NEXT_ROW(client, false);
 	}
 }
