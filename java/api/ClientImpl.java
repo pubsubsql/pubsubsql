@@ -23,16 +23,16 @@ import java.util.*;
 class ClientImpl implements Client {
 
 	private final Charset UTF8_CHARSET = Charset.forName("UTF-8");
-	int CONNECTION_TIMEOUT = 500;
-	int requestId = 1;
-	String host;
-	int port;
-	String err;
-	NetHelper rw = new NetHelper();
-	ResponseData response = new ResponseData();
-	String rawjson = null;
-	int record = -1;
-	Hashtable<String, Integer> columns = new Hashtable<String, Integer>();
+	private int CONNECTION_TIMEOUT = 500;
+	private int requestId = 1;
+	private String host;
+	private int port;
+	private String err;
+	private NetHelper rw = new NetHelper();
+	private ResponseData response = new ResponseData();
+	private String rawjson = null;
+	private int record = -1;
+	private Hashtable<String, Integer> columns = new Hashtable<String, Integer>();
 	
 	
 	public boolean Connect(String address) {
@@ -170,16 +170,21 @@ class ClientImpl implements Client {
 	}
 
 	public String Value(String column) {
-		return "";
+		if (response.data == null) return "";
+		if (response.data.size() <= record) return "";
+		int ordinal = getColumn(column);
+		if (ordinal == -1) return "";
+		//
+		return response.data.get(record).get(ordinal);
 	}
 
 	public boolean HasColumn(String column) {
-        return false;
+        return getColumn(column) != -1;
 	}
 
-	// Columns();
 	public int ColumnCount() {
-		return 0;
+		if (response.columns == null) return 0;
+		return response.columns.size();
 	}
 
 	public String Column(int index) {
@@ -289,6 +294,12 @@ class ClientImpl implements Client {
 				index++;
 			}
 		}	
+	}
+
+	int getColumn(String column) {
+		Integer ordinal = columns.get(column);
+		if (ordinal == null) return -1;
+		return (int)ordinal;
 	}
 }
 

@@ -124,6 +124,20 @@ public class PubSubSQLTest {
 		}
 	}
 
+	public void ASSERT_ID(Client client) {
+		String id = client.Value("id");
+		if (id == null || id.length() == 0) {
+			fail("ASSERT_ID failed: expected non empty string");
+		}
+	}
+
+	public void ASSERT_VALUE(Client client, String column, String expected) {
+		String got = client.Value(column);	
+		if (!expected.equals(got)) {
+			fail(String.format("ASSERT_VALUE failed: expected %s but got %s", expected, got));
+		}
+	}
+
 	//
 
 	public static void main(String[] args) {
@@ -172,6 +186,7 @@ public class PubSubSQLTest {
 		TestExecuteInvalidCommand();
 		TestInsertOneRow();
 		TestInsertManyRows();
+		TestSelectOneRow();
 	}
 
 	private void TestConnectDisconnect() {
@@ -216,7 +231,7 @@ public class PubSubSQLTest {
 	}
 
 	private void TestInsertOneRow() {
-		register("TestInsert");
+		register("TestInsertOneRow");
 		newtable();
 		Client client = pubsubsql.Factory.NewClient();
 		ASSERT_CONNECT(client, ADDRESS, true);
@@ -225,12 +240,18 @@ public class PubSubSQLTest {
 		ASSERT_ACTION(client, "insert");
 		ASSERT_ROW_COUNT(client, 1);
 		ASSERT_NEXT_ROW(client, true);
+		//
+		ASSERT_ID(client);
+		ASSERT_VALUE(client, "col1", "1:col1");
+		ASSERT_VALUE(client, "col2", "1:col2");
+		ASSERT_VALUE(client, "col3", "1:col3");
+		//
 		ASSERT_NEXT_ROW(client, false);
 		ASSERT_DISCONNECT(client);
 	}
 
 	private void TestInsertManyRows() {
-		register("TestInsert");
+		register("TestInsertManyRows");
 		newtable();
 		int ROWS = 10;
 		Client client = pubsubsql.Factory.NewClient();
@@ -241,9 +262,36 @@ public class PubSubSQLTest {
 			ASSERT_ACTION(client, "insert");
 			ASSERT_ROW_COUNT(client, 1);
 			ASSERT_NEXT_ROW(client, true);
+			//
+			ASSERT_ID(client);
+			ASSERT_VALUE(client, "col1", "1:col1");
+			ASSERT_VALUE(client, "col2", "1:col2");
+			ASSERT_VALUE(client, "col3", "1:col3");
+			//
 			ASSERT_NEXT_ROW(client, false);
 		}
 		ASSERT_DISCONNECT(client);
+	}
+	
+	private void TestSelectOneRow() {
+		register("TestSelectOneRow");
+		newtable();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		// first insert one row
+		String command = String.format("insert into %s (col1, col2, col3) values (1:col1, 1:col2, 1:col3)", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		// select one row
+		command = String.format("select * from %s", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "select");
+		ASSERT_ROW_COUNT(client, 1);
+		ASSERT_NEXT_ROW(client, true);
+		ASSERT_ID(client);
+		
+		ASSERT_NEXT_ROW(client, false);
+					
+
 	}
 }
 
