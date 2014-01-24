@@ -27,6 +27,7 @@ public interface Client {
 	boolean Execute(String command);
 	String JSON();
 	String Action();
+	String PubSubId();
 	int RecordCount();
 	boolean NextRecord();
 	String Value(String column);

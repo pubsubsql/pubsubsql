@@ -31,6 +31,16 @@ public class PubSubSQLTest {
 		failCount++;	
 	}
 
+	private void print(String message) {
+		System.out.println(message);
+	}
+
+	private void iferror(Client client, boolean expected, boolean got) {
+		if (expected && !got) {
+			print(String.format("Error: %s", client.Error()));
+		}	
+	}
+
 	private void register(String function) {
 		currentFunction = function;
 	}
@@ -47,29 +57,54 @@ public class PubSubSQLTest {
 		}
 	}
 
-	public void ASSERT_CONNECT(Client client) {
-		if (!client.Connect(ADDRESS)) {
-			fail("ASSERT_CONNECT failed: " + client.Error());
+	public void VALIDATE_RESULT(Client client, boolean result) {
+		if (result && !client.Ok() ) fail("VALIDATE_RESULT failed: expected Ok");
+		if (!result && !client.Failed() ) fail("VALIDATE_RESULT failed: expected Failed");
+	}
+
+	public void ASSERT_CONNECT(Client client, String address, boolean expected) {
+		boolean got = client.Connect(address);
+		if (expected != got) {
+			fail(String.format("ASSERT_CONNECT failed: expected %s got %s ", expected, got));
 		}	
-		ASSERT_TRUE(client.Ok(), "client.Ok " + client.Error());
-		ASSERT_FALSE(client.Failed(), "client.Failed " + client.Error());
+		iferror(client, expected, got);
+		VALIDATE_RESULT(client, got);
 	}
 
-	public void ASSERT_EXECUTE(Client client, String command) {
-		if (!client.Execute(command)) {
-			fail("ASSERT_EXECUTE failed: " + client.Error());
+	public void ASSERT_DISCONNECT(Client client) {
+		client.Disconnect();
+		if (client.Failed()) {
+			fail("ASSERT_DISCONNECT failed: expected Ok() not Failed() after Disconnect()");
 		}
 	}
 
-	public void ASSERT_ACTION(Client client, String action) {
-		if (!client.Action().equals(action)) {
-			fail("ASSERT_ACTION failed: expected " + action + " but got " + client.Action());
+	public void ASSERT_CONNECTED(Client client, boolean expected) {
+		boolean got = client.Connected();
+		if (expected != got) {
+			fail(String.format("ASSERT_CONNECTED failed: expected %s got %s", expected, got));
 		}
 	}
 
-	public void ASSERT_RECORD_COUNT(Client client, int recordCount) {
-		if (client.RecordCount() != recordCount) {
-			fail(String.format("ASSERT_RECORD_COUNT failed: expected %s but got %s", recordCount, client.RecordCount()));
+	public void ASSERT_EXECUTE(Client client, String command, boolean expected) {
+		boolean got = client.Execute(command);
+		if (expected != got) {
+			fail(String.format("ASSERT_EXECUTE failed: expected %s got %s", expected, got));	
+		}
+		iferror(client, expected, got);
+		VALIDATE_RESULT(client, got);
+	}
+
+	public void ASSERT_ACTION(Client client, String expected) {
+		String got = client.Action();
+		if (!expected.equals(got)) {
+			fail(String.format("ASSERT_ACTION failed: expected %s got %s", expected, got));
+		}
+	}
+
+	public void ASSERT_RECORD_COUNT(Client client, int expected) {
+		int got = client.RecordCount();
+		if (expected != got) {
+			fail(String.format("ASSERT_RECORD_COUNT failed: expected %s but got %s", expected, got));
 		}
 	}
 
@@ -117,38 +152,54 @@ public class PubSubSQLTest {
 	// Client
 	private void TestClient() {
 		TestConnectDisconnect();						
-		TestExecute();
+		TestExecuteStatus();
+		TestExecuteInvalidCommand();
 		TestInsert();
 	}
 
 	private void TestConnectDisconnect() {
 		register("TestConnectDisconnect");
 		Client client = pubsubsql.Factory.NewClient();
-		ASSERT_CONNECT(client);
-		client.Disconnect();	
-		ASSERT_FALSE(client.Connect("addresswithnoport"), "address with no port");
-		ASSERT_FALSE(client.Connect("addresswithnoport:"), "address with separator no port");
-		ASSERT_FALSE(client.Connect("localhost:7778"), "invalid address");
+		ASSERT_CONNECT(client, ADDRESS, true);
+		ASSERT_DISCONNECT(client);	
+		ASSERT_CONNECT(client, "addresswithnoport", false);
+		ASSERT_DISCONNECT(client);	
+		ASSERT_CONNECT(client, "addresswithnoport:", false);
+		ASSERT_DISCONNECT(client);	
+		ASSERT_CONNECT(client, "localhost:7778", false);
+		ASSERT_DISCONNECT(client);	
 	}
 
-	private void TestExecute() {
+	private void TestExecuteStatus() {
 		register("TestExecute");
 		Client client = pubsubsql.Factory.NewClient();
-		ASSERT_CONNECT(client);
-		ASSERT_EXECUTE(client, "status");
+		ASSERT_CONNECT(client, ADDRESS, true);
+		ASSERT_EXECUTE(client, "status", true);
 		ASSERT_ACTION(client, "status");
-		client.Disconnect();
+		//
+		ASSERT_RECORD_COUNT(client, 0);
+		ASSERT_DISCONNECT(client);	
+	}
+
+	private void TestExecuteInvalidCommand() {
+		register("TestExecuteInvalidCommand");
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		ASSERT_EXECUTE(client, "blablabla", false);
+		//
+		ASSERT_ACTION(client, "");
+		ASSERT_RECORD_COUNT(client, 0);
+		ASSERT_DISCONNECT(client);	
 	}
 
 	private void TestInsert() {
-		register("TestExecute");
+		register("TestInsert");
 		Client client = pubsubsql.Factory.NewClient();
-		ASSERT_CONNECT(client);
+		ASSERT_CONNECT(client, ADDRESS, true);
 		String command = String.format("insert into %s (col1, col2, col3) values (1, 1, 1)", TABLE);
-		ASSERT_EXECUTE(client, command);
+		ASSERT_EXECUTE(client, command, true);
 		ASSERT_ACTION(client, "insert");
 		ASSERT_RECORD_COUNT(client, 1);
-		client.Disconnect();
+		ASSERT_DISCONNECT(client);
 	}
-
 }

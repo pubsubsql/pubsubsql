@@ -78,7 +78,7 @@ class ClientImpl implements Client {
 	}
 
 	public boolean Connected() {
-		return false;
+		return rw.Valid();
 	}
 
 	public boolean Ok() {
@@ -90,7 +90,7 @@ class ClientImpl implements Client {
 	}
 
 	public String Error() {
-		return err;	
+		return NotNull(err);	
 	}
 
 	public boolean Execute(String command) {
@@ -105,8 +105,8 @@ class ClientImpl implements Client {
 				setErrorString("Timed out");
 				return false;
 			}
-			//
 			if (header.RequestId == requestId) {
+				// response we are waiting for
 				return unmarshallJSON(bytes);
 			} else if (header.RequestId == 0) {
 				//backlog
@@ -114,7 +114,7 @@ class ClientImpl implements Client {
 				// we did not read full result set from previous command irnore it
 				reset();
 			} else {
-				setErrorString("protocol error invalid requestId");
+				invalidRequestIdError();
 				return false;
 			}
 		}
@@ -122,12 +122,16 @@ class ClientImpl implements Client {
 	}
 
 	public String JSON() {
-		return "";
+		return NotNull(rawjson);
 	}
 
 	public String Action() {
-		if (IsNullOrEmpty(response.action)) return "";
-		return response.action;
+		return NotNull(response.action);
+	}
+
+	
+	public String PubSubId() {
+		return NotNull(response.pubsubid);
 	}
 
 	public int RecordCount() {
@@ -135,6 +139,33 @@ class ClientImpl implements Client {
 	}
 
 	public boolean NextRecord() {
+		while (Ok()) {
+			// no result set
+			if (response.rows == 0) return false;
+			if (response.fromrow == 0 || response.torow == 0) return false;
+			// the current record is valid
+			record++;
+			if (record <= (response.torow - response.fromrow)) return true;
+			// we reached the end of the result set?
+			if (response.rows == response.torow) {
+				record--;
+				return false;
+			}
+			// there is another batch of data
+			reset();
+			NetHeader header = new NetHeader();
+			byte[] bytes = readTimeout(0, header);
+			if (Failed()) return false;
+			if (bytes == null) {
+				setErrorString("Timed out");
+				return false;
+			}
+			if (header.RequestId != requestId) {
+				invalidRequestIdError();
+				return false;
+			}
+			unmarshallJSON(bytes);
+		}
 		return false;
 	}
 
@@ -163,6 +194,11 @@ class ClientImpl implements Client {
 
 	private boolean IsNullOrEmpty(String str) {
 		return (str == null || str.length() == 0);
+	}
+
+	private String NotNull(String str) {
+		if (str == null) return "";
+		return str;
 	}
 
 	private int toPort(String port) {
@@ -224,6 +260,10 @@ class ClientImpl implements Client {
 		String err = e.getMessage();
 		if (IsNullOrEmpty(err)) err = "Unknown error";
 		setErrorString(err);
+	}
+
+	private void invalidRequestIdError() {
+		setErrorString("Protocol error invalid request id");
 	}
 
 	private boolean unmarshallJSON(byte[] bytes) {
