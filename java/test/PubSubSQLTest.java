@@ -24,6 +24,7 @@ public class PubSubSQLTest {
 	private String currentFunction = "";
 	private static final String ADDRESS = "localhost:7777";
 	private String TABLE = "T" + System.currentTimeMillis();
+	private int ROWS = 10;
 
 	// simple test framework
 
@@ -187,6 +188,7 @@ public class PubSubSQLTest {
 		TestInsertOneRow();
 		TestInsertManyRows();
 		TestSelectOneRow();
+		TestSelectManyRows();
 	}
 
 	private void TestConnectDisconnect() {
@@ -253,7 +255,6 @@ public class PubSubSQLTest {
 	private void TestInsertManyRows() {
 		register("TestInsertManyRows");
 		newtable();
-		int ROWS = 10;
 		Client client = pubsubsql.Factory.NewClient();
 		ASSERT_CONNECT(client, ADDRESS, true);
 		String command = String.format("insert into %s (col1, col2, col3) values (1:col1, 1:col2, 1:col3)", TABLE);
@@ -287,11 +288,40 @@ public class PubSubSQLTest {
 		ASSERT_ACTION(client, "select");
 		ASSERT_ROW_COUNT(client, 1);
 		ASSERT_NEXT_ROW(client, true);
+		//
 		ASSERT_ID(client);
-		
+		ASSERT_VALUE(client, "col1", "1:col1");
+		ASSERT_VALUE(client, "col2", "1:col2");
+		ASSERT_VALUE(client, "col3", "1:col3");
+		//
 		ASSERT_NEXT_ROW(client, false);
-					
+	}
 
+	private void TestSelectManyRows() {
+		register("TestSelectOneRow");
+		newtable();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		String command;
+		// first insert rows
+		for (int row = 0; row < ROWS; row++) {	
+			command = String.format("insert into %s (col1, col2, col3) values (%s:col1, %s:col2, %s:col3)", TABLE, row, row, row);
+			ASSERT_EXECUTE(client, command, true);
+		}
+		// select one row
+		command = String.format("select * from %s", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "select");
+		ASSERT_ROW_COUNT(client, ROWS);
+		for (int row = 0; row < ROWS; row++) {
+			ASSERT_NEXT_ROW(client, true);
+			ASSERT_ID(client);
+			ASSERT_VALUE(client, "col1", row + ":col1");
+			ASSERT_VALUE(client, "col2", row + ":col2");
+			ASSERT_VALUE(client, "col3", row + ":col3");
+		}
+		//
+		ASSERT_NEXT_ROW(client, false);
 	}
 }
 
