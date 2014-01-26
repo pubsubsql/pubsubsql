@@ -70,7 +70,6 @@ public class PubSubSQLTest {
 
 	// Client
 	private void TestClient() {
-/*
 		TestConnectDisconnect();						
 		TestExecuteStatus();
 		TestExecuteInvalidCommand();
@@ -84,8 +83,6 @@ public class PubSubSQLTest {
 		TestDeleteManyRows();
 		TestKey();
 		TestTag();
-*/
-		//
 		TestSubscribeUnsubscribe();
 		TestSubscribeUnsubscribeByPubSubId();
 		TestPubSubTimeout();
