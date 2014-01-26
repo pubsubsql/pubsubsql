@@ -33,6 +33,7 @@ class ClientImpl implements Client {
 	private String rawjson = null;
 	private int record = -1;
 	private Hashtable<String, Integer> columns = new Hashtable<String, Integer>();
+	private LinkedList<byte[]> backlog = new LinkedList<byte[]>();
 	
 	
 	public boolean Connect(String address) {
@@ -70,7 +71,7 @@ class ClientImpl implements Client {
 	}
 
 	public void Disconnect() {
-		//backlog.Clear();	
+		backlog.clear();	
 		write("close");
 		// write may generate error so we reset after instead
 		reset();
@@ -110,6 +111,7 @@ class ClientImpl implements Client {
 				return unmarshallJSON(bytes);
 			} else if (header.RequestId == 0) {
 				//backlog
+				backlog.add(bytes);
 			} else if (header.RequestId < requestId) {
 				// we did not read full result set from previous command irnore it
 				reset();
@@ -178,6 +180,13 @@ class ClientImpl implements Client {
 		return response.data.get(record).get(ordinal);
 	}
 
+	public String ValueByOrdinal(int ordinal) {
+		if (response.data == null) return "";
+		if (response.data.size() <= record) return "";
+		if (ordinal >= response.columns.size()) return "";
+		return response.data.get(record).get(ordinal);
+	}
+
 	public boolean HasColumn(String column) {
         return getColumn(column) != -1;
 	}
@@ -187,12 +196,25 @@ class ClientImpl implements Client {
 		return response.columns.size();
 	}
 
-	public String Column(int index) {
-		return "";
-	}
-
 	public boolean WaitForPubSub(int timeout) {
-		return false;
+		if (timeout <= 0) return false;		
+		reset();
+		// process backlog first
+		if (backlog.size() > 0) {
+			byte[] bytes = backlog.remove();
+			return unmarshallJSON(bytes);
+		}
+		for (;;) {
+			NetHeader header = new NetHeader();
+			byte[] bytes = readTimeout(timeout, header);
+			if (Failed()) return false;
+			if (bytes == null) return false; 
+			if (header.RequestId == 0) { 
+				return unmarshallJSON(bytes);			
+			}
+			// this is not pubsub message; are we reading abandoned result set?
+			// ignore and continue
+		}
 	}
 
 	// helper functions

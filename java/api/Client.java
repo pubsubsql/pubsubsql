@@ -31,10 +31,9 @@ public interface Client {
 	int RowCount();
 	boolean NextRow();
 	String Value(String column);
+	String ValueByOrdinal(int ordinal);
 	boolean HasColumn(String column);
-	// Columns();
 	int ColumnCount();
-	String Column(int index);
 	boolean WaitForPubSub(int timeout);	
 
 }
