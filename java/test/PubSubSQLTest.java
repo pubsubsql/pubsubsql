@@ -25,8 +25,7 @@ public class PubSubSQLTest {
 	private static final String ADDRESS = "localhost:7777";
 	private String TABLE = "T" + System.currentTimeMillis();
 	private int ROWS = 10;
-
-	
+	private int COLUMNS = 4; // including id
 
 	//
 
@@ -71,6 +70,7 @@ public class PubSubSQLTest {
 
 	// Client
 	private void TestClient() {
+/*
 		TestConnectDisconnect();						
 		TestExecuteStatus();
 		TestExecuteInvalidCommand();
@@ -84,8 +84,17 @@ public class PubSubSQLTest {
 		TestDeleteManyRows();
 		TestKey();
 		TestTag();
+*/
 		//
 		TestSubscribeUnsubscribe();
+		TestSubscribeUnsubscribeByPubSubId();
+		TestPubSubTimeout();
+		TestSubscribeSkip();
+		TestPubSubAddOnSubscribe();
+		TestPubSubInsert();
+		TestPubSubUpdate();
+		TestPubSubDelete();
+		TestPubSubRemove();
 	}
 
 	private void TestConnectDisconnect() {
@@ -141,9 +150,9 @@ public class PubSubSQLTest {
 		ASSERT_NEXT_ROW(client, true);
 		//
 		ASSERT_ID(client);
-		ASSERT_VALUE(client, "col1", "1:col1");
-		ASSERT_VALUE(client, "col2", "1:col2");
-		ASSERT_VALUE(client, "col3", "1:col3");
+		ASSERT_VALUE(client, "col1", "1:col1", true);
+		ASSERT_VALUE(client, "col2", "1:col2", true);
+		ASSERT_VALUE(client, "col3", "1:col3", true);
 		ASSERT_HAS_COLUMN(client, "col1", true);
 		ASSERT_HAS_COLUMN(client, "col2", true);
 		ASSERT_HAS_COLUMN(client, "col3", true);
@@ -166,9 +175,9 @@ public class PubSubSQLTest {
 			ASSERT_NEXT_ROW(client, true);
 			//
 			ASSERT_ID(client);
-			ASSERT_VALUE(client, "col1", "1:col1");
-			ASSERT_VALUE(client, "col2", "1:col2");
-			ASSERT_VALUE(client, "col3", "1:col3");
+			ASSERT_VALUE(client, "col1", "1:col1", true);
+			ASSERT_VALUE(client, "col2", "1:col2", true);
+			ASSERT_VALUE(client, "col3", "1:col3", true);
 			ASSERT_HAS_COLUMN(client, "col1", true);
 			ASSERT_HAS_COLUMN(client, "col2", true);
 			ASSERT_HAS_COLUMN(client, "col3", true);
@@ -193,9 +202,9 @@ public class PubSubSQLTest {
 		ASSERT_NEXT_ROW(client, true);
 		//
 		ASSERT_ID(client);
-		ASSERT_VALUE(client, "col1", "1:col1");
-		ASSERT_VALUE(client, "col2", "1:col2");
-		ASSERT_VALUE(client, "col3", "1:col3");
+		ASSERT_VALUE(client, "col1", "1:col1", true);
+		ASSERT_VALUE(client, "col2", "1:col2", true);
+		ASSERT_VALUE(client, "col3", "1:col3", true);
 		ASSERT_HAS_COLUMN(client, "col1", true);
 		ASSERT_HAS_COLUMN(client, "col2", true);
 		ASSERT_HAS_COLUMN(client, "col3", true);
@@ -218,9 +227,9 @@ public class PubSubSQLTest {
 		for (int row = 0; row < ROWS; row++) {
 			ASSERT_NEXT_ROW(client, true);
 			ASSERT_ID(client);
-			ASSERT_VALUE(client, "col1", row + ":col1");
-			ASSERT_VALUE(client, "col2", row + ":col2");
-			ASSERT_VALUE(client, "col3", row + ":col3");
+			ASSERT_VALUE(client, "col1", row + ":col1", true);
+			ASSERT_VALUE(client, "col2", row + ":col2", true);
+			ASSERT_VALUE(client, "col3", row + ":col3", true);
 			ASSERT_HAS_COLUMN(client, "col1", true);
 			ASSERT_HAS_COLUMN(client, "col2", true);
 			ASSERT_HAS_COLUMN(client, "col3", true);
@@ -308,16 +317,144 @@ public class PubSubSQLTest {
 	}
 
 	private void TestSubscribeUnsubscribe() {
-		register("TestTag");
+		register("TestSubscribeUnsubscribe");
 		newtable();
 		Client client = pubsubsql.Factory.NewClient();
 		ASSERT_CONNECT(client, ADDRESS, true);
 		String command = String.format("subscribe * from %s", TABLE);
+		// subscribe
 		ASSERT_EXECUTE(client, command, true);
 		ASSERT_ACTION(client, "subscribe");
 		ASSERT_PUBSUBID(client);
+		// unsubscribe
+		command = String.format("unsubscribe from %s", TABLE);		
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "unsubscribe");
+		//
+		ASSERT_DISCONNECT(client);
+	}
+
+	private void TestSubscribeUnsubscribeByPubSubId() {
+		register("TestSubscribeUnsubscribeByPubSubId");
+		newtable();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		String command = String.format("subscribe * from %s", TABLE);
+		// subscribe
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "subscribe");
+		ASSERT_PUBSUBID(client);
+		// unsubscribe
+		command = String.format("unsubscribe from %s where pubsubid = %s", TABLE, client.PubSubId());		
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "unsubscribe");
+		//
 		ASSERT_DISCONNECT(client);
 	} 
+
+	private void TestPubSubTimeout() {
+		register("TestPubSubTimeout");
+		newtable();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		ASSERT_WAIT_FOR_PUBSUB(client, 10, false);	
+	}
+
+	private void TestSubscribeSkip() {
+		register("TestSubscribeSkip");
+		newtable();
+		insertRows();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		String command = String.format("subscribe skip * from %s", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "subscribe");
+		ASSERT_PUBSUBID(client);
+		ASSERT_WAIT_FOR_PUBSUB(client, 10, false);	
+		ASSERT_DISCONNECT(client);
+	}
+
+
+	private void TestPubSubAddOnSubscribe() {
+		register("TestPubSubAddOnSubscribe");
+		newtable();
+		insertRows();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		String command = String.format("subscribe * from %s", TABLE);
+		// subscribe
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "subscribe");
+		ASSERT_PUBSUBID(client);
+		// pubsub add
+		String pubsubid = client.PubSubId();
+		ASSERT_WAIT_FOR_PUBSUB(client, 10, true);	
+		ASSERT_PUBSUBID_VALUE(client, pubsubid);
+		ASSERT_ACTION(client, "add");
+		ASSERT_RESULT_SET(client, ROWS, COLUMNS); 
+		ASSERT_DISCONNECT(client);
+	}
+
+	private void TestPubSubInsert() {
+		register("TestPubSubInsert");
+		newtable();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		String command = String.format("subscribe * from %s", TABLE);
+		// subscribe
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "subscribe");
+		ASSERT_PUBSUBID(client);
+		// generate insert event
+		insertRows();
+		// pubsub insert
+		ASSERT_PUBSUB_RESULT_SET(client, client.PubSubId(), "insert", ROWS, COLUMNS);
+		ASSERT_DISCONNECT(client);
+	}
+
+	private void TestPubSubUpdate() {
+		register("TestPubSubUpdate");
+		newtable();
+		insertRows();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		String command = String.format("subscribe skip * from %s", TABLE);
+		// subscribe
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "subscribe");
+		ASSERT_PUBSUBID(client);
+		String pubsubid = client.PubSubId();
+		// generate update event
+		command = String.format("update %s set col1 = newvalue", TABLE);	
+		ASSERT_EXECUTE(client, command, true);
+		// expected id and updated column (col1)
+		ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "update", ROWS, 2);
+		ASSERT_DISCONNECT(client);
+	}
+
+	private void TestPubSubDelete() {
+		register("TestPubSubDelete");
+		newtable();
+		insertRows();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		String command = String.format("subscribe skip * from %s", TABLE);
+		// subscribe
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ACTION(client, "subscribe");
+		ASSERT_PUBSUBID(client);
+		String pubsubid = client.PubSubId();
+		// generate update event
+		command = String.format("delete from %s", TABLE);	
+		ASSERT_EXECUTE(client, command, true);
+		// expected id and updated column (col1)
+		ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "delete", ROWS, COLUMNS);
+		ASSERT_DISCONNECT(client);
+	}
+
+	private void TestPubSubRemove() {
+		register("TestPubSubRemove");
+	}
 
 	// helper functions
 
@@ -466,10 +603,20 @@ public class PubSubSQLTest {
 		}	
 	}
 
-	public void ASSERT_VALUE(Client client, String column, String expected) {
-		String got = client.Value(column);	
+	public void ASSERT_PUBSUBID_VALUE(Client client, String expected) {
+		String got = client.PubSubId(); 		
 		if (!expected.equals(got)) {
-			fail(String.format("ASSERT_VALUE failed: expected %s but got %s", expected, got));
+			fail(String.format("ASSERT_PUBSUBID_VALUE failed: expected %s but got %s", expected, got));
+		}
+	}
+
+	public void ASSERT_VALUE(Client client, String column, String value, boolean match) {
+		String got = client.Value(column);	
+		if (match && !value.equals(got)) {
+			fail(String.format("ASSERT_VALUE failed: expected %s but got %s", value, got));
+		}
+		else if (!match && value.equals(got)) {
+			fail(String.format("ASSERT_VALUE failed: not expected %s", value));
 		}
 	}
 
@@ -486,5 +633,52 @@ public class PubSubSQLTest {
 			fail(String.format("ASSERT_HAS_COLUMN failed: expected %s but got %s", expected, got));
 		}
 	}	
+
+	public void ASSERT_WAIT_FOR_PUBSUB(Client client, int timeout, boolean expected) {
+		boolean got = client.WaitForPubSub(timeout);
+		if (client.Failed()) {
+			fail(String.format("ASSERT_WAIT_FOR_PUBSUB failed: %s", client.Error()));
+		}
+		else if (expected != got) {
+			fail(String.format("ASSERT_WAIT_FOR_PUBSUB failed: expected %s but got %s", expected, got));
+		}	
+	}
+
+	public void ASSERT_NON_EMPTY_VALUE(Client client, int ordinal) {
+		if (client.ValueByOrdinal(ordinal).length() == 0) {
+			fail(String.format("ASSERT_NON_EMPTY_VALUE failed: expected non empty string for ordinal %s", ordinal));
+		}
+	}
+
+	public void ASSERT_RESULT_SET(Client client, int rows, int columns) {
+		ASSERT_ROW_COUNT(client, rows);
+		for (int row = 0; row < rows; row++) {
+			ASSERT_NEXT_ROW(client, true);
+			ASSERT_COLUMN_COUNT(client, columns); 
+			for (int col = 0; col < columns; col++) {
+				ASSERT_NON_EMPTY_VALUE(client, col);
+			} 
+		}
+		ASSERT_NEXT_ROW(client, false);
+	} 
+
+	public void ASSERT_PUBSUB_RESULT_SET(Client client, String pubsubid, String action, int rows, int columns) {
+		int readRows = 0;		
+		while (readRows < rows) {
+			if (!client.WaitForPubSub(100)) {
+				fail(String.format("ASSERT_PUBSUB_RESULT_SET failed expected %s rows but got %s", rows, readRows));
+				return;
+			}
+			ASSERT_PUBSUBID_VALUE(client, pubsubid);
+			ASSERT_ACTION(client, action);
+			while (client.NextRow()) {
+				readRows++;
+				ASSERT_COLUMN_COUNT(client, columns); 
+				for (int col = 0; col < columns; col++) {
+					ASSERT_NON_EMPTY_VALUE(client, col);
+				} 
+			}
+		}
+	}
 }
 
