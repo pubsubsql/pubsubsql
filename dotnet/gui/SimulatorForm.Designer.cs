@@ -51,9 +51,9 @@
             this.groupBox.Controls.Add(this.rowsLabel);
             this.groupBox.Controls.Add(this.columnsLabel);
             this.groupBox.Location = new System.Drawing.Point(7, -1);
-            this.groupBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox.Margin = new System.Windows.Forms.Padding(4);
             this.groupBox.Name = "groupBox";
-            this.groupBox.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox.Padding = new System.Windows.Forms.Padding(4);
             this.groupBox.Size = new System.Drawing.Size(303, 185);
             this.groupBox.TabIndex = 27;
             this.groupBox.TabStop = false;
@@ -61,9 +61,9 @@
             // line
             // 
             this.line.Location = new System.Drawing.Point(16, 133);
-            this.line.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.line.Margin = new System.Windows.Forms.Padding(4);
             this.line.Name = "line";
-            this.line.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.line.Padding = new System.Windows.Forms.Padding(4);
             this.line.Size = new System.Drawing.Size(272, 4);
             this.line.TabIndex = 29;
             this.line.TabStop = false;
@@ -73,7 +73,7 @@
             this.cancelButton.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
             this.cancelButton.Location = new System.Drawing.Point(76, 146);
-            this.cancelButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.cancelButton.Margin = new System.Windows.Forms.Padding(4);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(100, 28);
             this.cancelButton.TabIndex = 28;
@@ -84,7 +84,7 @@
             this.okButton.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
             this.okButton.Location = new System.Drawing.Point(188, 146);
-            this.okButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.okButton.Margin = new System.Windows.Forms.Padding(4);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(100, 28);
             this.okButton.TabIndex = 27;
@@ -94,9 +94,9 @@
             // rowsUpDown
             // 
             this.rowsUpDown.Location = new System.Drawing.Point(163, 58);
-            this.rowsUpDown.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.rowsUpDown.Margin = new System.Windows.Forms.Padding(4);
             this.rowsUpDown.Maximum = new decimal(new int[] {
-            10000,
+            500,
             0,
             0,
             0});
@@ -117,9 +117,9 @@
             // columnsUpDown
             // 
             this.columnsUpDown.Location = new System.Drawing.Point(163, 23);
-            this.columnsUpDown.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.columnsUpDown.Margin = new System.Windows.Forms.Padding(4);
             this.columnsUpDown.Maximum = new decimal(new int[] {
-            25,
+            15,
             0,
             0,
             0});
@@ -165,7 +165,7 @@
             this.ControlBox = false;
             this.Controls.Add(this.groupBox);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
-            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.Margin = new System.Windows.Forms.Padding(4);
             this.Name = "SimulatorForm";
             this.Text = "Simulator";
             this.Load += new System.EventHandler(this.SimulatorForm_Load);

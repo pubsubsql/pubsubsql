@@ -225,6 +225,7 @@ namespace PubSubSQLGUI
             queryText.Enabled = false;
             executeButton.Enabled = false;
             executeMenu.Enabled = false;
+            simulateMenu.Enabled = false;
             cancelButton.Enabled = true;
             cancelMenu.Enabled = true;
         }
@@ -235,6 +236,7 @@ namespace PubSubSQLGUI
             queryText.Enabled = true;
             executeButton.Enabled = connected;
             executeMenu.Enabled = connected;
+            simulateMenu.Enabled = connected;
             cancelButton.Enabled = false;
             cancelMenu.Enabled = false;
         }
