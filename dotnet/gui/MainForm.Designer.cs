@@ -58,11 +58,11 @@
             this.queryText = new System.Windows.Forms.TextBox();
             this.resultsTabContainer = new System.Windows.Forms.TabControl();
             this.resultsTab = new System.Windows.Forms.TabPage();
+            this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.statusTab = new System.Windows.Forms.TabPage();
             this.statusText = new System.Windows.Forms.TextBox();
             this.rawDataTab = new System.Windows.Forms.TabPage();
             this.rawdataText = new System.Windows.Forms.TextBox();
-            this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.menuStrip.SuspendLayout();
             this.toolStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
@@ -101,18 +101,18 @@
             // newMenu
             // 
             this.newMenu.Name = "newMenu";
-            this.newMenu.Size = new System.Drawing.Size(98, 22);
+            this.newMenu.Size = new System.Drawing.Size(152, 22);
             this.newMenu.Text = "New";
             // 
             // toolStripSeparator1
             // 
             this.toolStripSeparator1.Name = "toolStripSeparator1";
-            this.toolStripSeparator1.Size = new System.Drawing.Size(95, 6);
+            this.toolStripSeparator1.Size = new System.Drawing.Size(149, 6);
             // 
             // exitMenu
             // 
             this.exitMenu.Name = "exitMenu";
-            this.exitMenu.Size = new System.Drawing.Size(98, 22);
+            this.exitMenu.Size = new System.Drawing.Size(152, 22);
             this.exitMenu.Text = "Exit";
             // 
             // connectionMenu
@@ -176,6 +176,7 @@
             this.simulateMenu.Name = "simulateMenu";
             this.simulateMenu.Size = new System.Drawing.Size(199, 22);
             this.simulateMenu.Text = "Simulate";
+            this.simulateMenu.ToolTipText = "Simulate";
             // 
             // helpMenu
             // 
@@ -322,6 +323,23 @@
             this.resultsTab.Text = "Results";
             this.resultsTab.UseVisualStyleBackColor = true;
             // 
+            // listView
+            // 
+            this.listView.Activation = System.Windows.Forms.ItemActivation.OneClick;
+            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listView.GridLines = true;
+            this.listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+            this.listView.HoverSelection = true;
+            this.listView.Location = new System.Drawing.Point(3, 3);
+            this.listView.MultiSelect = false;
+            this.listView.Name = "listView";
+            this.listView.Size = new System.Drawing.Size(764, 347);
+            this.listView.TabIndex = 0;
+            this.listView.UseCompatibleStateImageBehavior = false;
+            this.listView.View = System.Windows.Forms.View.Details;
+            this.listView.VirtualMode = true;
+            this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
+            // 
             // statusTab
             // 
             this.statusTab.Controls.Add(this.statusText);
@@ -365,23 +383,6 @@
             this.rawdataText.Name = "rawdataText";
             this.rawdataText.Size = new System.Drawing.Size(764, 347);
             this.rawdataText.TabIndex = 0;
-            // 
-            // listView
-            // 
-            this.listView.Activation = System.Windows.Forms.ItemActivation.OneClick;
-            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.listView.GridLines = true;
-            this.listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
-            this.listView.HoverSelection = true;
-            this.listView.Location = new System.Drawing.Point(3, 3);
-            this.listView.MultiSelect = false;
-            this.listView.Name = "listView";
-            this.listView.Size = new System.Drawing.Size(764, 347);
-            this.listView.TabIndex = 0;
-            this.listView.UseCompatibleStateImageBehavior = false;
-            this.listView.View = System.Windows.Forms.View.Details;
-            this.listView.VirtualMode = true;
-            this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
             // 
             // MainForm
             // 
