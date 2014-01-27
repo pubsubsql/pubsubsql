@@ -20,9 +20,27 @@ import javax.swing.*;
 
 public class MainForm extends JFrame {
 
+	private JTextArea queryText;
+	private JTabbedPane resultsTabContainer;
+	private JTextArea statusText;
+	private JTextArea jsonText;
+
 	public MainForm() {
 		setTitle("Interactive Query");
 		setupMenuAndToolBar();		
+		// query text
+		queryText = new JTextArea();
+		queryText.setPreferredSize(new Dimension(100, 100));
+		// tabs
+		resultsTabContainer = new JTabbedPane();
+		statusText = new JTextArea();		
+		resultsTabContainer.addTab("Status", statusText);
+		jsonText = new JTextArea();
+		resultsTabContainer.addTab("JSON Response", jsonText);
+		// splitter
+		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, queryText, resultsTabContainer); 
+		this.add(splitPane, BorderLayout.CENTER);	
+		pack();
 	}
 
 	void setupMenuAndToolBar() {
@@ -87,7 +105,6 @@ public class MainForm extends JFrame {
 			defaultTooltips(about);
 			helpMenu.add(aboutMenu);
 		menuBar.add(helpMenu);	
-	
 	}
 
 	// events
