@@ -92,31 +92,31 @@ public class MainForm extends JFrame {
 		}
 	};
 
-	Action connectLocal = new AbstractAction("Connect to localhost:7777") {
+	Action connectLocal = new AbstractAction("Connect to localhost:7777", createImageIcon("images/ConnectLocal.png")) {
 		public void actionPerformed(ActionEvent event) {
 			System.exit(0);
 		}
 	};
 
-	Action connect = new AbstractAction("Connect...") {
+	Action connect = new AbstractAction("Connect...", createImageIcon("images/Connect.png")) {
 		public void actionPerformed(ActionEvent event) {
 			System.exit(0);
 		}
 	};
 
-	Action disconnect = new AbstractAction("Disconnect") {
+	Action disconnect = new AbstractAction("Disconnect", createImageIcon("images/Disconnect.png")) {
 		public void actionPerformed(ActionEvent event) {
 			System.exit(0);
 		}
 	};
 
-	Action execute = new AbstractAction("Execute") {
+	Action execute = new AbstractAction("Execute", createImageIcon("images/Execute2.png")) {
 		public void actionPerformed(ActionEvent event) {
 			System.exit(0);
 		}
 	};
 
-	Action cancelExecute = new AbstractAction("Cancel Executing Query") {
+	Action cancelExecute = new AbstractAction("Cancel Executing Query", createImageIcon("images/Stop.png")) {
 		public void actionPerformed(ActionEvent event) {
 			System.exit(0);
 		}
