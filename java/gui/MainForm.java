@@ -80,7 +80,7 @@ public class MainForm extends JFrame {
 	}
 
 	// events
-	Action new_ = new AbstractAction("New") {
+	Action new_ = new AbstractAction("New", createImageIcon("images/New.png")) {
 		public void actionPerformed(ActionEvent event) {
 			
 		}
@@ -138,5 +138,11 @@ public class MainForm extends JFrame {
 
 	private void defaultTooltips(JMenuItem menu) {
 		menu.setToolTipText(menu.getText());
+	}
+
+	private ImageIcon createImageIcon(String path) {
+		java.net.URL url = getClass().getResource(path);
+		if (url == null) return null;
+		return new ImageIcon(url);
 	}
 }
