@@ -13,19 +13,15 @@ namespace PubSubSQLGUI
         public string TableName = string.Empty;
         public string Address = string.Empty;
         private PubSubSQL.Client client = PubSubSQL.Factory.NewClient();
-        private bool stopFlag = false;
+        private volatile bool stopFlag = false;
         Thread thread = null;
         List<string> ids = new List<string>();
-
-        public volatile int TotalPublished = 0;
-        public volatile int TotalConsumed = 0;
 
         private void Run()
         {
             try
             {
-                TotalPublished = 0;
-                TotalConsumed = 0;
+                ids.Clear();
                 Thread.Sleep(0);
                 if (!client.Connect(Address)) throw new Exception("Failed to connect");
                 // first insert data
@@ -37,24 +33,20 @@ namespace PubSubSQLGUI
                     string id = client.Value("id");
                     if (string.IsNullOrEmpty(id)) throw new Exception("id is empty");
                     ids.Add(id);
-                    while (TotalPublished - TotalConsumed > 2000 && !stopFlag)
-                    {
-                        Thread.Sleep(50);
-                    }
                 }
                 //
                 while (!stopFlag)
                 {
-                    string update = generateUpdate();
-                    if (!client.Execute(update)) throw new Exception(client.Error());
-                    TotalPublished++;
-                    while (TotalPublished - TotalConsumed > 2000 && !stopFlag)
+                    for (int i = 0; i < 100 && !stopFlag; i++)
                     {
-                        // gui thread can not process that many messages from the server
-                        // slow down the updates
-                        Thread.Sleep(50);
+                        string update = generateUpdate();
+                        if (!client.Execute(update)) throw new Exception(client.Error());
                     }
+                    // gui thread can not process that many messages from the server
+                    // slow down the updates
+                    Thread.Sleep(100);
                 }
+                client.Disconnect();
             }
             catch (Exception e)
             {

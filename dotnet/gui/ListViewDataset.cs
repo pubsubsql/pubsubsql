@@ -23,6 +23,14 @@ namespace PubSubSQLGUI
         private Dictionary<string, int> columnOrdinals = new Dictionary<string, int>();
         private List<List<Cell>> rows = new List<List<Cell>>();
         private Dictionary<string, List<Cell>> idsToRows = new Dictionary<string, List<Cell>>();
+        private volatile bool dirtyFlag = false;
+
+        public bool ResetDirty()
+        {
+            bool ret = dirtyFlag;
+            dirtyFlag = false;
+            return ret;
+        }
 
         public void Reset()
         {
@@ -56,6 +64,7 @@ namespace PubSubSQLGUI
 
         public void ProcessRow(PubSubSQL.Client client)
         {
+            dirtyFlag = true;
             string id = client.Value("id");
             List<Cell> row = null;
             switch (client.Action())

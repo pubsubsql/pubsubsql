@@ -19,7 +19,6 @@ namespace PubSubSQLGUI
         private bool cancelExecuteFlag = false;
         private string connectedAddress = string.Empty;
         private ListViewDataset dataset = new ListViewDataset();
-        private bool useFlashColor = false;
         private Timer flashTimer = new Timer();
         private Simulator simulator = new Simulator();
 
@@ -43,7 +42,7 @@ namespace PubSubSQLGUI
             enableDisableControls();
 
             flashTimer.Interval = FLASH_TIMER_INTERVAL;
-            flashTimer.Enabled = false;
+            flashTimer.Enabled = true;
             flashTimer.Tick += tick;
         }
 
@@ -80,11 +79,6 @@ namespace PubSubSQLGUI
         private void exit(object sender, EventArgs e)
         {
             this.Close();
-        }
-
-        private void closing(object sender, EventArgs e)
-        {
-
         }
 
         private void connectLocal(object sender, EventArgs e)
@@ -126,7 +120,6 @@ namespace PubSubSQLGUI
             try
             {
                 executing();
-                cancelExecuteFlag = false;
                 string command = queryText.Text.Trim();
                 if (string.IsNullOrEmpty(command)) return;
                 client.Execute(queryText.Text);
@@ -177,11 +170,26 @@ namespace PubSubSQLGUI
             dlg.ShowDialog(this);
         }
 
+        long flashTicks = DateTime.Now.Ticks;
         private void tick(object sender, EventArgs e)
         {
-            listView.BeginUpdate();
-            listView.EndUpdate();
-            if (!useFlashColor) flashTimer.Enabled = false;
+            if (dataset.ResetDirty())
+            {
+                setStatus();
+                setRawData();
+                listView.VirtualListSize = dataset.RowCount;
+                resultsTabContainer.SelectedTab = resultsTab;
+                listView.BeginUpdate();
+                listView.EndUpdate();
+                flashTicks = DateTime.Now.Ticks;
+            }
+            else if ((DateTime.Now.Ticks - flashTicks) < (FLASH_TIMEOUT * 2) )
+            {
+                // make sure that we clear the background color
+                listView.VirtualListSize = dataset.RowCount;
+                listView.BeginUpdate();
+                listView.EndUpdate();
+            }
         }
 
         // helper functions
@@ -222,6 +230,7 @@ namespace PubSubSQLGUI
         private void executing()
         {        
             clear();
+            cancelExecuteFlag = false;
             queryText.Enabled = false;
             executeButton.Enabled = false;
             executeMenu.Enabled = false;
@@ -233,6 +242,7 @@ namespace PubSubSQLGUI
         private void doneExecuting()
         {
             bool connected = client.Connected();
+            cancelExecuteFlag = true;
             queryText.Enabled = true;
             executeButton.Enabled = connected;
             executeMenu.Enabled = connected;
@@ -250,17 +260,8 @@ namespace PubSubSQLGUI
             // determine if we just subscribed  
             if (client.PubSubId() != string.Empty && client.Action() == "subscribe")
             {
-                try
-                {
-                    useFlashColor = true;
-                    flashTimer.Enabled = true;
-                    waitForPubSubEvent();
-                }
-                finally
-                {
-                    useFlashColor = false;
-                }
-                return;
+                flashTimer.Enabled = true;
+                waitForPubSubEvent();
             }
             processResults();
         }
@@ -278,24 +279,13 @@ namespace PubSubSQLGUI
         private void waitForPubSubEvent()
         {
             long ticks = DateTime.Now.Ticks;
-            int times = 0;
             while (!cancelExecuteFlag)
             {
                 bool timedout = !client.WaitForPubSub(PUBSUB_TIMEOUT);
                 if (client.Failed()) break;
-                if (!timedout) times += updateDataset();
+                if (!timedout) updateDataset();
                 if (!timedout && (DateTime.Now.Ticks - ticks) < PUBSUB_TIMEOUT * 10000) continue;  
-                setStatus();
-                setRawData();
-                if (times > 0)
-                {
-                    listView.VirtualListSize = dataset.RowCount;
-                    resultsTabContainer.SelectedTab = resultsTab;
-                    listView.BeginUpdate();
-                    listView.EndUpdate();
-                }
                 Application.DoEvents();
-                times = 0;
                 ticks = DateTime.Now.Ticks;
             }
             if (client.Failed())
@@ -304,21 +294,17 @@ namespace PubSubSQLGUI
             }
         }
 
-        private int updateDataset()
+        private void updateDataset()
         {
-            int times = 0;
-            if (!(client.RecordCount() > 0 && client.ColumnCount() > 0)) return 0;
+            if (!(client.RecordCount() > 0 && client.ColumnCount() > 0)) return;
             // inside dataset
             dataset.SyncColumns(client);
             syncColumns();
             dataset.AddRowsCapacity(client.RecordCount());
             while (client.NextRecord() && !cancelExecuteFlag)
             {
-                times++;
-                simulator.TotalConsumed++;
                 dataset.ProcessRow(client);
             }
-            return times;
         }
 
         private void processResults()
@@ -368,7 +354,7 @@ namespace PubSubSQLGUI
                 {
                     Cell cell = row[i];
                     str = cell.Value;
-                    if (useFlashColor && (DateTime.Now.Ticks - cell.LastUpdated) < FLASH_TIMEOUT)
+                    if ((DateTime.Now.Ticks - cell.LastUpdated) < FLASH_TIMEOUT)
                     {
                         cellBackColor = Color.HotPink;
                     }

@@ -105,7 +105,9 @@
       <Name>PubSubSQL</Name>
     </ProjectReference>
   </ItemGroup>
-  <ItemGroup />
+  <ItemGroup>
+    <None Include="images\Connect.bmp" />
+  </ItemGroup>
   <ItemGroup>
     <None Include="Properties\Settings.settings" />
   </ItemGroup>

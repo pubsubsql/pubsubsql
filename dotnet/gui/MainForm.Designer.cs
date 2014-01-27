@@ -58,11 +58,11 @@
             this.queryText = new System.Windows.Forms.TextBox();
             this.resultsTabContainer = new System.Windows.Forms.TabControl();
             this.resultsTab = new System.Windows.Forms.TabPage();
-            this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.statusTab = new System.Windows.Forms.TabPage();
             this.statusText = new System.Windows.Forms.TextBox();
             this.rawDataTab = new System.Windows.Forms.TabPage();
             this.rawdataText = new System.Windows.Forms.TextBox();
+            this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.menuStrip.SuspendLayout();
             this.toolStrip.SuspendLayout();
             ((System.ComponentModel.ISupportInitialize)(this.splitContainer)).BeginInit();
@@ -100,6 +100,8 @@
             // 
             // newMenu
             // 
+            this.newMenu.Image = ((System.Drawing.Image)(resources.GetObject("newMenu.Image")));
+            this.newMenu.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.newMenu.Name = "newMenu";
             this.newMenu.Size = new System.Drawing.Size(152, 22);
             this.newMenu.Text = "New";
@@ -127,18 +129,24 @@
             // 
             // connectLocalMenu
             // 
+            this.connectLocalMenu.Image = ((System.Drawing.Image)(resources.GetObject("connectLocalMenu.Image")));
+            this.connectLocalMenu.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.connectLocalMenu.Name = "connectLocalMenu";
             this.connectLocalMenu.Size = new System.Drawing.Size(211, 22);
             this.connectLocalMenu.Text = "Connect to localhost:7777";
             // 
             // connectMenu
             // 
+            this.connectMenu.Image = global::PubSubSQLGUI.Properties.Resources.Connect;
+            this.connectMenu.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.connectMenu.Name = "connectMenu";
             this.connectMenu.Size = new System.Drawing.Size(211, 22);
             this.connectMenu.Text = "Connect...";
             // 
             // disconnectMenu
             // 
+            this.disconnectMenu.Image = ((System.Drawing.Image)(resources.GetObject("disconnectMenu.Image")));
+            this.disconnectMenu.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.disconnectMenu.Name = "disconnectMenu";
             this.disconnectMenu.Size = new System.Drawing.Size(211, 22);
             this.disconnectMenu.Text = "Disconnect";
@@ -161,12 +169,16 @@
             // 
             // executeMenu
             // 
+            this.executeMenu.Image = ((System.Drawing.Image)(resources.GetObject("executeMenu.Image")));
+            this.executeMenu.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.executeMenu.Name = "executeMenu";
             this.executeMenu.Size = new System.Drawing.Size(199, 22);
             this.executeMenu.Text = "Execute";
             // 
             // cancelMenu
             // 
+            this.cancelMenu.Image = ((System.Drawing.Image)(resources.GetObject("cancelMenu.Image")));
+            this.cancelMenu.ImageTransparentColor = System.Drawing.Color.Magenta;
             this.cancelMenu.Name = "cancelMenu";
             this.cancelMenu.Size = new System.Drawing.Size(199, 22);
             this.cancelMenu.Text = "Cancel Executing Query";
@@ -323,23 +335,6 @@
             this.resultsTab.Text = "Results";
             this.resultsTab.UseVisualStyleBackColor = true;
             // 
-            // listView
-            // 
-            this.listView.Activation = System.Windows.Forms.ItemActivation.OneClick;
-            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.listView.GridLines = true;
-            this.listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
-            this.listView.HoverSelection = true;
-            this.listView.Location = new System.Drawing.Point(3, 3);
-            this.listView.MultiSelect = false;
-            this.listView.Name = "listView";
-            this.listView.Size = new System.Drawing.Size(764, 347);
-            this.listView.TabIndex = 0;
-            this.listView.UseCompatibleStateImageBehavior = false;
-            this.listView.View = System.Windows.Forms.View.Details;
-            this.listView.VirtualMode = true;
-            this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
-            // 
             // statusTab
             // 
             this.statusTab.Controls.Add(this.statusText);
@@ -383,6 +378,23 @@
             this.rawdataText.Name = "rawdataText";
             this.rawdataText.Size = new System.Drawing.Size(764, 347);
             this.rawdataText.TabIndex = 0;
+            // 
+            // listView
+            // 
+            this.listView.Activation = System.Windows.Forms.ItemActivation.OneClick;
+            this.listView.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.listView.GridLines = true;
+            this.listView.HeaderStyle = System.Windows.Forms.ColumnHeaderStyle.Nonclickable;
+            this.listView.HoverSelection = true;
+            this.listView.Location = new System.Drawing.Point(3, 3);
+            this.listView.MultiSelect = false;
+            this.listView.Name = "listView";
+            this.listView.Size = new System.Drawing.Size(764, 347);
+            this.listView.TabIndex = 0;
+            this.listView.UseCompatibleStateImageBehavior = false;
+            this.listView.View = System.Windows.Forms.View.Details;
+            this.listView.VirtualMode = true;
+            this.listView.RetrieveVirtualItem += new System.Windows.Forms.RetrieveVirtualItemEventHandler(this.listView_RetrieveVirtualItem);
             // 
             // MainForm
             // 
