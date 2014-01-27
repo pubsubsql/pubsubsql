@@ -22,58 +22,69 @@ public class MainForm extends JFrame {
 
 	public MainForm() {
 		setTitle("Interactive Query");
-		setupMenuBar();		
+		setupMenuAndToolBar();		
 	}
 
-	void setupMenuBar() {
+	void setupMenuAndToolBar() {
 		JMenuBar menuBar = new JMenuBar();
 		this.setJMenuBar(menuBar);	
+		JToolBar toolBar = new JToolBar();
+		this.add(toolBar, BorderLayout.NORTH);
 		// File
 		JMenu fileMenu = new JMenu("File");
 			// New
 			JMenuItem newMenu = new JMenuItem(new_);	
-			newMenu.setToolTipText("New PubSubSQL Interactive Query");
+			new_.putValue(Action.SHORT_DESCRIPTION, "New PubSubSQL Interactive Query");
 			fileMenu.add(newMenu);
+			fileMenu.addSeparator();
+			toolBar.add(new_);
+			toolBar.addSeparator();
 			// Exit	
 			JMenuItem exitMenu = new JMenuItem(exit);
-			defaultTooltips(exitMenu);
+			defaultTooltips(exit);
 			fileMenu.add(exitMenu);
 		menuBar.add(fileMenu);
 		// Connection
 		JMenu connectionMenu = new JMenu("Connection");
 			// Connect local
 			JMenuItem connectLocalMenu = new JMenuItem(connectLocal);
-			connectLocalMenu.setToolTipText(connectLocalMenu.getText());
+			defaultTooltips(connectLocal);
 			connectionMenu.add(connectLocalMenu);
+			toolBar.add(connectLocal);
 			// Connect
 			JMenuItem connectMenu = new JMenuItem(connect);
-			connectMenu.setToolTipText("Connect to remote server");
+			connect.putValue(Action.SHORT_DESCRIPTION, "Connect to remote server");
 			connectionMenu.add(connectMenu);
+			toolBar.add(connect);
 			// Disconnect
 			JMenuItem disconnectMenu = new JMenuItem(disconnect);
-			defaultTooltips(disconnectMenu);
+			defaultTooltips(disconnect);
 			connectionMenu.add(disconnectMenu);
+			toolBar.add(disconnect);
+			toolBar.addSeparator();
 		menuBar.add(connectionMenu);	
 		// Query
 		JMenu queryMenu = new JMenu("Query");
 			// Execute 
 			JMenuItem executeMenu = new JMenuItem(execute);
-			defaultTooltips(executeMenu);
+			defaultTooltips(execute);
 			queryMenu.add(executeMenu);
+			toolBar.add(execute);
 			// Cancel Executing Query 
 			JMenuItem cancelMenu = new JMenuItem(cancelExecute);
-			defaultTooltips(cancelMenu);
+			defaultTooltips(cancelExecute);
 			queryMenu.add(cancelMenu);
+			toolBar.add(cancelExecute);
 			// Simulate 
 			JMenuItem simulateMenu = new JMenuItem(simulate);
-			defaultTooltips(simulateMenu);
+			defaultTooltips(simulate);
 			queryMenu.add(simulateMenu);
 		menuBar.add(queryMenu);	
 		// Help
 		JMenu helpMenu = new JMenu("Help");
 			// About 
 			JMenuItem aboutMenu = new JMenuItem(about);
-			defaultTooltips(aboutMenu);
+			defaultTooltips(about);
 			helpMenu.add(aboutMenu);
 		menuBar.add(helpMenu);	
 	
@@ -135,9 +146,8 @@ public class MainForm extends JFrame {
 	};
 	
 	// helpers 
-
-	private void defaultTooltips(JMenuItem menu) {
-		menu.setToolTipText(menu.getText());
+	private void defaultTooltips(Action action) {
+		action.putValue(Action.SHORT_DESCRIPTION, action.getValue(Action.NAME)); 
 	}
 
 	private ImageIcon createImageIcon(String path) {
