@@ -17,6 +17,7 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
+import pubsubsql.*;
 
 public class MainForm extends JFrame {
 
@@ -24,13 +25,17 @@ public class MainForm extends JFrame {
 	private JTabbedPane resultsTabContainer;
 	private JTextArea statusText;
 	private JTextArea jsonText;
+	private String DEFAULT_ADDRESS = "localhost:7777";
+	private pubsubsql.Client client = pubsubsql.Factory.NewClient();
 
 	public MainForm() {
-		setTitle("Interactive Query");
+		Toolkit toolkit = Toolkit.getDefaultToolkit();
+        Dimension screen = toolkit.getScreenSize();
+        setTitle("Interactive Query");
 		setupMenuAndToolBar();		
 		// query text
 		queryText = new JTextArea();
-		queryText.setPreferredSize(new Dimension(100, 100));
+		queryText.setPreferredSize(new Dimension(screen.width / 2, 100));
 		// tabs
 		resultsTabContainer = new JTabbedPane();
 		statusText = new JTextArea();		
@@ -40,14 +45,19 @@ public class MainForm extends JFrame {
 		// splitter
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, queryText, resultsTabContainer); 
 		this.add(splitPane, BorderLayout.CENTER);	
-		pack();
+		
+		// position
+        setSize(screen.width / 2, screen.height / 2);
+        setLocation(screen.width / 4, screen.height / 4);
+		//
+		//pack();
 	}
 
 	void setupMenuAndToolBar() {
 		JMenuBar menuBar = new JMenuBar();
-		this.setJMenuBar(menuBar);	
+		setJMenuBar(menuBar);	
 		JToolBar toolBar = new JToolBar();
-		this.add(toolBar, BorderLayout.NORTH);
+		add(toolBar, BorderLayout.NORTH);
 		// File
 		JMenu fileMenu = new JMenu("File");
 			// New

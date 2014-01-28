@@ -1,11 +1,10 @@
-#javac -d . gui/PubSubSQLGUI.java gui/MainForm.java
-#jar cvmf gui/main_manifest pubsubsqlgui.jar PubSubSQLGUI.class PubSubSQLGUI1$.class MainForm.class gui/images/New.png
-#java -jar pubsubsqlgui.jar
- 
-rm *.jar
-javac -d . PubSubSQLGUI.java MainForm.java
+javac -d . -cp .:../lib/* PubSubSQLGUI.java MainForm.java
+echo compiled
 jar cvf pubsubsqlgui.jar *.class  images/*.png   
 jar ufe pubsubsqlgui.jar PubSubSQLGUI PubSubSQLGUI.class
+jar ufm pubsubsqlgui.jar manifest.txt 
 rm *.class
-java -jar pubsubsqlgui.jar
+mv pubsubsqlgui.jar ../pubsubsqlgui.jar
+echo running...
+java -jar ../pubsubsqlgui.jar
 

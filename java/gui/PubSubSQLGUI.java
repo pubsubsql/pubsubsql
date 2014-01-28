@@ -26,7 +26,6 @@ public class PubSubSQLGUI {
 				MainForm frm = new MainForm();
 				frm.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);								
 				frm.setVisible(true);
-				frm.setSize(400, 400);
 			}
 		});	
 	}
