@@ -37,7 +37,7 @@ namespace PubSubSQLGUI
             setControls(cancelButton, cancelMenu, cancelExecute);
             simulateMenu.Click += simulate;
             aboutMenu.Click += about;
-            setTitle(string.Empty);
+            updateConnectedAddress(string.Empty);
             resultsTabContainer.SelectedTab = statusTab;
             enableDisableControls();
 
@@ -97,10 +97,10 @@ namespace PubSubSQLGUI
 
         private void connect(string address)
         {
-            clear();
+            clearResults();
             if (client.Connect(address))
             {
-                setTitle(address);
+                updateConnectedAddress(address);
             }
             setStatus();
             enableDisableControls();
@@ -108,10 +108,10 @@ namespace PubSubSQLGUI
 
         private void disconnect(object sender, EventArgs e)
         {
-            setTitle(string.Empty);
-            clear();
+            simulator.Stop();
+            updateConnectedAddress(string.Empty);
+            clearResults();
             client.Disconnect();
-            connectedAddress = string.Empty;
             enableDisableControls();
         }
 
@@ -122,7 +122,7 @@ namespace PubSubSQLGUI
                 executing();
                 string command = queryText.Text.Trim();
                 if (string.IsNullOrEmpty(command)) return;
-                client.Execute(queryText.Text);
+                client.Execute(command);
                 processResponse();
             }
             finally
@@ -136,7 +136,7 @@ namespace PubSubSQLGUI
                     if (!string.IsNullOrEmpty(connectedAddress))
                     {
                         connect(connectedAddress);
-                        clear();
+                        clearResults();
                     }
                 }
             }
@@ -176,7 +176,7 @@ namespace PubSubSQLGUI
             if (dataset.ResetDirty())
             {
                 setStatus();
-                setRawData();
+                setJSON();
                 listView.VirtualListSize = dataset.RowCount;
                 resultsTabContainer.SelectedTab = resultsTab;
                 listView.BeginUpdate();
@@ -194,34 +194,34 @@ namespace PubSubSQLGUI
 
         // helper functions
 
-        private void clear()
+        private void clearResults()
         {
             listView.Columns.Clear();
             listView.VirtualListSize = 0;
             statusText.Text = "";
-            rawdataText.Text = "";
+            jsonText.Text = "";
         }
 
-        private bool setStatus()
+        private void setStatus()
         {
             if (client.Ok())
             {
                 statusText.ForeColor = Color.Black;
                 statusText.Text = "ok";
-                return true;
+                return;
             }
             statusText.ForeColor = Color.Red;
             statusText.Text = "error\r\n" + client.Error();
             enableDisableControls();
-            return false;
+            return;
         }
 
-        private void setRawData()
+        private void setJSON()
         {
-            rawdataText.Text = client.JSON();
+            jsonText.Text = client.JSON();
         }
-
-        private void setTitle(string address)
+        
+        private void updateConnectedAddress(string address)
         {
             Text = "PubSubSQL Interactive Query " + address;
             connectedAddress = address;
@@ -229,7 +229,7 @@ namespace PubSubSQLGUI
 
         private void executing()
         {        
-            clear();
+            clearResults();
             cancelExecuteFlag = false;
             queryText.Enabled = false;
             executeButton.Enabled = false;
@@ -241,29 +241,32 @@ namespace PubSubSQLGUI
 
         private void doneExecuting()
         {
-            bool connected = client.Connected();
-            cancelExecuteFlag = true;
             queryText.Enabled = true;
-            executeButton.Enabled = connected;
-            executeMenu.Enabled = connected;
-            simulateMenu.Enabled = connected;
-            cancelButton.Enabled = false;
-            cancelMenu.Enabled = false;
+            enableDisableControls();
         }
 
         private void processResponse()
         {
-            setStatus();
-            setRawData();
-            dataset.Reset();
-            if (client.Failed()) return;
+            dataset.Clear();
             // determine if we just subscribed  
             if (client.PubSubId() != string.Empty && client.Action() == "subscribe")
             {
-                flashTimer.Enabled = true;
+                setStatus();
+                setJSON();
+                // enter event loop
                 waitForPubSubEvent();
+                return;
             }
-            processResults();
+            // check if it is result set
+            if (client.RecordCount() > 0 && client.ColumnCount() > 0)
+            {
+                updateDataset(); 
+                resultsTabContainer.SelectedTab = resultsTab;
+            }
+            //            
+            if (client.Failed())resultsTabContainer.SelectedTab = statusTab;
+            setStatus();
+            setJSON();
         }
 
         private void syncColumns()
@@ -304,40 +307,6 @@ namespace PubSubSQLGUI
             while (client.NextRecord() && !cancelExecuteFlag)
             {
                 dataset.ProcessRow(client);
-            }
-        }
-
-        private void processResults()
-        {
-            setRawData();
-            bool results = false;
-            // check if it is result set
-            if (client.RecordCount() > 0 && client.ColumnCount() > 0)
-            {
-                results = true;
-                updateDataset(); 
-                listView.VirtualListSize = dataset.RowCount;        
-                Application.DoEvents();
-            }
-            if (client.Failed())
-            {
-                setStatus();
-                setRawData();
-                resultsTabContainer.SelectedTab = statusTab;
-            }
-            else
-            {
-                if (results)
-                {
-                    resultsTabContainer.SelectedTab = resultsTab;
-                    listView.BeginUpdate();
-                    listView.EndUpdate();
-                    Application.DoEvents();
-                }
-                else
-                {
-                    resultsTabContainer.SelectedTab = statusTab;
-                }
             }
         }
 

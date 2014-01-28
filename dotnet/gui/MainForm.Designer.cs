@@ -61,7 +61,7 @@
             this.statusTab = new System.Windows.Forms.TabPage();
             this.statusText = new System.Windows.Forms.TextBox();
             this.rawDataTab = new System.Windows.Forms.TabPage();
-            this.rawdataText = new System.Windows.Forms.TextBox();
+            this.jsonText = new System.Windows.Forms.TextBox();
             this.listView = new PubSubSQLGUI.ListViewDoubleBuffered();
             this.menuStrip.SuspendLayout();
             this.toolStrip.SuspendLayout();
@@ -360,7 +360,7 @@
             // 
             // rawDataTab
             // 
-            this.rawDataTab.Controls.Add(this.rawdataText);
+            this.rawDataTab.Controls.Add(this.jsonText);
             this.rawDataTab.Location = new System.Drawing.Point(4, 22);
             this.rawDataTab.Name = "rawDataTab";
             this.rawDataTab.Padding = new System.Windows.Forms.Padding(3);
@@ -371,13 +371,13 @@
             // 
             // rawdataText
             // 
-            this.rawdataText.Dock = System.Windows.Forms.DockStyle.Fill;
-            this.rawdataText.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
-            this.rawdataText.Location = new System.Drawing.Point(3, 3);
-            this.rawdataText.Multiline = true;
-            this.rawdataText.Name = "rawdataText";
-            this.rawdataText.Size = new System.Drawing.Size(764, 347);
-            this.rawdataText.TabIndex = 0;
+            this.jsonText.Dock = System.Windows.Forms.DockStyle.Fill;
+            this.jsonText.Font = new System.Drawing.Font("Verdana", 9.75F, System.Drawing.FontStyle.Regular, System.Drawing.GraphicsUnit.Point, ((byte)(0)));
+            this.jsonText.Location = new System.Drawing.Point(3, 3);
+            this.jsonText.Multiline = true;
+            this.jsonText.Name = "rawdataText";
+            this.jsonText.Size = new System.Drawing.Size(764, 347);
+            this.jsonText.TabIndex = 0;
             // 
             // listView
             // 
@@ -463,7 +463,7 @@
         private System.Windows.Forms.TabPage statusTab;
         private System.Windows.Forms.TabPage rawDataTab;
         private System.Windows.Forms.TextBox statusText;
-        private System.Windows.Forms.TextBox rawdataText;
+        private System.Windows.Forms.TextBox jsonText;
         private ListViewDoubleBuffered listView;
         private System.Windows.Forms.ToolStripMenuItem simulateMenu;
     }

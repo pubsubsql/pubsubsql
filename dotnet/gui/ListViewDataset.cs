@@ -32,7 +32,7 @@ namespace PubSubSQLGUI
             return ret;
         }
 
-        public void Reset()
+        public void Clear()
         {
             columns.Clear();
             columnOrdinals.Clear();
@@ -131,11 +131,11 @@ namespace PubSubSQLGUI
             get { return columns.Count; }
         }
 
-        public string Column(int index)
+        public string Column(int colIndex)
         {
-            if (index < columns.Count)
+            if (colIndex < columns.Count)
             {
-                return columns[index];
+                return columns[colIndex];
             }
             return string.Empty;
         }
