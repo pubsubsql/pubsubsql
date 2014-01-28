@@ -41,9 +41,11 @@
             this.groupBox.Controls.Add(this.license);
             this.groupBox.Controls.Add(this.okButton);
             this.groupBox.Controls.Add(this.copyrightLable);
-            this.groupBox.Location = new System.Drawing.Point(5, -1);
+            this.groupBox.Location = new System.Drawing.Point(7, -1);
+            this.groupBox.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.groupBox.Name = "groupBox";
-            this.groupBox.Size = new System.Drawing.Size(305, 182);
+            this.groupBox.Padding = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.groupBox.Size = new System.Drawing.Size(407, 224);
             this.groupBox.TabIndex = 27;
             this.groupBox.TabStop = false;
             // 
@@ -51,10 +53,11 @@
             // 
             this.license.BackColor = System.Drawing.SystemColors.Control;
             this.license.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.license.Location = new System.Drawing.Point(14, 42);
+            this.license.Location = new System.Drawing.Point(19, 52);
+            this.license.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.license.Multiline = true;
             this.license.Name = "license";
-            this.license.Size = new System.Drawing.Size(280, 90);
+            this.license.Size = new System.Drawing.Size(373, 110);
             this.license.TabIndex = 28;
             this.license.Text = resources.GetString("license.Text");
             // 
@@ -62,29 +65,34 @@
             // 
             this.okButton.Anchor = System.Windows.Forms.AnchorStyles.None;
             this.okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.okButton.Location = new System.Drawing.Point(195, 150);
+            this.okButton.Location = new System.Drawing.Point(260, 185);
+            this.okButton.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
             this.okButton.Name = "okButton";
-            this.okButton.Size = new System.Drawing.Size(99, 23);
+            this.okButton.Size = new System.Drawing.Size(132, 28);
             this.okButton.TabIndex = 27;
             this.okButton.Text = "OK";
             // 
             // copyrightLable
             // 
             this.copyrightLable.AutoSize = true;
-            this.copyrightLable.Location = new System.Drawing.Point(12, 19);
+            this.copyrightLable.Location = new System.Drawing.Point(16, 23);
+            this.copyrightLable.Margin = new System.Windows.Forms.Padding(4, 0, 4, 0);
             this.copyrightLable.Name = "copyrightLable";
-            this.copyrightLable.Size = new System.Drawing.Size(181, 13);
+            this.copyrightLable.Size = new System.Drawing.Size(242, 17);
             this.copyrightLable.TabIndex = 4;
             this.copyrightLable.Text = "Copyright (C) 2013 CompleteDB LLC.";
             // 
             // AboutForm
             // 
-            this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
+            this.AutoScaleDimensions = new System.Drawing.SizeF(8F, 16F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(317, 190);
+            this.ClientSize = new System.Drawing.Size(423, 234);
             this.ControlBox = false;
             this.Controls.Add(this.groupBox);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
+            this.Margin = new System.Windows.Forms.Padding(4, 4, 4, 4);
+            this.MaximumSize = new System.Drawing.Size(441, 281);
+            this.MinimumSize = new System.Drawing.Size(441, 281);
             this.Name = "AboutForm";
             this.Text = "About PubSubSQL Interactive Query";
             this.Load += new System.EventHandler(this.AboutForm_Load);
