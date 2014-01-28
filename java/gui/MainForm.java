@@ -32,7 +32,6 @@ public class MainForm extends JFrame {
 	private JButton cancelButton;
 	private JMenuItem simulateMenu;
 		
-
 	private JTextArea queryText;
 	private JTabbedPane resultsTabContainer;
 	private JTextArea statusText;
@@ -40,6 +39,7 @@ public class MainForm extends JFrame {
 	private String DEFAULT_ADDRESS = "localhost:7777";
 	private pubsubsql.Client client = pubsubsql.Factory.NewClient();
 	private String connectedAddress = "";
+	private boolean cancelExecuteFlag = false;
 
 	public MainForm() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -155,7 +155,7 @@ public class MainForm extends JFrame {
 	};
 
 	private void connect(String address) {
-		clear();
+		clearResults();
 		if (client.Connect(address)) {
 			updateConnectedAddress(address);	
 		}
@@ -166,7 +166,7 @@ public class MainForm extends JFrame {
 	Action disconnect = new AbstractAction("Disconnect", createImageIcon("images/Disconnect.png")) {
 		public void actionPerformed(ActionEvent event) {
 			updateConnectedAddress("");
-			clear();
+			clearResults();
 			client.Disconnect();
 			enableDisableControls();
 		}
@@ -174,7 +174,23 @@ public class MainForm extends JFrame {
 
 	Action execute = new AbstractAction("Execute", createImageIcon("images/Execute2.png")) {
 		public void actionPerformed(ActionEvent event) {
-			System.exit(0);
+			try {
+				executing();
+				String command = queryText.getText().trim();
+				if (command.length() == 0) return;
+				client.Execute(command);
+				processResponse();
+			}
+			finally {
+				doneExecuting();
+				// we were stoped in the middle
+				if (cancelExecuteFlag) {
+					if (connectedAddress.length() > 0) {
+						connect(connectedAddress);
+						clearResults();
+					}
+				}
+			}
 		}
 	};
 
@@ -207,8 +223,9 @@ public class MainForm extends JFrame {
 		return new ImageIcon(url);
 	}
 
-	private void clear() {
-		updateConnectedAddress("");
+	private void clearResults() {
+		statusText.setText("");	
+		jsonText.setText("");	
 	}
 
 	private void updateConnectedAddress(String address) {
@@ -217,7 +234,18 @@ public class MainForm extends JFrame {
 	}
 
 	private void setStatus() {
+		if (client.Ok()) {
+			statusText.setForeground(Color.black);
+			statusText.setText("ok");
+			return;
+		}
+		statusText.setForeground(Color.red);
+		statusText.setText("error\n" + client.Error());
+		enableDisableControls();
+	}
 
+	private void setJSON() {
+		jsonText.setText(client.JSON());						
 	}
 
 	private void enableDisableControls() {
@@ -233,5 +261,25 @@ public class MainForm extends JFrame {
 		cancelButton.setEnabled(false);
 		cancelMenu.setEnabled(false);
 		simulateMenu.setEnabled(executeMenu.isEnabled());
+	}
+
+	private void executing() {
+		clearResults();
+		cancelExecuteFlag = false;
+		queryText.setEnabled(false);
+		executeButton.setEnabled(false);
+		executeMenu.setEnabled(false);
+		cancelButton.setEnabled(true);
+		cancelMenu.setEnabled(true);
+	}
+
+	private void doneExecuting() {
+		queryText.setEnabled(true);
+		enableDisableControls();	
+	}
+
+	private void processResponse() {
+		setStatus();		
+		setJSON();
 	}
 }

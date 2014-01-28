@@ -1,2 +1,2 @@
-Class-Path: lib/pubsubsql.jar
+Class-Path: lib/pubsubsql.jar lib/gson-2.2.4.jar
 
