@@ -196,6 +196,10 @@ class ClientImpl implements Client {
 		return response.columns.size();
 	}
 
+	public Iterable<String> Columns() {
+		return response.columns;
+	}
+
 	public boolean WaitForPubSub(int timeout) {
 		if (timeout <= 0) return false;		
 		reset();
@@ -246,7 +250,7 @@ class ClientImpl implements Client {
 	}
 
 	private void hardDisconnect() {
-		//backlog.Clear();
+		backlog.clear();
 		rw.Close();
 		reset();
 	}

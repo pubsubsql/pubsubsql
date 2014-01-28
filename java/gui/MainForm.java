@@ -40,6 +40,7 @@ public class MainForm extends JFrame {
 	private pubsubsql.Client client = pubsubsql.Factory.NewClient();
 	private String connectedAddress = "";
 	private boolean cancelExecuteFlag = false;
+	private TableDataset dataset = new TableDataset();
 
 	public MainForm() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();

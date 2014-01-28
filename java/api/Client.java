@@ -16,6 +16,8 @@
 
 package pubsubsql; 
 
+import java.util.*;
+
 public interface Client {
 
 	boolean Connect(String address);
@@ -34,6 +36,7 @@ public interface Client {
 	String ValueByOrdinal(int ordinal);
 	boolean HasColumn(String column);
 	int ColumnCount();
+	Iterable<String> Columns();
 	boolean WaitForPubSub(int timeout);	
 
 }
