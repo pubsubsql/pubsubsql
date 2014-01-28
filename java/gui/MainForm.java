@@ -18,7 +18,7 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-public class MainForm extends JFrame {
+public class MainForm extends JFrame implements ActionListener {
 
 	private JMenuItem connectLocalMenu;
 	private JButton connectLocalButton;
@@ -41,6 +41,8 @@ public class MainForm extends JFrame {
 	private String connectedAddress = "";
 	private boolean cancelExecuteFlag = false;
 	private TableDataset dataset = new TableDataset();
+	private int FLASH_TIMER_INTERVAL = 150;	
+	private TableView tableView = new TableView(FLASH_TIMER_INTERVAL * 2000000, dataset); 
 
 	public MainForm() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -51,6 +53,7 @@ public class MainForm extends JFrame {
 		queryText.setPreferredSize(new Dimension(screen.width / 2, 100));
 		// tabs
 		resultsTabContainer = new JTabbedPane();
+		resultsTabContainer.addTab("Results", tableView);
 		statusText = new JTextArea();		
 		resultsTabContainer.addTab("Status", statusText);
 		jsonText = new JTextArea();
@@ -130,6 +133,19 @@ public class MainForm extends JFrame {
 		menuBar.add(helpMenu);	
 	}
 
+	// timer event
+	long flashTicks = System.nanoTime();
+	public void actionPerformed(ActionEvent e) {
+		if (dataset.ResetDirty()) {
+			setStatus();
+			setJSON();
+			tableView.Update();
+			flashTicks = System.nanoTime();
+		} else if (System.nanoTime() - flashTicks < tableView.FLASH_TIMEOUT * 2) {
+			tableView.Update();
+		}
+	}
+
 	// events
 	Action new_ = new AbstractAction("New", createImageIcon("images/New.png")) {
 		public void actionPerformed(ActionEvent event) {
@@ -181,14 +197,15 @@ public class MainForm extends JFrame {
 				if (command.length() == 0) return;
 				client.Execute(command);
 				processResponse();
+				tableView.Update();
 			}
 			finally {
 				doneExecuting();
 				// we were stoped in the middle
 				if (cancelExecuteFlag) {
+					clearResults();
 					if (connectedAddress.length() > 0) {
 						connect(connectedAddress);
-						clearResults();
 					}
 				}
 			}
@@ -225,6 +242,7 @@ public class MainForm extends JFrame {
 	}
 
 	private void clearResults() {
+		dataset.Clear();
 		statusText.setText("");	
 		jsonText.setText("");	
 	}
@@ -259,8 +277,7 @@ public class MainForm extends JFrame {
 		disconnectMenu.setEnabled(connected);
 		executeButton.setEnabled(connected);
 		executeMenu.setEnabled(connected);
-		cancelButton.setEnabled(false);
-		cancelMenu.setEnabled(false);
+		cancelButton.setEnabled(false); cancelMenu.setEnabled(false);
 		simulateMenu.setEnabled(executeMenu.isEnabled());
 	}
 
@@ -280,7 +297,32 @@ public class MainForm extends JFrame {
 	}
 
 	private void processResponse() {
-		setStatus();		
-		setJSON();
+		// determine if we just subscribed  
+		if (client.PubSubId() != "" && client.Action() == "subscribe") {
+			setStatus();
+			setJSON();
+			// enter event loop
+			//waitForPubSubEvent();
+			return;
+		}
+		// check if it is result set
+		if (client.RowCount() > 0 && client.ColumnCount() > 0) {
+			updateDataset(); 
+			//resultsTabContainer.SelectedTab = resultsTab;
+		}
+		//            
+		if (client.Failed());//resultsTabContainer.SelectedTab = statusTab;
+		setStatus();
+		setJSON();			
 	}
+
+	private void updateDataset() {
+		if (!(client.RowCount() > 0 && client.ColumnCount() > 0)) return;
+		// inside dataset
+		dataset.SyncColumns(client);
+		while (client.NextRow() && !cancelExecuteFlag) {
+			dataset.ProcessRow(client);
+		}	
+	}
+
 }

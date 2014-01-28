@@ -22,18 +22,23 @@ import java.util.*;
 
 public class TableView extends JPanel {
 
-	private int flashTimeout;
+	public int FLASH_TIMEOUT;
 	private TableDataset dataset;	
 	private JTable table;
 	private TableModel model;
 		
-	public TableView(int flashTimeout) {
-		this.flashTimeout = flashTimeout;
+	public TableView(int flashTimeout, TableDataset dataset) {
+		this.FLASH_TIMEOUT = flashTimeout;
+		this.dataset = dataset;
 		setLayout(new BorderLayout());
 		model = this.new TableModel();
 		table = new JTable(model);
 		table.setDefaultRenderer(Object.class, this.new CellRenderer());
 		add(new JScrollPane(table));
+	}
+
+	public void Update() {
+		model.Update();
 	}
 
 	// Model
@@ -46,6 +51,7 @@ public class TableView extends JPanel {
 			boolean structureChanged = false;
 			if (dataset.RowCount() != rows) structureChanged = true;
 			if (dataset.ColumnCount() != cols) structureChanged = true;
+			if (dataset.ResetClear()) structureChanged = true;
 			rows = dataset.RowCount();
 			cols = dataset.ColumnCount();
 			if (structureChanged) fireTableStructureChanged();
@@ -87,7 +93,7 @@ public class TableView extends JPanel {
 				 return this;
 			}
 			TableDataset.Cell cell = (TableDataset.Cell)value;
-			if (System.nanoTime() - cell.LastUpdated > flashTimeout * 1000000) backcolor = Color.pink;
+			if (System.nanoTime() - cell.LastUpdated < FLASH_TIMEOUT) backcolor = Color.pink;
 			setBackground(backcolor);
 			setValue(cell.Value);
 			return this;

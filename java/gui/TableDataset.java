@@ -33,6 +33,7 @@ public class TableDataset {
 	private ArrayList<ArrayList<Cell>> rows = new ArrayList<ArrayList<Cell>>();
 	private Hashtable<String, ArrayList<Cell>> idsToRows = new Hashtable<String, ArrayList<Cell>>();
 	private volatile boolean dirtyFlag = false;
+	private volatile boolean clearFlag = false;
 	
 	public boolean ResetDirty() {
 		boolean ret = dirtyFlag;
@@ -40,16 +41,25 @@ public class TableDataset {
 		return ret;
 	}
 
-	public void Reset() {
+	public boolean ResetClear() {
+		boolean ret = clearFlag;
+		clearFlag = false;
+		return ret;
+	}	
+
+	public void Clear() {
 		columns.clear();
 		columnOrdinals.clear();
 		rows.clear();
 		idsToRows.clear();
+		dirtyFlag = true;
+		clearFlag = true;
 	}
 
 	public void SyncColumns(pubsubsql.Client client) {
 		for(String col : client.Columns()) {
 			if (!columnOrdinals.containsKey(col)) {
+				clearFlag = true;
 				int ordinal = columns.size();
 				columnOrdinals.put(col, ordinal);
 				columns.add(col);
