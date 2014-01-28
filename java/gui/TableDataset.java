@@ -103,7 +103,7 @@ public class TableDataset {
 		}
 	}
 	
-	public ArrayList<Cell> GetRow(int rowIndex) {
+	public ArrayList<Cell> Row(int rowIndex) {
 		if (rowIndex < rows.size()) return rows.get(rowIndex);
 		return new ArrayList<Cell>();
 	}
