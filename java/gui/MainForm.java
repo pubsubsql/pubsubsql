@@ -142,7 +142,7 @@ public class MainForm extends JFrame {
 		}
 	};
 
-	Action connectLocal = new AbstractAction("Connect to localhost:7777", createImageIcon("images/ConnectLocal.png")) {
+	Action connectLocal = new AbstractAction("Connect to " + DEFAULT_ADDRESS, createImageIcon("images/ConnectLocal.png")) {
 		public void actionPerformed(ActionEvent event) {
 			connect(DEFAULT_ADDRESS);
 		}
