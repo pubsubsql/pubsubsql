@@ -17,9 +17,21 @@
 import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
-import pubsubsql.*;
 
 public class MainForm extends JFrame {
+
+	private JMenuItem connectLocalMenu;
+	private JButton connectLocalButton;
+	private JMenuItem connectMenu;
+	private JButton connectButton;
+	private JMenuItem disconnectMenu;
+	private JButton disconnectButton;
+	private JMenuItem executeMenu;
+	private JButton executeButton;
+	private JMenuItem cancelMenu;
+	private JButton cancelButton;
+	private JMenuItem simulateMenu;
+		
 
 	private JTextArea queryText;
 	private JTabbedPane resultsTabContainer;
@@ -27,11 +39,11 @@ public class MainForm extends JFrame {
 	private JTextArea jsonText;
 	private String DEFAULT_ADDRESS = "localhost:7777";
 	private pubsubsql.Client client = pubsubsql.Factory.NewClient();
+	private String connectedAddress = "";
 
 	public MainForm() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
         Dimension screen = toolkit.getScreenSize();
-        setTitle("Interactive Query");
 		setupMenuAndToolBar();		
 		// query text
 		queryText = new JTextArea();
@@ -45,12 +57,12 @@ public class MainForm extends JFrame {
 		// splitter
 		JSplitPane splitPane = new JSplitPane(JSplitPane.VERTICAL_SPLIT, queryText, resultsTabContainer); 
 		this.add(splitPane, BorderLayout.CENTER);	
-		
 		// position
         setSize(screen.width / 2, screen.height / 2);
         setLocation(screen.width / 4, screen.height / 4);
 		//
-		//pack();
+        updateConnectedAddress("");
+		enableDisableControls();
 	}
 
 	void setupMenuAndToolBar() {
@@ -75,36 +87,36 @@ public class MainForm extends JFrame {
 		// Connection
 		JMenu connectionMenu = new JMenu("Connection");
 			// Connect local
-			JMenuItem connectLocalMenu = new JMenuItem(connectLocal);
+			connectLocalMenu = new JMenuItem(connectLocal);
 			defaultTooltips(connectLocal);
 			connectionMenu.add(connectLocalMenu);
-			toolBar.add(connectLocal);
+			connectLocalButton = toolBar.add(connectLocal);
 			// Connect
-			JMenuItem connectMenu = new JMenuItem(connect);
+			connectMenu = new JMenuItem(connect);
 			connect.putValue(Action.SHORT_DESCRIPTION, "Connect to remote server");
 			connectionMenu.add(connectMenu);
-			toolBar.add(connect);
+			connectButton = toolBar.add(connect);
 			// Disconnect
-			JMenuItem disconnectMenu = new JMenuItem(disconnect);
+			disconnectMenu = new JMenuItem(disconnect);
 			defaultTooltips(disconnect);
 			connectionMenu.add(disconnectMenu);
-			toolBar.add(disconnect);
+			disconnectButton = toolBar.add(disconnect);
 			toolBar.addSeparator();
 		menuBar.add(connectionMenu);	
 		// Query
 		JMenu queryMenu = new JMenu("Query");
 			// Execute 
-			JMenuItem executeMenu = new JMenuItem(execute);
+			executeMenu = new JMenuItem(execute);
 			defaultTooltips(execute);
 			queryMenu.add(executeMenu);
-			toolBar.add(execute);
+			executeButton = toolBar.add(execute);
 			// Cancel Executing Query 
-			JMenuItem cancelMenu = new JMenuItem(cancelExecute);
+			cancelMenu = new JMenuItem(cancelExecute);
 			defaultTooltips(cancelExecute);
 			queryMenu.add(cancelMenu);
-			toolBar.add(cancelExecute);
+			cancelButton = toolBar.add(cancelExecute);
 			// Simulate 
-			JMenuItem simulateMenu = new JMenuItem(simulate);
+			simulateMenu = new JMenuItem(simulate);
 			defaultTooltips(simulate);
 			queryMenu.add(simulateMenu);
 		menuBar.add(queryMenu);	
@@ -132,7 +144,7 @@ public class MainForm extends JFrame {
 
 	Action connectLocal = new AbstractAction("Connect to localhost:7777", createImageIcon("images/ConnectLocal.png")) {
 		public void actionPerformed(ActionEvent event) {
-			System.exit(0);
+			connect(DEFAULT_ADDRESS);
 		}
 	};
 
@@ -142,9 +154,21 @@ public class MainForm extends JFrame {
 		}
 	};
 
+	private void connect(String address) {
+		clear();
+		if (client.Connect(address)) {
+			updateConnectedAddress(address);	
+		}
+		setStatus();
+		enableDisableControls();
+	}
+
 	Action disconnect = new AbstractAction("Disconnect", createImageIcon("images/Disconnect.png")) {
 		public void actionPerformed(ActionEvent event) {
-			System.exit(0);
+			updateConnectedAddress("");
+			clear();
+			client.Disconnect();
+			enableDisableControls();
 		}
 	};
 
@@ -181,5 +205,33 @@ public class MainForm extends JFrame {
 		java.net.URL url = getClass().getResource(path);
 		if (url == null) return null;
 		return new ImageIcon(url);
+	}
+
+	private void clear() {
+		updateConnectedAddress("");
+	}
+
+	private void updateConnectedAddress(String address) {
+        setTitle("PubSubSQL Interactive Query " + address);
+		connectedAddress = address;
+	}
+
+	private void setStatus() {
+
+	}
+
+	private void enableDisableControls() {
+		boolean connected = client.Connected();
+		connectLocalButton.setEnabled(!connected);
+		connectLocalMenu.setEnabled(!connected);
+		connectButton.setEnabled(!connected);
+		connectMenu.setEnabled(!connected);
+		disconnectButton.setEnabled(connected);
+		disconnectMenu.setEnabled(connected);
+		executeButton.setEnabled(connected);
+		executeMenu.setEnabled(connected);
+		cancelButton.setEnabled(false);
+		cancelMenu.setEnabled(false);
+		simulateMenu.setEnabled(executeMenu.isEnabled());
 	}
 }
