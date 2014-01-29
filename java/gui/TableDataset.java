@@ -32,18 +32,18 @@ public class TableDataset {
 	private Hashtable<String, Integer> columnOrdinals = new Hashtable<String, Integer>();
 	private ArrayList<ArrayList<Cell>> rows = new ArrayList<ArrayList<Cell>>();
 	private Hashtable<String, ArrayList<Cell>> idsToRows = new Hashtable<String, ArrayList<Cell>>();
-	private volatile boolean dirtyFlag = false;
-	private volatile boolean clearFlag = false;
+	private volatile boolean dirtyData = false;
+	private volatile boolean dirtySchema = false;
 	
-	public boolean ResetDirty() {
-		boolean ret = dirtyFlag;
-		dirtyFlag = false;
+	public boolean ResetDirtyData() {
+		boolean ret = dirtyData;
+		dirtyData = false;
 		return ret;
 	}
 
-	public boolean ResetClear() {
-		boolean ret = clearFlag;
-		clearFlag = false;
+	public boolean ResetDirtySchema() {
+		boolean ret = dirtySchema;
+		dirtySchema = false;
 		return ret;
 	}	
 
@@ -52,14 +52,15 @@ public class TableDataset {
 		columnOrdinals.clear();
 		rows.clear();
 		idsToRows.clear();
-		dirtyFlag = true;
-		clearFlag = true;
+		dirtyData = true;
+		dirtySchema = true;
 	}
 
 	public void SyncColumns(pubsubsql.Client client) {
 		for(String col : client.Columns()) {
 			if (!columnOrdinals.containsKey(col)) {
-				clearFlag = true;
+				dirtySchema = true;
+				dirtyData = true;
 				int ordinal = columns.size();
 				columnOrdinals.put(col, ordinal);
 				columns.add(col);
@@ -68,7 +69,7 @@ public class TableDataset {
 	}
 
 	public void ProcessRow(pubsubsql.Client client) {
-		dirtyFlag = true;
+		dirtyData = true;
 		String id = client.Value("id");
 		ArrayList<Cell> row = null;
 		switch (client.Action()) {
