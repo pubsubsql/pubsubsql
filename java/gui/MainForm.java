@@ -45,6 +45,7 @@ public class MainForm extends JFrame implements ActionListener {
 	private int PUBSUB_TIMEOUT = 5;
 	private TableView tableView = new TableView(FLASH_TIMER_INTERVAL * 2000000, dataset); 
 	private Timer timer;	
+	private Simulator simulator = new Simulator();
 
 	public MainForm() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -187,6 +188,7 @@ public class MainForm extends JFrame implements ActionListener {
 
 	Action disconnect = new AbstractAction("Disconnect", createImageIcon("images/Disconnect.png")) {
 		public void actionPerformed(ActionEvent event) {
+			simulator.Stop();
 			cancelExecuteFlag = true;
 			updateConnectedAddress("");
 			client.Disconnect();
@@ -195,35 +197,48 @@ public class MainForm extends JFrame implements ActionListener {
 		}
 	};
 
+	private void executeCommand() {
+		executing();
+		String command = queryText.getText().trim();
+		if (command.length() == 0) return;
+		client.Execute(command);
+		// determine if we just subscribed  
+		if (client.PubSubId().length() > 0 && client.Action().equals("subscribe")) {
+			setStatus();
+			setJSON();
+			// enter event loop
+			waitForPubSubEvent();
+			return;
+		}
+		processResponse();
+		doneExecuting();
+	}
+
 	Action execute = new AbstractAction("Execute", createImageIcon("images/Execute2.png")) {
 		public void actionPerformed(ActionEvent event) {
-			executing();
-			String command = queryText.getText().trim();
-			if (command.length() == 0) return;
-			client.Execute(command);
-			// determine if we just subscribed  
-			if (client.PubSubId().length() > 0 && client.Action().equals("subscribe")) {
-				setStatus();
-				setJSON();
-				// enter event loop
-				waitForPubSubEvent();
-				return;
-			}
-			processResponse();
-			doneExecuting();
+			executeCommand();
 		}
 	};
 
 	Action cancelExecute = new AbstractAction("Cancel Executing Query", createImageIcon("images/Stop.png")) {
 		public void actionPerformed(ActionEvent event) {
-			//simulator.Stop();
+			simulator.Stop();
 			cancelExecuteFlag = true;
 		}
 	};
 
 	Action simulate = new AbstractAction("Simulate") {
 		public void actionPerformed(ActionEvent event) {
-			System.exit(0);
+			simulator.Stop();		
+			simulator.Address = connectedAddress;
+			//
+			simulator.Rows = 100;	
+			simulator.Columns = 5;
+			simulator.TableName = "T" + System.currentTimeMillis();	
+			simulator.Start();
+			queryText.setText("subscribe * from " + simulator.TableName);
+			executeCommand();
+			//
 		}
 	};
 
@@ -341,5 +356,4 @@ public class MainForm extends JFrame implements ActionListener {
 			dataset.ProcessRow(client);
 		}	
 	}
-
 }
