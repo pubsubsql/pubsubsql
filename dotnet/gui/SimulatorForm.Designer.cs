@@ -44,7 +44,7 @@
             // 
             this.cancelButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.cancelButton.DialogResult = System.Windows.Forms.DialogResult.Cancel;
-            this.cancelButton.Location = new System.Drawing.Point(57, 102);
+            this.cancelButton.Location = new System.Drawing.Point(41, 97);
             this.cancelButton.Name = "cancelButton";
             this.cancelButton.Size = new System.Drawing.Size(75, 23);
             this.cancelButton.TabIndex = 28;
@@ -54,7 +54,7 @@
             // 
             this.okButton.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Bottom | System.Windows.Forms.AnchorStyles.Right)));
             this.okButton.DialogResult = System.Windows.Forms.DialogResult.OK;
-            this.okButton.Location = new System.Drawing.Point(139, 102);
+            this.okButton.Location = new System.Drawing.Point(122, 97);
             this.okButton.Name = "okButton";
             this.okButton.Size = new System.Drawing.Size(75, 23);
             this.okButton.TabIndex = 27;
@@ -64,7 +64,7 @@
             // rowsUpDown
             // 
             this.rowsUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.rowsUpDown.Location = new System.Drawing.Point(119, 42);
+            this.rowsUpDown.Location = new System.Drawing.Point(102, 40);
             this.rowsUpDown.Maximum = new decimal(new int[] {
             5000,
             0,
@@ -87,7 +87,7 @@
             // columnsUpDown
             // 
             this.columnsUpDown.Anchor = ((System.Windows.Forms.AnchorStyles)((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Right)));
-            this.columnsUpDown.Location = new System.Drawing.Point(119, 11);
+            this.columnsUpDown.Location = new System.Drawing.Point(102, 11);
             this.columnsUpDown.Maximum = new decimal(new int[] {
             15,
             0,
@@ -137,14 +137,14 @@
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
             this.panel1.Name = "panel1";
-            this.panel1.Size = new System.Drawing.Size(223, 136);
+            this.panel1.Size = new System.Drawing.Size(202, 125);
             this.panel1.TabIndex = 29;
             // 
             // SimulatorForm
             // 
             this.AutoScaleDimensions = new System.Drawing.SizeF(6F, 13F);
             this.AutoScaleMode = System.Windows.Forms.AutoScaleMode.Font;
-            this.ClientSize = new System.Drawing.Size(223, 136);
+            this.ClientSize = new System.Drawing.Size(202, 125);
             this.ControlBox = false;
             this.Controls.Add(this.panel1);
             this.FormBorderStyle = System.Windows.Forms.FormBorderStyle.FixedDialog;
