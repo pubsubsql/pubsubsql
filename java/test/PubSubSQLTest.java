@@ -70,6 +70,7 @@ public class PubSubSQLTest {
 
 	// Client
 	private void TestClient() {
+		System.out.println("testing client...");
 		TestConnectDisconnect();						
 		TestExecuteStatus();
 		TestExecuteInvalidCommand();
@@ -451,6 +452,21 @@ public class PubSubSQLTest {
 
 	private void TestPubSubRemove() {
 		register("TestPubSubRemove");
+		newtable();
+		insertRows();
+		Client client = pubsubsql.Factory.NewClient();
+		ASSERT_CONNECT(client, ADDRESS, true);
+		// key col1
+		String command = String.format("key %s col1", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		command = String.format("subscribe skip * from %s where col1 = 1:col1", TABLE);
+		ASSERT_EXECUTE(client, command, true);
+		String pubsubid = client.PubSubId();
+		// generate remove
+		command = String.format("update %s set col1 = newvalue where col1 = 1:col1", TABLE);	
+		ASSERT_EXECUTE(client, command, true);
+		ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "remove", 1, COLUMNS);
+		ASSERT_DISCONNECT(client);
 	}
 
 	// helper functions
