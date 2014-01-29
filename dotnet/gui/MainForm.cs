@@ -281,20 +281,14 @@ namespace PubSubSQLGUI
 
         private void waitForPubSubEvent()
         {
-            long ticks = DateTime.Now.Ticks;
             while (!cancelExecuteFlag)
             {
                 bool timedout = !client.WaitForPubSub(PUBSUB_TIMEOUT);
                 if (client.Failed()) break;
                 if (!timedout) updateDataset();
-                if (!timedout && (DateTime.Now.Ticks - ticks) < PUBSUB_TIMEOUT * 10000) continue;  
                 Application.DoEvents();
-                ticks = DateTime.Now.Ticks;
             }
-            if (client.Failed())
-            {
-                setStatus();
-            }
+            if (client.Failed()) setStatus();
         }
 
         private void updateDataset()

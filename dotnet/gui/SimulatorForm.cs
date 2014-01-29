@@ -22,6 +22,7 @@ namespace PubSubSQLGUI
         private void SimulatorForm_Load(object sender, EventArgs e)
         {
             CenterToParent();
+            SetClientSizeCore(225, 136);
         }
 
         private void okButton_Click_1(object sender, EventArgs e)
