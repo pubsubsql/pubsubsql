@@ -51,7 +51,7 @@ public class TableView extends JPanel {
 			boolean structureChanged = false;
 			if (dataset.RowCount() != rows) structureChanged = true;
 			if (dataset.ColumnCount() != cols) structureChanged = true;
-			if (dataset.ResetClear()) structureChanged = true;
+			if (dataset.ResetDirtySchema()) structureChanged = true;
 			rows = dataset.RowCount();
 			cols = dataset.ColumnCount();
 			if (structureChanged) fireTableStructureChanged();

@@ -42,7 +42,9 @@ public class MainForm extends JFrame implements ActionListener {
 	private boolean cancelExecuteFlag = false;
 	private TableDataset dataset = new TableDataset();
 	private int FLASH_TIMER_INTERVAL = 150;	
+	private int PUBSUB_TIMEOUT = 5;
 	private TableView tableView = new TableView(FLASH_TIMER_INTERVAL * 2000000, dataset); 
+	private Timer timer;	
 
 	public MainForm() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -67,6 +69,9 @@ public class MainForm extends JFrame implements ActionListener {
 		//
         updateConnectedAddress("");
 		enableDisableControls();
+		//
+		timer = new Timer(FLASH_TIMER_INTERVAL, this); 
+		timer.start();
 	}
 
 	void setupMenuAndToolBar() {
@@ -136,7 +141,7 @@ public class MainForm extends JFrame implements ActionListener {
 	// timer event
 	long flashTicks = System.nanoTime();
 	public void actionPerformed(ActionEvent e) {
-		if (dataset.ResetDirty()) {
+		if (dataset.ResetDirtyData()) {
 			setStatus();
 			setJSON();
 			tableView.Update();
@@ -182,39 +187,37 @@ public class MainForm extends JFrame implements ActionListener {
 
 	Action disconnect = new AbstractAction("Disconnect", createImageIcon("images/Disconnect.png")) {
 		public void actionPerformed(ActionEvent event) {
+			cancelExecuteFlag = true;
 			updateConnectedAddress("");
-			clearResults();
 			client.Disconnect();
 			enableDisableControls();
+			clearResults();
 		}
 	};
 
 	Action execute = new AbstractAction("Execute", createImageIcon("images/Execute2.png")) {
 		public void actionPerformed(ActionEvent event) {
-			try {
-				executing();
-				String command = queryText.getText().trim();
-				if (command.length() == 0) return;
-				client.Execute(command);
-				processResponse();
-				tableView.Update();
+			executing();
+			String command = queryText.getText().trim();
+			if (command.length() == 0) return;
+			client.Execute(command);
+			// determine if we just subscribed  
+			if (client.PubSubId().length() > 0 && client.Action().equals("subscribe")) {
+				setStatus();
+				setJSON();
+				// enter event loop
+				waitForPubSubEvent();
+				return;
 			}
-			finally {
-				doneExecuting();
-				// we were stoped in the middle
-				if (cancelExecuteFlag) {
-					clearResults();
-					if (connectedAddress.length() > 0) {
-						connect(connectedAddress);
-					}
-				}
-			}
+			processResponse();
+			doneExecuting();
 		}
 	};
 
 	Action cancelExecute = new AbstractAction("Cancel Executing Query", createImageIcon("images/Stop.png")) {
 		public void actionPerformed(ActionEvent event) {
-			System.exit(0);
+			//simulator.Stop();
+			cancelExecuteFlag = true;
 		}
 	};
 
@@ -297,14 +300,6 @@ public class MainForm extends JFrame implements ActionListener {
 	}
 
 	private void processResponse() {
-		// determine if we just subscribed  
-		if (client.PubSubId() != "" && client.Action() == "subscribe") {
-			setStatus();
-			setJSON();
-			// enter event loop
-			//waitForPubSubEvent();
-			return;
-		}
 		// check if it is result set
 		if (client.RowCount() > 0 && client.ColumnCount() > 0) {
 			updateDataset(); 
@@ -316,9 +311,31 @@ public class MainForm extends JFrame implements ActionListener {
 		setJSON();			
 	}
 
+	private void waitForPubSubEvent() {
+		if (cancelExecuteFlag) { 
+			doneExecuting();		
+			// just reconnect to avoid unsubscribing
+			if (connectedAddress.length() > 0) {
+				connect(connectedAddress);
+			}
+			clearResults();
+			return;
+		}
+		if (client.WaitForPubSub(PUBSUB_TIMEOUT)) updateDataset();
+		if (client.Failed()) {
+			doneExecuting();		
+			return;
+		}
+		// release control to gui thread and post back to continue polling for pubsub events
+		EventQueue.invokeLater(new Runnable() {
+			public void run() {
+				waitForPubSubEvent();
+			}
+		});	
+	}
+
 	private void updateDataset() {
 		if (!(client.RowCount() > 0 && client.ColumnCount() > 0)) return;
-		// inside dataset
 		dataset.SyncColumns(client);
 		while (client.NextRow() && !cancelExecuteFlag) {
 			dataset.ProcessRow(client);
