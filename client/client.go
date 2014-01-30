@@ -89,7 +89,7 @@ type Client interface {
 	// WaitForPubSub waits until publish message is retreived or timeout expired.
 	// Returns false on error or timeout.
 	// When timeout expires Ok() will return true.
-	WaitForPubSub(timeout int64) bool
+	WaitForPubSub(timeout int) bool
 }
 
 func NewClient() Client {
@@ -193,9 +193,12 @@ func (this *client) Execute(command string) bool {
 		} else if header.RequestId == 0 {
 			// pubsub action, save it and skip it for now
 			// will be proccesed next time WaitPubSub is called
-			this.backlog.PushBack(bytes)
+			//WE MUST COPY BYTES SINCE THEY ARE REUSED IN NetHelper
+			t := make([]byte, header.MessageSize, header.MessageSize)
+			copy(t, bytes[0:header.MessageSize]) 
+			this.backlog.PushBack(t)
 		} else if header.RequestId < this.requestId {
-			// we did not read full result set from previous command ignore it or flag and error?
+			// we did not read full result set from previous command ignore it or report error?
 			// for now lets ignore it, continue reading until we hit our request id 
 			this.reset()
 		} else {
@@ -292,30 +295,37 @@ func (this *client) Columns() []string {
 	return this.response.Columns
 }
 
-func (this *client) WaitForPubSub(timeout int64) bool {
+func (this *client) WaitForPubSub(timeout int) bool {
 	var bytes []byte
 	for {
 		this.reset()
 		// process backlog first	
-		if element := this.backlog.Front(); element != nil {
-			bytes = element.Value.([]byte)
-			this.backlog.Remove(element)
-			break
+		bytes = this.popBacklog()
+		if len(bytes) > 0 {
+			return this.unmarshalJSON(bytes)
 		}
-		if len(bytes) == 0 {
-			header, temp, success, timedout := this.readTimeout(timeout)
-			bytes = temp
-			if !success || timedout {
-				return false
-			}
-			if header.RequestId == 0 {
-				break
-			}
-			// this is not pubsub message; are we reading abandoned cursor?
-			// ignore and keep trying
+		header, temp, success, timedout := this.readTimeout(int64(timeout))
+		bytes = temp
+		if !success || timedout {
+			return false
 		}
+		if header.RequestId == 0 {
+			return this.unmarshalJSON(bytes)
+		}
+		// this is not pubsub message; are we reading abandoned cursor?
+		// ignore and keep trying
 	}
-	return this.unmarshalJSON(bytes)
+	return false;
+}
+
+func (this *client) popBacklog() []byte {
+	element := this.backlog.Front()
+	if element != nil {
+		bytes := element.Value.([]byte)
+		this.backlog.Remove(element)
+		return bytes
+	}
+	return nil
 }
 
 func (this *client) unmarshalJSON(bytes []byte) bool {
