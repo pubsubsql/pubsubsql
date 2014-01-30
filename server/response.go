@@ -145,7 +145,7 @@ func (this *sqlInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	action(builder, "insert")
 	builder.valueSeparator()
-	more := this.data(builder)
+	more := this.data(builder, false)
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), more
 }
@@ -174,7 +174,7 @@ func row(builder *JSONBuilder, columns []*column, rec *record) {
 	builder.endArray()
 }
 
-func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
+func (this *sqlSelectResponse) data(builder *JSONBuilder, pubsub bool) bool {
 	// write the columns first
 	builder.string("columns")
 	builder.nameSeparator()
@@ -202,18 +202,24 @@ func (this *sqlSelectResponse) data(builder *JSONBuilder) bool {
 		this.records = this.records[config.DATA_BATCH_SIZE:]
 		this.fromrow = this.torow + 1
 		this.torow = this.fromrow + config.DATA_BATCH_SIZE - 1
-	} else {
-		if this.rows > 0 {
-			this.fromrow = this.torow + 1
-			this.torow = this.rows
-		}
+	} else if this.rows > 0 {
+		this.fromrow = this.torow + 1
+		this.torow = this.rows
 	}
 	// rows, fromrow, torow
-	builder.nameIntValue("rows", this.rows)
+	rows := this.rows
+	fromrow := this.fromrow
+	torow := this.torow
+	if pubsub && fromrow > 0 {
+		rows = torow - fromrow + 1;
+		torow = rows 
+		fromrow = 1
+	}
+	builder.nameIntValue("rows", rows)
 	builder.valueSeparator()
-	builder.nameIntValue("fromrow", this.fromrow)
+	builder.nameIntValue("fromrow", fromrow)
 	builder.valueSeparator()
-	builder.nameIntValue("torow", this.torow)
+	builder.nameIntValue("torow", torow)
 	builder.valueSeparator()
 	//
 	builder.string("data")
@@ -239,7 +245,7 @@ func (this *sqlSelectResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	action(builder, "select")
 	builder.valueSeparator()
-	more := this.data(builder)
+	more := this.data(builder, false)
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), more
 }
@@ -330,7 +336,7 @@ func (this *sqlActionDataResponse) toNetworkReadyJSONHelper(act string) ([]byte,
 	builder.valueSeparator()
 	builder.nameValue("pubsubid", strconv.FormatUint(this.pubsubid, 10))
 	builder.valueSeparator()
-	more := this.data(builder)
+	more := this.data(builder, true)
 	builder.endObject()
 	return builder.getNetworkBytes(0), more
 }
