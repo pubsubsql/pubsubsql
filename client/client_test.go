@@ -23,15 +23,157 @@ import (
 	"time"
 )
 
-func generateTableName() string {
-	return "T" + strconv.FormatInt(time.Now().Unix(), 10)
+
+func TestConnectDisconnect(t *testing.T) {
+	register("TestConnectDisconnect", t)
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true);
+	ASSERT_DISCONNECT(client);	
+	ASSERT_CONNECT(client, "addresswithnoport", false);
+	ASSERT_DISCONNECT(client);	
+	ASSERT_CONNECT(client, "addresswithnoport:", false);
+	ASSERT_DISCONNECT(client);	
+	ASSERT_CONNECT(client, "localhost:7778", false);
+	ASSERT_DISCONNECT(client);	
+	//
+	//ASSERT_ACTION(client, "");
+	//ASSERT_ROW_COUNT(client, 0);
+	//ASSERT_NEXT_ROW(client, false);
 }
+
+func TestExecuteStatus(t *testing.T) {
+	register("TestExecuteStatus", t)
+}
+
+func TestExecuteInvalidCommand(t *testing.T) {
+
+}
+
+func TestInsertOneRow(t *testing.T) {
+
+}
+
+func TestInsertManyRows(t *testing.T) {
+
+}
+
+func TestSelectOneRow(t *testing.T) {
+
+}
+
+func TestSelectManyRows(t *testing.T) {
+
+}
+
+func TestUpdateOneRow(t *testing.T) {
+
+}
+
+func TestUpdateManyRows(t *testing.T) {
+
+}
+
+func TestDeleteOneRow(t *testing.T) {
+
+}
+
+func TestDeleteManyRows(t *testing.T) {
+
+}
+
+func TestKey(t *testing.T) {
+
+}
+
+func TestTag(t *testing.T) {
+
+}
+
+func TestSubscribeUnsubscribe(t *testing.T) {
+
+}
+
+func TestSubscribeUnsubscribeByPubSubId(t *testing.T) {
+
+}
+
+func TestPubSubTimeout(t *testing.T) {
+
+}
+
+func TestSubscribeSkip(t *testing.T) {
+
+}
+
+func TestPubSubAddOnSubscribe(t *testing.T) {
+
+}
+
+func TestPubSubInsert(t *testing.T) {
+
+}
+
+func TestPubSubUpdate(t *testing.T) {
+
+}
+
+func TestPubSubDelete(t *testing.T) {
+
+}
+
+func TestPubSubRemove(t *testing.T) {
+
+}
+
+// helpers
 
 var ADDRESS = "localhost:7777"
 var T *testing.T = nil
+var F = ""
 var TABLE = generateTableName()
 var ROWS = 300
+var COLUMNS = 4
 
+func generateTableName() string {
+	return "T" + strconv.FormatInt(time.Now().Unix(), 10)
+
+}
+
+func register(f string, t *testing.T) {
+	F = f
+	T = t
+}
+
+func fail(msg string) {
+	fmt.Println("%v %v", F, msg);
+}
+
+func iferror(client Client, expected bool , got bool) {
+	if (expected && !got) {
+		print(fmt.Sprintf("Error: %v", client.Error()));
+	}	
+}
+
+func ASSERT_CONNECT(client Client, address string, expected bool) {
+	got := client.Connect(address)			
+	if expected != got {
+		fail(fmt.Sprintf("ASSERT_CONNECT failed: expected %v got %v ", expected, got));
+	}		
+} 
+
+func VALIDATE_RESULT(client Client, result bool) {
+	if result && !client.Ok() { fail("VALIDATE_RESULT failed: expected Ok") }
+	if !result && !client.Failed() { fail("VALIDATE_RESULT failed: expected Failed") }
+}
+
+func ASSERT_DISCONNECT(client Client) {
+	client.Disconnect()
+	if (client.Failed()) {
+		fail("ASSERT_DISCONNECT failed: expected Ok() not Failed() after Disconnect()");
+	}
+}
+
+/*
 func ASSERT_TRUE(b bool) {
 	if !b {
 		T.Error("Expected true")
@@ -381,4 +523,4 @@ func TestWaitPubSub(t *testing.T) {
 	subscriber.Disconnect()
 	publisher.Disconnect()
 }
-
+*/
