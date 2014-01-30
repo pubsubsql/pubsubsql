@@ -24,7 +24,7 @@ public class PubSubSQLTest {
 	private String currentFunction = "";
 	private static final String ADDRESS = "localhost:7777";
 	private String TABLE = "T" + System.currentTimeMillis();
-	private int ROWS = 10;
+	private int ROWS = 300;
 	private int COLUMNS = 4; // including id
 
 	//
@@ -376,10 +376,7 @@ public class PubSubSQLTest {
 		ASSERT_PUBSUBID(client);
 		// pubsub add
 		String pubsubid = client.PubSubId();
-		ASSERT_WAIT_FOR_PUBSUB(client, 10, true);	
-		ASSERT_PUBSUBID_VALUE(client, pubsubid);
-		ASSERT_ACTION(client, "add");
-		ASSERT_RESULT_SET(client, ROWS, COLUMNS); 
+		ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "add", ROWS, COLUMNS);
 		ASSERT_DISCONNECT(client);
 	}
 
@@ -415,6 +412,7 @@ public class PubSubSQLTest {
 		// generate update event
 		command = String.format("update %s set col1 = newvalue", TABLE);	
 		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ROW_COUNT(client, ROWS);
 		// expected id and updated column (col1)
 		ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "update", ROWS, 2);
 		ASSERT_DISCONNECT(client);
@@ -435,6 +433,7 @@ public class PubSubSQLTest {
 		// generate update event
 		command = String.format("delete from %s", TABLE);	
 		ASSERT_EXECUTE(client, command, true);
+		ASSERT_ROW_COUNT(client, ROWS);
 		// expected id and updated column (col1)
 		ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "delete", ROWS, COLUMNS);
 		ASSERT_DISCONNECT(client);
@@ -486,6 +485,7 @@ public class PubSubSQLTest {
 
 	private void register(String function) {
 		currentFunction = function;
+		System.out.println(function);
 	}
 
 	private void insertRow() {

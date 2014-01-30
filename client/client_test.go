@@ -197,193 +197,193 @@ func TestDeleteOneRow(t *testing.T) {
 }
 
 func TestDeleteManyRows(t *testing.T) {
-	register("TestDeleteManyRow", t);
-	newtable();
-	insertRows();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("delete from %v ", TABLE);
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "delete");
-	ASSERT_ROW_COUNT(client, ROWS);
-	ASSERT_DISCONNECT(client);
+	register("TestDeleteManyRow", t)
+	newtable()
+	insertRows()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("delete from %v ", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "delete")
+	ASSERT_ROW_COUNT(client, ROWS)
+	ASSERT_DISCONNECT(client)
 }
 
 func TestKey(t *testing.T) {
-	register("TestKey", t);
-	newtable();
-	insertRows();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("key %v col1", TABLE);
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "key");
-	ASSERT_DISCONNECT(client);
+	register("TestKey", t)
+	newtable()
+	insertRows()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("key %v col1", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "key")
+	ASSERT_DISCONNECT(client)
 }
 
 func TestTag(t *testing.T) {
-	register("TestKey", t);
-	newtable();
-	insertRows();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("tag %v col1", TABLE);
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "tag");
-	ASSERT_DISCONNECT(client);
+	register("TestKey", t)
+	newtable()
+	insertRows()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("tag %v col1", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "tag")
+	ASSERT_DISCONNECT(client)
 }
 
 func TestSubscribeUnsubscribe(t *testing.T) {
-	register("TestSubscribeUnsubscribe", t);
-	newtable();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("subscribe * from %v", TABLE);
+	register("TestSubscribeUnsubscribe", t)
+	newtable()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("subscribe * from %v", TABLE)
 	// subscribe
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "subscribe");
-	ASSERT_PUBSUBID(client);
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "subscribe")
+	ASSERT_PUBSUBID(client)
 	// unsubscribe
-	command = fmt.Sprintf("unsubscribe from %v", TABLE);		
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "unsubscribe");
+	command = fmt.Sprintf("unsubscribe from %v", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "unsubscribe")
 	//
-	ASSERT_DISCONNECT(client);
+	ASSERT_DISCONNECT(client)
 }
 
 func TestSubscribeUnsubscribeByPubSubId(t *testing.T) {
-	register("TestSubscribeUnsubscribeByPubSubId", t);
-	newtable();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("subscribe * from %v", TABLE);
+	register("TestSubscribeUnsubscribeByPubSubId", t)
+	newtable()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("subscribe * from %v", TABLE)
 	// subscribe
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "subscribe");
-	ASSERT_PUBSUBID(client);
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "subscribe")
+	ASSERT_PUBSUBID(client)
 	// unsubscribe
-	command = fmt.Sprintf("unsubscribe from %v where pubsubid = %v", TABLE, client.PubSubId());		
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "unsubscribe");
+	command = fmt.Sprintf("unsubscribe from %v where pubsubid = %v", TABLE, client.PubSubId())
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "unsubscribe")
 	//
-	ASSERT_DISCONNECT(client);
+	ASSERT_DISCONNECT(client)
 }
 
 func TestPubSubTimeout(t *testing.T) {
-	register("TestPubSubTimeout", t);
-	newtable();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	ASSERT_WAIT_FOR_PUBSUB(client, 10, false);	
+	register("TestPubSubTimeout", t)
+	newtable()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	ASSERT_WAIT_FOR_PUBSUB(client, 10, false)
 }
 
 func TestSubscribeSkip(t *testing.T) {
-	register("TestSubscribeSkip", t);
-	newtable();
-	insertRows();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("subscribe skip * from %v", TABLE);
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "subscribe");
-	ASSERT_PUBSUBID(client);
-	ASSERT_WAIT_FOR_PUBSUB(client, 10, false);	
-	ASSERT_DISCONNECT(client);
+	register("TestSubscribeSkip", t)
+	newtable()
+	insertRows()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("subscribe skip * from %v", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "subscribe")
+	ASSERT_PUBSUBID(client)
+	ASSERT_WAIT_FOR_PUBSUB(client, 10, false)
+	ASSERT_DISCONNECT(client)
 }
 
 func TestPubSubAddOnSubscribe(t *testing.T) {
-	register("TestPubSubAddOnSubscribe", t);
-	newtable();
-	insertRows();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("subscribe * from %v", TABLE);
+	register("TestPubSubAddOnSubscribe", t)
+	newtable()
+	insertRows()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("subscribe * from %v", TABLE)
 	// subscribe
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "subscribe");
-	ASSERT_PUBSUBID(client);
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "subscribe")
+	ASSERT_PUBSUBID(client)
 	// pubsub add
-	pubsubid := client.PubSubId();
-	ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "add", ROWS, COLUMNS);
-	ASSERT_DISCONNECT(client);
+	pubsubid := client.PubSubId()
+	ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "add", ROWS, COLUMNS)
+	ASSERT_DISCONNECT(client)
 }
 
 func TestPubSubInsert(t *testing.T) {
-	register("TestPubSubInsert", t);
-	newtable();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("subscribe * from %v", TABLE);
+	register("TestPubSubInsert", t)
+	newtable()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("subscribe * from %v", TABLE)
 	// subscribe
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "subscribe");
-	ASSERT_PUBSUBID(client);
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "subscribe")
+	ASSERT_PUBSUBID(client)
 	// generate insert event
-	insertRows();
+	insertRows()
 	// pubsub insert
-	ASSERT_PUBSUB_RESULT_SET(client, client.PubSubId(), "insert", ROWS, COLUMNS);
-	ASSERT_DISCONNECT(client);
+	ASSERT_PUBSUB_RESULT_SET(client, client.PubSubId(), "insert", ROWS, COLUMNS)
+	ASSERT_DISCONNECT(client)
 }
 
 func TestPubSubUpdate(t *testing.T) {
-	register("TestPubSubUpdate", t);
-	newtable();
-	insertRows();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("subscribe skip * from %v", TABLE);
+	register("TestPubSubUpdate", t)
+	newtable()
+	insertRows()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("subscribe skip * from %v", TABLE)
 	// subscribe
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "subscribe");
-	ASSERT_PUBSUBID(client);
-	pubsubid := client.PubSubId();
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "subscribe")
+	ASSERT_PUBSUBID(client)
+	pubsubid := client.PubSubId()
 	// generate update event
-	command = fmt.Sprintf("update %v set col1 = newvalue", TABLE);	
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ROW_COUNT(client, ROWS);
+	command = fmt.Sprintf("update %v set col1 = newvalue", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ROW_COUNT(client, ROWS)
 	// expected id and updated column (col1)
-	ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "update", ROWS, 2);
-	ASSERT_DISCONNECT(client);
+	ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "update", ROWS, 2)
+	ASSERT_DISCONNECT(client)
 }
 
 func TestPubSubDelete(t *testing.T) {
-	register("TestPubSubDelete", t);
-	newtable();
-	insertRows();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
-	command := fmt.Sprintf("subscribe skip * from %v", TABLE);
+	register("TestPubSubDelete", t)
+	newtable()
+	insertRows()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("subscribe skip * from %v", TABLE)
 	// subscribe
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ACTION(client, "subscribe");
-	ASSERT_PUBSUBID(client);
-	pubsubid := client.PubSubId();
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "subscribe")
+	ASSERT_PUBSUBID(client)
+	pubsubid := client.PubSubId()
 	// generate update event
-	command = fmt.Sprintf("delete from %v", TABLE);	
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_ROW_COUNT(client, ROWS);
+	command = fmt.Sprintf("delete from %v", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ROW_COUNT(client, ROWS)
 	// expected id and updated column (col1)
-	ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "delete", ROWS, COLUMNS);
-	ASSERT_DISCONNECT(client);
+	ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "delete", ROWS, COLUMNS)
+	ASSERT_DISCONNECT(client)
 }
 
 func TestPubSubRemove(t *testing.T) {
-	register("TestPubSubRemove", t);
-	newtable();
-	insertRows();
-	client := NewClient();
-	ASSERT_CONNECT(client, ADDRESS, true);
+	register("TestPubSubRemove", t)
+	newtable()
+	insertRows()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
 	// key col1
-	command := fmt.Sprintf("key %v col1", TABLE);
-	ASSERT_EXECUTE(client, command, true);
-	command = fmt.Sprintf("subscribe skip * from %v where col1 = 1:col1", TABLE);
-	ASSERT_EXECUTE(client, command, true);
-	pubsubid := client.PubSubId();
+	command := fmt.Sprintf("key %v col1", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	command = fmt.Sprintf("subscribe skip * from %v where col1 = 1:col1", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	pubsubid := client.PubSubId()
 	// generate remove
-	command = fmt.Sprintf("update %v set col1 = newvalue where col1 = 1:col1", TABLE);	
-	ASSERT_EXECUTE(client, command, true);
-	ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "remove", 1, COLUMNS);
-	ASSERT_DISCONNECT(client);
+	command = fmt.Sprintf("update %v set col1 = newvalue where col1 = 1:col1", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "remove", 1, COLUMNS)
+	ASSERT_DISCONNECT(client)
 }
 
 // helpers
@@ -392,7 +392,7 @@ var ADDRESS = "localhost:7777"
 var T *testing.T = nil
 var F = ""
 var TABLE = generateTableName()
-var ROWS = 300 
+var ROWS = 300
 var COLUMNS = 4
 
 func generateTableName() string {
@@ -528,10 +528,10 @@ func ASSERT_COLUMN_COUNT(client Client, expected int) {
 	}
 }
 func ASSERT_PUBSUBID(client Client) {
-	pubsubid := client.PubSubId();	
-	if (pubsubid == "") {
-		fail("ASSERT_PUBSUBID failed: expected non empty string");
-	}	
+	pubsubid := client.PubSubId()
+	if pubsubid == "" {
+		fail("ASSERT_PUBSUBID failed: expected non empty string")
+	}
 }
 
 func ASSERT_WAIT_FOR_PUBSUB(client Client, timeout int, expected bool) {
@@ -540,50 +540,49 @@ func ASSERT_WAIT_FOR_PUBSUB(client Client, timeout int, expected bool) {
 		fail(fmt.Sprintf("ASSERT_WAIT_FOR_PUBSUB failed: %v", client.Error()))
 	} else if expected != got {
 		fail(fmt.Sprintf("ASSERT_WAIT_FOR_PUBSUB failed: expected %v but got %v", expected, got))
-	}	
+	}
 }
 
 func ASSERT_PUBSUBID_VALUE(client Client, expected string) {
-	got := client.PubSubId(); 		
+	got := client.PubSubId()
 	if expected != got {
-		fail(fmt.Sprintf("ASSERT_PUBSUBID_VALUE failed: expected %v but got %v", expected, got));
+		fail(fmt.Sprintf("ASSERT_PUBSUBID_VALUE failed: expected %v but got %v", expected, got))
 	}
 }
 
 func ASSERT_NON_EMPTY_VALUE(client Client, ordinal int) {
 	if client.ValueByOrdinal(ordinal) == "" {
-		fail(fmt.Sprintf("ASSERT_NON_EMPTY_VALUE failed: expected non empty string for ordinal %v", ordinal));
+		fail(fmt.Sprintf("ASSERT_NON_EMPTY_VALUE failed: expected non empty string for ordinal %v", ordinal))
 	}
 }
 
-func ASSERT_RESULT_SET(client Client, rows int , columns int) {
-	ASSERT_ROW_COUNT(client, rows);
+func ASSERT_RESULT_SET(client Client, rows int, columns int) {
+	ASSERT_ROW_COUNT(client, rows)
 	for row := 0; row < rows; row++ {
-		ASSERT_NEXT_ROW(client, true);
-		ASSERT_COLUMN_COUNT(client, columns); 
+		ASSERT_NEXT_ROW(client, true)
+		ASSERT_COLUMN_COUNT(client, columns)
 		for col := 0; col < columns; col++ {
-			ASSERT_NON_EMPTY_VALUE(client, col);
-		} 
+			ASSERT_NON_EMPTY_VALUE(client, col)
+		}
 	}
-	ASSERT_NEXT_ROW(client, false);
-} 
+	ASSERT_NEXT_ROW(client, false)
+}
 
 func ASSERT_PUBSUB_RESULT_SET(client Client, pubsubid string, action string, rows int, columns int) {
-	readRows := 0;		
+	readRows := 0
 	for readRows < rows {
 		if !client.WaitForPubSub(100) {
-			fail(fmt.Sprintf("ASSERT_PUBSUB_RESULT_SET failed expected %v rows but got %v error %v", rows, readRows, client.Error()));
-			return;
+			fail(fmt.Sprintf("ASSERT_PUBSUB_RESULT_SET failed expected %v rows but got %v error %v", rows, readRows, client.Error()))
+			return
 		}
-		ASSERT_PUBSUBID_VALUE(client, pubsubid);
-		ASSERT_ACTION(client, action);
+		ASSERT_PUBSUBID_VALUE(client, pubsubid)
+		ASSERT_ACTION(client, action)
 		for client.NextRow() {
-			readRows++;
-			ASSERT_COLUMN_COUNT(client, columns); 
+			readRows++
+			ASSERT_COLUMN_COUNT(client, columns)
 			for col := 0; col < columns; col++ {
-				ASSERT_NON_EMPTY_VALUE(client, col);
-			} 
+				ASSERT_NON_EMPTY_VALUE(client, col)
+			}
 		}
 	}
 }
-

@@ -195,7 +195,7 @@ func (this *client) Execute(command string) bool {
 			// will be proccesed next time WaitPubSub is called
 			//WE MUST COPY BYTES SINCE THEY ARE REUSED IN NetHelper
 			t := make([]byte, header.MessageSize, header.MessageSize)
-			copy(t, bytes[0:header.MessageSize]) 
+			copy(t, bytes[0:header.MessageSize])
 			this.backlog.PushBack(t)
 		} else if header.RequestId < this.requestId {
 			// we did not read full result set from previous command ignore it or report error?
@@ -315,7 +315,7 @@ func (this *client) WaitForPubSub(timeout int) bool {
 		// this is not pubsub message; are we reading abandoned cursor?
 		// ignore and keep trying
 	}
-	return false;
+	return false
 }
 
 func (this *client) popBacklog() []byte {
