@@ -135,7 +135,7 @@ type client struct {
 	//
 	response responseData
 	record   int
-	columns map[string]int
+	columns  map[string]int
 
 	// pubsub back log
 	backlog list.List
@@ -144,7 +144,7 @@ type client struct {
 func (this *client) Connect(address string) bool {
 	this.address = address
 	this.Disconnect()
-	conn, err := net.DialTimeout("tcp", this.address, time.Millisecond * 1000)
+	conn, err := net.DialTimeout("tcp", this.address, time.Millisecond*1000)
 	if err != nil {
 		this.setError(err)
 		return false
@@ -158,6 +158,10 @@ func (this *client) Disconnect() {
 	// write may generate error so we reset after instead
 	this.reset()
 	this.rw.Close()
+}
+
+func (this *client) Connected() bool {
+	return this.rw.Valid()
 }
 
 func (this *client) Ok() bool {
@@ -258,19 +262,25 @@ func (this *client) NextRow() bool {
 }
 
 func (this *client) Value(column string) string {
-	ordinal, ok := this.columns[column]			
-	if !ok { return "" }
-	return this.ValueByOrdinal(ordinal);	
+	ordinal, ok := this.columns[column]
+	if !ok {
+		return ""
+	}
+	return this.ValueByOrdinal(ordinal)
 }
 
 func (this *client) ValueByOrdinal(ordinal int) string {
-	if this.record < 0  || this.record >= len(this.response.Data) { return "" }
-	if ordinal >= len(this.response.Data[this.record]) { return "" }	
-	return 	this.response.Data[this.record][ordinal]
+	if this.record < 0 || this.record >= len(this.response.Data) {
+		return ""
+	}
+	if ordinal >= len(this.response.Data[this.record]) {
+		return ""
+	}
+	return this.response.Data[this.record][ordinal]
 }
 
 func (this *client) HasColumn(column string) bool {
-	_, ok := this.columns[column]			
+	_, ok := this.columns[column]
 	return ok
 }
 
@@ -324,12 +334,12 @@ func (this *client) unmarshalJSON(bytes []byte) bool {
 }
 
 func (this *client) setColumns() {
-	if len(this.response.Columns)  == 0 {
-		return;	
+	if len(this.response.Columns) == 0 {
+		return
 	}
-	this.columns = make(map[string]int, cap(this.response.Columns));
+	this.columns = make(map[string]int, cap(this.response.Columns))
 	for ordinal, column := range this.response.Columns {
-		this.columns[column] = ordinal;	
+		this.columns[column] = ordinal
 	}
 }
 

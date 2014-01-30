@@ -99,17 +99,17 @@ public class PubSubSQLTest {
 		register("TestConnectDisconnect");
 		Client client = pubsubsql.Factory.NewClient();
 		ASSERT_CONNECT(client, ADDRESS, true);
+		ASSERT_CONNECTED(client, true);
 		ASSERT_DISCONNECT(client);	
 		ASSERT_CONNECT(client, "addresswithnoport", false);
+		ASSERT_CONNECTED(client, false);
 		ASSERT_DISCONNECT(client);	
 		ASSERT_CONNECT(client, "addresswithnoport:", false);
+		ASSERT_CONNECTED(client, false);
 		ASSERT_DISCONNECT(client);	
 		ASSERT_CONNECT(client, "localhost:7778", false);
+		ASSERT_CONNECTED(client, false);
 		ASSERT_DISCONNECT(client);	
-		//
-		ASSERT_ACTION(client, "");
-		ASSERT_ROW_COUNT(client, 0);
-		ASSERT_NEXT_ROW(client, false);
 	}
 
 	private void TestExecuteStatus() {
@@ -118,9 +118,6 @@ public class PubSubSQLTest {
 		ASSERT_CONNECT(client, ADDRESS, true);
 		ASSERT_EXECUTE(client, "status", true);
 		ASSERT_ACTION(client, "status");
-		//
-		ASSERT_ROW_COUNT(client, 0);
-		ASSERT_NEXT_ROW(client, false);
 		ASSERT_DISCONNECT(client);	
 	}
 
@@ -129,11 +126,6 @@ public class PubSubSQLTest {
 		Client client = pubsubsql.Factory.NewClient();
 		ASSERT_CONNECT(client, ADDRESS, true);
 		ASSERT_EXECUTE(client, "blablabla", false);
-		//
-		ASSERT_ACTION(client, "");
-		ASSERT_ROW_COUNT(client, 0);
-		ASSERT_NEXT_ROW(client, false);
-		ASSERT_DISCONNECT(client);	
 	}
 
 	private void TestInsertOneRow() {
@@ -146,7 +138,6 @@ public class PubSubSQLTest {
 		ASSERT_ACTION(client, "insert");
 		ASSERT_ROW_COUNT(client, 1);
 		ASSERT_NEXT_ROW(client, true);
-		//
 		ASSERT_ID(client);
 		ASSERT_VALUE(client, "col1", "1:col1", true);
 		ASSERT_VALUE(client, "col2", "1:col2", true);
@@ -155,7 +146,6 @@ public class PubSubSQLTest {
 		ASSERT_HAS_COLUMN(client, "col2", true);
 		ASSERT_HAS_COLUMN(client, "col3", true);
 		ASSERT_COLUMN_COUNT(client, 4); // including id
-		//
 		ASSERT_NEXT_ROW(client, false);
 		ASSERT_DISCONNECT(client);
 	}

@@ -23,34 +23,60 @@ import (
 	"time"
 )
 
-
 func TestConnectDisconnect(t *testing.T) {
 	register("TestConnectDisconnect", t)
 	client := NewClient()
-	ASSERT_CONNECT(client, ADDRESS, true);
-	ASSERT_DISCONNECT(client);	
-	ASSERT_CONNECT(client, "addresswithnoport", false);
-	ASSERT_DISCONNECT(client);	
-	ASSERT_CONNECT(client, "addresswithnoport:", false);
-	ASSERT_DISCONNECT(client);	
-	ASSERT_CONNECT(client, "localhost:7778", false);
-	ASSERT_DISCONNECT(client);	
-	//
-	//ASSERT_ACTION(client, "");
-	//ASSERT_ROW_COUNT(client, 0);
-	//ASSERT_NEXT_ROW(client, false);
+	ASSERT_CONNECT(client, ADDRESS, true)
+	ASSERT_CONNECTED(client, true)
+	ASSERT_DISCONNECT(client)
+	ASSERT_CONNECT(client, "addresswithnoport", false)
+	ASSERT_CONNECTED(client, false)
+	ASSERT_DISCONNECT(client)
+	ASSERT_CONNECT(client, "addresswithnoport:", false)
+	ASSERT_CONNECTED(client, false)
+	ASSERT_DISCONNECT(client)
+	ASSERT_CONNECT(client, "localhost:7778", false)
+	ASSERT_CONNECTED(client, false)
+	ASSERT_DISCONNECT(client)
 }
 
 func TestExecuteStatus(t *testing.T) {
 	register("TestExecuteStatus", t)
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	ASSERT_EXECUTE(client, "status", true)
+	ASSERT_ACTION(client, "status")
+	ASSERT_DISCONNECT(client)
 }
 
 func TestExecuteInvalidCommand(t *testing.T) {
-
+	register("TestExecuteInvalidCommand", t)
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	ASSERT_EXECUTE(client, "blablabla", false)
+	ASSERT_DISCONNECT(client)
 }
 
 func TestInsertOneRow(t *testing.T) {
-
+	register("TestInsertOneRow", t)
+	newtable()
+	client := NewClient()
+	ASSERT_CONNECT(client, ADDRESS, true)
+	command := fmt.Sprintf("insert into %v (col1, col2, col3) values (1:col1, 1:col2, 1:col3)", TABLE)
+	ASSERT_EXECUTE(client, command, true)
+	ASSERT_ACTION(client, "insert")
+	ASSERT_ROW_COUNT(client, 1)
+	ASSERT_NEXT_ROW(client, true)
+	ASSERT_ID(client)
+	ASSERT_VALUE(client, "col1", "1:col1", true)
+	ASSERT_VALUE(client, "col2", "1:col2", true)
+	ASSERT_VALUE(client, "col3", "1:col3", true)
+	ASSERT_HAS_COLUMN(client, "col1", true)
+	ASSERT_HAS_COLUMN(client, "col2", true)
+	ASSERT_HAS_COLUMN(client, "col3", true)
+	ASSERT_COLUMN_COUNT(client, 4) // including id
+	ASSERT_NEXT_ROW(client, false)
+	ASSERT_DISCONNECT(client)
 }
 
 func TestInsertManyRows(t *testing.T) {
@@ -136,7 +162,6 @@ var COLUMNS = 4
 
 func generateTableName() string {
 	return "T" + strconv.FormatInt(time.Now().Unix(), 10)
-
 }
 
 func register(f string, t *testing.T) {
@@ -145,33 +170,109 @@ func register(f string, t *testing.T) {
 }
 
 func fail(msg string) {
-	fmt.Println("%v %v", F, msg);
+	fmt.Println("%v %v", F, msg)
 }
 
-func iferror(client Client, expected bool , got bool) {
-	if (expected && !got) {
-		print(fmt.Sprintf("Error: %v", client.Error()));
-	}	
+func iferror(client Client, expected bool, got bool) {
+	if expected && !got {
+		print(fmt.Sprintf("Error: %v", client.Error()))
+	}
+}
+
+func newtable() {
+	TABLE = generateTableName()
 }
 
 func ASSERT_CONNECT(client Client, address string, expected bool) {
-	got := client.Connect(address)			
+	got := client.Connect(address)
 	if expected != got {
-		fail(fmt.Sprintf("ASSERT_CONNECT failed: expected %v got %v ", expected, got));
-	}		
-} 
+		fail(fmt.Sprintf("ASSERT_CONNECT failed: expected %v got %v ", expected, got))
+	}
+}
 
 func VALIDATE_RESULT(client Client, result bool) {
-	if result && !client.Ok() { fail("VALIDATE_RESULT failed: expected Ok") }
-	if !result && !client.Failed() { fail("VALIDATE_RESULT failed: expected Failed") }
+	if result && !client.Ok() {
+		fail("VALIDATE_RESULT failed: expected Ok")
+	}
+	if !result && !client.Failed() {
+		fail("VALIDATE_RESULT failed: expected Failed")
+	}
 }
 
 func ASSERT_DISCONNECT(client Client) {
 	client.Disconnect()
-	if (client.Failed()) {
-		fail("ASSERT_DISCONNECT failed: expected Ok() not Failed() after Disconnect()");
+	if client.Failed() {
+		fail("ASSERT_DISCONNECT failed: expected Ok() not Failed() after Disconnect()")
 	}
 }
+
+func ASSERT_CONNECTED(client Client, expected bool) {
+	got := client.Connected()
+	if expected != got {
+		fail(fmt.Sprintf("ASSERT_CONNECTED failed: expected %v got %v", expected, got))
+	}
+}
+
+func ASSERT_EXECUTE(client Client, command string, expected bool) {
+	got := client.Execute(command)
+	if expected != got {
+		fail(fmt.Sprintf("ASSERT_EXECUTE failed: expected %v got %v", expected, got))
+	}
+	iferror(client, expected, got)
+	VALIDATE_RESULT(client, got)
+}
+
+func ASSERT_ACTION(client Client, expected string) {
+	got := client.Action()
+	if expected != got {
+		fail(fmt.Sprintf("ASSERT_ACTION failed: expected %v got %v", expected, got))
+	}
+}
+
+func ASSERT_ROW_COUNT(client Client, expected int) {
+	got := client.RowCount()
+	if expected != got {
+		fail(fmt.Sprintf("ASSERT_ROW_COUNT failed: expected %v but got %v", expected, got));
+	}
+}
+
+func ASSERT_NEXT_ROW(client Client, expected bool) {
+	got := client.NextRow()
+	if expected != got {
+		fail(fmt.Sprintf("ASSERT_NEXT_ROW failed: expected %v but got %v", expected, got));
+	}
+}
+
+func ASSERT_ID(client Client) {
+	id := client.Value("id")
+	if id == "" {
+		fail("ASSERT_ID failed: expected non empty string")
+	}
+}
+
+func ASSERT_VALUE(client Client, column string, value string, match bool) {
+	got := client.Value(column)
+	if match && value != got {
+		fail(fmt.Sprintf("ASSERT_VALUE failed: expected %v but got %v", value, got))
+	} else if !match && value != got {
+		fail(fmt.Sprintf("ASSERT_VALUE failed: not expected %v", value));
+	}
+}
+
+func ASSERT_HAS_COLUMN(client Client, column string, expected bool) {
+	got := client.HasColumn(column)
+	if expected != got {
+		fail(fmt.Sprintf("ASSERT_HAS_COLUMN failed: expected %v but got %v", expected, got));
+	}
+}	
+
+func ASSERT_COLUMN_COUNT(client Client, expected int) {
+	got := client.ColumnCount()
+	if expected != got {
+		fail(fmt.Sprintf("ASSERT_COLUMN_COUNT failed: expected %v but got %v", expected, got));
+	}
+}
+
 
 /*
 func ASSERT_TRUE(b bool) {
