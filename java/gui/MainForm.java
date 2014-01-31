@@ -47,6 +47,8 @@ public class MainForm extends JFrame implements ActionListener {
 	private Timer timer;	
 	private Simulator simulator = new Simulator();
 
+	private AboutForm aboutForm;
+
 	public MainForm() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
         Dimension screen = toolkit.getScreenSize();
@@ -244,7 +246,9 @@ public class MainForm extends JFrame implements ActionListener {
 
 	Action about = new AbstractAction("About") {
 		public void actionPerformed(ActionEvent event) {
-			System.exit(0);
+			if (aboutForm == null) aboutForm = new AboutForm(MainForm.this);	
+			aboutForm.setLocationRelativeTo(MainForm.this);
+			aboutForm.setVisible(true);
 		}
 	};
 	
