@@ -346,7 +346,7 @@ namespace PubSubSQLTest
             ASSERT_ACTION(client, "subscribe");
             ASSERT_PUBSUBID(client);
             String pubsubid = client.PubSubId();
-            // generate update event
+            // generate delete event
             command = string.Format("delete from {0}", TABLE);	
             ASSERT_EXECUTE(client, command, true);
             ASSERT_ROW_COUNT(client, ROWS);
@@ -367,7 +367,7 @@ namespace PubSubSQLTest
             command = string.Format("subscribe skip * from {0} where col1 = 1:col1", TABLE);
             ASSERT_EXECUTE(client, command, true);
             String pubsubid = client.PubSubId();
-            // generate remove
+            // generate remove event
             command = string.Format("update {0} set col1 = newvalue where col1 = 1:col1", TABLE);	
             ASSERT_EXECUTE(client, command, true);
             ASSERT_PUBSUB_RESULT_SET(client, pubsubid, "remove", 1, COLUMNS);

@@ -29,26 +29,26 @@
         private void InitializeComponent()
         {
             System.ComponentModel.ComponentResourceManager resources = new System.ComponentModel.ComponentResourceManager(typeof(AboutForm));
-            this.license = new System.Windows.Forms.TextBox();
+            this.licenseText = new System.Windows.Forms.TextBox();
             this.okButton = new System.Windows.Forms.Button();
             this.copyrightLable = new System.Windows.Forms.Label();
             this.panel1 = new System.Windows.Forms.Panel();
             this.panel1.SuspendLayout();
             this.SuspendLayout();
             // 
-            // license
+            // licenseText
             // 
-            this.license.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
+            this.licenseText.Anchor = ((System.Windows.Forms.AnchorStyles)((((System.Windows.Forms.AnchorStyles.Top | System.Windows.Forms.AnchorStyles.Bottom) 
             | System.Windows.Forms.AnchorStyles.Left) 
             | System.Windows.Forms.AnchorStyles.Right)));
-            this.license.BackColor = System.Drawing.SystemColors.Control;
-            this.license.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
-            this.license.Location = new System.Drawing.Point(6, 3);
-            this.license.Multiline = true;
-            this.license.Name = "license";
-            this.license.Size = new System.Drawing.Size(279, 107);
-            this.license.TabIndex = 28;
-            this.license.Text = resources.GetString("license.Text");
+            this.licenseText.BackColor = System.Drawing.SystemColors.Control;
+            this.licenseText.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
+            this.licenseText.Location = new System.Drawing.Point(6, 3);
+            this.licenseText.Multiline = true;
+            this.licenseText.Name = "licenseText";
+            this.licenseText.Size = new System.Drawing.Size(279, 107);
+            this.licenseText.TabIndex = 28;
+            this.licenseText.Text = resources.GetString("licenseText.Text");
             // 
             // okButton
             // 
@@ -72,7 +72,7 @@
             // 
             this.panel1.BorderStyle = System.Windows.Forms.BorderStyle.FixedSingle;
             this.panel1.Controls.Add(this.okButton);
-            this.panel1.Controls.Add(this.license);
+            this.panel1.Controls.Add(this.licenseText);
             this.panel1.Controls.Add(this.copyrightLable);
             this.panel1.Dock = System.Windows.Forms.DockStyle.Fill;
             this.panel1.Location = new System.Drawing.Point(0, 0);
@@ -101,7 +101,7 @@
 
         private System.Windows.Forms.Button okButton;
         private System.Windows.Forms.Label copyrightLable;
-        private System.Windows.Forms.TextBox license;
+        private System.Windows.Forms.TextBox licenseText;
         private System.Windows.Forms.Panel panel1;
 
     }
