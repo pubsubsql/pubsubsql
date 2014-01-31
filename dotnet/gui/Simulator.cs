@@ -22,14 +22,13 @@ namespace PubSubSQLGUI
             try
             {
                 ids.Clear();
-                Thread.Sleep(0);
                 if (!client.Connect(Address)) throw new Exception("Failed to connect");
                 // first insert data
                 for (int row = 1; row <= Rows && !stopFlag; row++)
                 {
                     string insert = generateInsert(row);
                     if (!client.Execute(insert)) throw new Exception("Failed to insert: " + insert);
-                    if (!client.NextRecord()) throw new Exception("Failed to move to the first record");
+                    if (!client.NextRow()) throw new Exception("Failed to move to the first record");
                     string id = client.Value("id");
                     if (string.IsNullOrEmpty(id)) throw new Exception("id is empty");
                     ids.Add(id);

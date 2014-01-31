@@ -52,7 +52,6 @@
     <Compile Include="ClientTest.cs" />
     <Compile Include="NetHeaderTest.cs" />
     <Compile Include="NetHelperTest.cs" />
-    <Compile Include="TestUtils.cs" />
   </ItemGroup>
   <ItemGroup>
     <Folder Include="Properties\" />

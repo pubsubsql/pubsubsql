@@ -109,10 +109,11 @@ namespace PubSubSQLGUI
         private void disconnect(object sender, EventArgs e)
         {
             simulator.Stop();
+            cancelExecuteFlag = true;
             updateConnectedAddress(string.Empty);
-            clearResults();
             client.Disconnect();
             enableDisableControls();
+            clearResults();
         }
 
         private void execute(object sender, EventArgs e)
@@ -258,7 +259,7 @@ namespace PubSubSQLGUI
                 return;
             }
             // check if it is result set
-            if (client.RecordCount() > 0 && client.ColumnCount() > 0)
+            if (client.RowCount() > 0 && client.ColumnCount() > 0)
             {
                 updateDataset(); 
                 resultsTabContainer.SelectedTab = resultsTab;
@@ -293,12 +294,12 @@ namespace PubSubSQLGUI
 
         private void updateDataset()
         {
-            if (!(client.RecordCount() > 0 && client.ColumnCount() > 0)) return;
+            if (!(client.RowCount() > 0 && client.ColumnCount() > 0)) return;
             // inside dataset
             dataset.SyncColumns(client);
             syncColumns();
-            dataset.AddRowsCapacity(client.RecordCount());
-            while (client.NextRecord() && !cancelExecuteFlag)
+            dataset.AddRowsCapacity(client.RowCount());
+            while (client.NextRow() && !cancelExecuteFlag)
             {
                 dataset.ProcessRow(client);
             }

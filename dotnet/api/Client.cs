@@ -36,9 +36,10 @@ namespace PubSubSQL
         string JSON();
         string Action();
         string PubSubId();
-        int RecordCount();
-        bool NextRecord();
+        int RowCount();
+        bool NextRow();
         string Value(string column);
+        string ValueByOrdinal(int ordinal);
         bool HasColumn(string column);
         IEnumerable<string> Columns();
         int ColumnCount();
@@ -211,12 +212,12 @@ namespace PubSubSQL
             return response.PubSubId;
         }
 
-        public int RecordCount()
+        public int RowCount()
         {
             return response.Rows;
         }
 
-        public bool NextRecord()
+        public bool NextRow()
         {
             while (Ok())
             {
@@ -252,6 +253,14 @@ namespace PubSubSQL
             int ordinal = -1;
             if (record < 0 || record >= response.Values.Count) return string.Empty;
             if (response.Values == null || !columns.TryGetValue(column, out ordinal)) return string.Empty;
+            return response.Values[record][ordinal];
+        }
+
+        public string ValueByOrdinal(int ordinal)
+        {
+            if (ordinal < 0) return string.Empty;
+            if (record < 0 || record >= response.Values.Count) return string.Empty;
+            if (response.Values == null || response.Columns.Count <= ordinal) return string.Empty;
             return response.Values[record][ordinal];
         }
 

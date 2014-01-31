@@ -181,6 +181,7 @@ class ClientImpl implements Client {
 	}
 
 	public String ValueByOrdinal(int ordinal) {
+		if (ordinal == -1) return "";
 		if (response.data == null) return "";
 		if (response.data.size() <= record) return "";
 		if (ordinal >= response.columns.size()) return "";

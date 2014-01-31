@@ -1,6 +1,10 @@
-javac -d . PubSubSQLGUI.java MainForm.java
-jar cvf pubsubsqlgui.jar *.class images/*.png  
+javac -d . -cp .;..\lib\* *.java
+echo compiled
+jar cvf pubsubsqlgui.jar *.class  images\*.png   
 jar ufe pubsubsqlgui.jar PubSubSQLGUI PubSubSQLGUI.class
+jar ufm pubsubsqlgui.jar manifest.txt 
 del *.class
-java -jar pubsubsqlgui.jar
+move pubsubsqlgui.jar ..\pubsubsqlgui.jar
+echo running...
+java -jar ..\pubsubsqlgui.jar
 
