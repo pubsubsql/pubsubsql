@@ -48,6 +48,7 @@ public class MainForm extends JFrame implements ActionListener {
 	private Simulator simulator = new Simulator();
 
 	private AboutForm aboutForm;
+	private ConnectForm connectForm;
 
 	public MainForm() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -175,7 +176,14 @@ public class MainForm extends JFrame implements ActionListener {
 
 	Action connect = new AbstractAction("Connect...", createImageIcon("images/Connect.png")) {
 		public void actionPerformed(ActionEvent event) {
-			System.exit(0);
+			if (connectForm == null) connectForm = new ConnectForm(MainForm.this);	
+			connectForm.setLocationRelativeTo(MainForm.this);
+			connectForm.setHost("localhost");	
+			connectForm.setPort(7777);
+			connectForm.setVisible(true);
+			if (connectForm.Ok()) {
+				connect(connectForm.getAddress());
+			}
 		}
 	};
 

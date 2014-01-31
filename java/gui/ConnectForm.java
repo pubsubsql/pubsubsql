@@ -18,23 +18,49 @@ import java.awt.*;
 import java.awt.event.*;
 import javax.swing.*;
 
-public class AboutForm extends JDialog {
+public class ConnectForm extends JDialog {
 
-	private AboutPanel panel;
+	private ConnectPanel panel;
+	private boolean ok = false;
 
-	public AboutForm(JFrame owner) {
+	public ConnectForm(JFrame owner) {
 		super(owner, "About PubSubSQL Interactive Query", true);		
 
-		panel = new AboutPanel();
+		panel = new ConnectPanel();
 		add(panel, BorderLayout.CENTER);
 		pack();
 		setResizable(false);
 		
 		panel.okButton.addActionListener( new ActionListener() {	
 			public void actionPerformed(ActionEvent event) {
+				ok = true;
+				setVisible(false);
+			}
+		});
+
+		panel.cancelButton.addActionListener( new ActionListener() {	
+			public void actionPerformed(ActionEvent event) {
+				ok = false;
 				setVisible(false);
 			}
 		});
 	}
+
+	public void setHost(String host) {
+		panel.hostText.setText(host);			
+	}
+
+	public void setPort(int port) {
+		panel.portSpinner.setValue(port);		
+	}
+
+	public String getAddress() {
+		return String.format("%s:%s", panel.hostText.getText(), panel.portSpinner.getValue()); 
+	}	
+
+	public boolean Ok() {
+		return ok;
+	}
+
 }
 
