@@ -48,7 +48,6 @@ public class MainForm extends JFrame implements ActionListener {
 	private Simulator simulator = new Simulator();
 
 	private AboutForm aboutForm;
-	private ConnectForm connectForm;
 
 	public MainForm() {
 		Toolkit toolkit = Toolkit.getDefaultToolkit();
@@ -176,7 +175,7 @@ public class MainForm extends JFrame implements ActionListener {
 
 	Action connect = new AbstractAction("Connect...", createImageIcon("images/Connect.png")) {
 		public void actionPerformed(ActionEvent event) {
-			if (connectForm == null) connectForm = new ConnectForm(MainForm.this);	
+			ConnectForm connectForm = new ConnectForm(MainForm.this);	
 			connectForm.setLocationRelativeTo(MainForm.this);
 			connectForm.setHost("localhost");	
 			connectForm.setPort(7777);
@@ -241,9 +240,15 @@ public class MainForm extends JFrame implements ActionListener {
 		public void actionPerformed(ActionEvent event) {
 			simulator.Stop();		
 			simulator.Address = connectedAddress;
+			SimulatorForm simulatorForm = new SimulatorForm(MainForm.this);	
+			simulatorForm.setLocationRelativeTo(MainForm.this);
+			simulatorForm.setVisible(true);
+			if (!simulatorForm.Ok()) {
+				return;
+			}
 			//
-			simulator.Rows = 100;	
-			simulator.Columns = 5;
+			simulator.Columns = simulatorForm.getColumns();
+			simulator.Rows = simulatorForm.getRows();	
 			simulator.TableName = "T" + System.currentTimeMillis();	
 			simulator.Start();
 			queryText.setText("subscribe * from " + simulator.TableName);

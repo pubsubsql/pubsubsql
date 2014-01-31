@@ -24,7 +24,7 @@ public class ConnectForm extends JDialog {
 	private boolean ok = false;
 
 	public ConnectForm(JFrame owner) {
-		super(owner, "About PubSubSQL Interactive Query", true);		
+		super(owner, "Connect", true);		
 
 		panel = new ConnectPanel();
 		add(panel, BorderLayout.CENTER);
