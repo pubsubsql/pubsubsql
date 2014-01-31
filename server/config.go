@@ -22,6 +22,7 @@ import (
 	"strconv"
 	"strings"
 	"time"
+	"net"
 )
 
 type configuration struct {
@@ -91,7 +92,7 @@ func defaultConfig() configuration {
 		COMMAND: "start",
 
 		// network
-		IP:   "127.0.0.1",
+		IP:   "",
 		PORT: 7777,
 	}
 }
@@ -115,7 +116,7 @@ func validCommandsUsageString() string {
 }
 
 func (this *configuration) netAddress() string {
-	return this.IP + ":" + strconv.Itoa(int(this.PORT))
+	return net.JoinHostPort(this.IP, strconv.Itoa(int(this.PORT)))
 }
 
 func (this *configuration) setLogLevel(loglevel string) bool {
