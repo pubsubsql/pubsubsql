@@ -31,6 +31,7 @@ func main() {
 	start()	
 	//
 	buildServer()	
+	buildService()
 	//
 	done()
 }
@@ -38,6 +39,7 @@ func main() {
 // server
 
 func buildServer() {
+	emptyln();
 	print("Building pubsubsql server...")
 	bin := "build/stage/bin/"
 	cd("..")
@@ -45,6 +47,7 @@ func buildServer() {
 	execute("go", "build")
 	cp(serverFileName(), bin + serverFileName(), true)
 	cd("build")
+	success()
 }
 
 func serverFileName() string {
@@ -54,6 +57,29 @@ func serverFileName() string {
 		default:
 			return "pubsubsql"
 	}
+}
+
+// service installer
+
+func buildService() {
+	emptyln();
+	print("Building service/installer...") 
+	cd("../service/" + OS)		
+	switch OS {
+		case "linux":
+			buildServiceLinux()
+		default:
+			fail("not implemented")
+	}
+	success()
+}
+
+func buildServiceLinux() {
+	bin := "../../build/stage/bin/"
+	execute("make", "clean")
+	execute("make")
+	svc := "pubsubsqlsvc"
+	cp(svc, bin + svc, true)
 }
 
 // helpers
@@ -69,8 +95,17 @@ func fail(str string, v ...interface{}) {
 	os.Exit(1)
 }
 
+func emptyln() {
+	fmt.Println("")
+}
+
+func success() {
+	print("SUCCESS")	
+}
+
 func start() {
 	print("BUILD STARTED")
+	emptyln();
 	// check OS 
 	switch OS {
 		case "windows":
@@ -85,6 +120,7 @@ func start() {
 }
 
 func done() {
+	emptyln();
 	if failCount > 0 {
 		print("BUILD FAILED")
 	} else {
