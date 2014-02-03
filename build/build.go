@@ -21,6 +21,9 @@ import (
 	"os"
 	"os/exec"
 	"io"
+	"archive/tar"
+	"compress/gzip"
+	"path/filepath"
 )
 
 var failCount = 0
@@ -32,6 +35,8 @@ func main() {
 	//
 	buildServer()	
 	buildService()
+	copyRootFiles()
+	createArchive()
 	//
 	done()
 }
@@ -41,7 +46,7 @@ func main() {
 func buildServer() {
 	emptyln();
 	print("Building pubsubsql server...")
-	bin := "build/stage/bin/"
+	bin := "build/pubsubsql/bin/"
 	cd("..")
 	rm(serverFileName())
 	execute("go", "build")
@@ -71,16 +76,43 @@ func buildService() {
 		default:
 			fail("not implemented")
 	}
+	cd("../../build")		
 	success()
 }
 
 func buildServiceLinux() {
-	bin := "../../build/stage/bin/"
+	bin := "../../build/pubsubsql/bin/"
 	execute("make", "clean")
 	execute("make")
 	svc := "pubsubsqlsvc"
 	cp(svc, bin + svc, true)
 }
+
+// copy README LICENSE etc..
+
+func copyRootFiles() {
+	emptyln();
+	print("Coping root files...") 
+	cp("../LICENSE", "./pubsubsql/LICENSE", false)		
+	success()
+}
+
+// create archive
+
+func createArchive() {
+	emptyln();	
+	print("Archiving files...") 
+	str := "temp.tar.gz"
+	switch OS {
+		case "linux":
+			targz(str, "./pubsubsql")						
+		case "windows":
+			zip()
+	}	
+	success()
+}
+
+
 
 // helpers
 
@@ -117,6 +149,7 @@ func start() {
 	}
 	print("Preparing staging area...")
 	prepareStagingArea();	
+	success()
 }
 
 func done() {
@@ -129,8 +162,8 @@ func done() {
 }
 
 func prepareStagingArea() {
-	rm("stage")
-	mkdir("./stage/bin")	
+	rm("pubsubsql")
+	mkdir("./pubsubsql/bin")	
 }
 
 func mkdir(path string) {
@@ -193,3 +226,60 @@ func cp(src string, dst string, execute bool) {
 		fail("Failed to copy file %v", err)	
 	}	
 }
+
+func open(path string) *os.File {
+	file, err := os.Open(path)	
+	if err != nil {
+		fail("Failed to open file %v error %v", path, err)
+	}
+	return file
+}
+
+func create(path string) *os.File {
+	file, err := os.Create(path)
+	if err != nil {
+		fail("Failed to create file %v error %v", path, err)
+	}
+	return file
+}
+
+func targz(archiveFile string, dir string) {
+	// file
+	file := create(archiveFile)	
+	// gzip
+	gzipWriter := gzip.NewWriter(file)	
+	defer gzipWriter.Close()
+	// tar 
+	tarWriter := tar.NewWriter(gzipWriter)
+	defer tarWriter.Close()
+	//	
+	walk := func (path string, fileInfo os.FileInfo, err error) error {
+		if err != nil {
+			fail("Failed to traverse directory structure %v", err)
+		}
+		print(path)
+		fileToWrite := open(path)
+		defer fileToWrite.Close()
+		header, err := tar.FileInfoHeader(fileInfo, path)
+		header.Name = path
+		if err != nil {
+			fail("Failed to create tar header from file info %v", err)
+		}
+		err = tarWriter.WriteHeader(header)
+		if err != nil {
+			fail("Failed to write tar header %v", err)
+		}
+		_, err = io.Copy(tarWriter, fileToWrite)		
+		return nil
+	}
+	//
+	err := filepath.Walk(dir, walk)
+	if err != nil {
+		fail("Failed to traverse directory %v %v", dir, err)
+	}
+}
+
+func zip() {
+
+}
+
