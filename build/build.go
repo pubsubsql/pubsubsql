@@ -28,8 +28,8 @@ import (
 )
 
 var failCount = 0
-var OS = "linux"
-var architecture = 64 
+var OS = "windows"
+var architecture = "Win32"
 
 func main() {
 	start()	
@@ -75,10 +75,17 @@ func buildService() {
 		case "linux":
 			buildServiceLinux()
 		default:
-			fail("not implemented")
+			buildServiceWindows()
 	}
 	cd("../../build")		
 	success()
+}
+
+func buildServiceWindows() {
+	bin := "../../build/pubsubsql/bin/"
+	execute("msbuild.exe", "/t:Clean,Build",  "/p:Configuration=Release", "/p:Platform=" + architecture)
+	svc := "pubsubsqlsvc.exe"
+	cp(svc, bin + svc, false)
 }
 
 func buildServiceLinux() {
@@ -210,10 +217,12 @@ func copyFile(src string, dst string, execute bool)  (err error) {
     }
     defer dstFile.Close()
 
-	err = dstFile.Chmod(os.ModePerm)
-    if err != nil {
-        return
-    }
+	if OS == "linux" {
+		err = dstFile.Chmod(os.ModePerm)
+		if err != nil {
+			return
+		}
+	}
 
     _, err = io.Copy(dstFile, srcFile)
 	return err
