@@ -22,6 +22,7 @@ import (
 	"os/exec"
 	"io"
 	"archive/tar"
+	"archive/zip"
 	"compress/gzip"
 	"path/filepath"
 )
@@ -102,17 +103,15 @@ func copyRootFiles() {
 func createArchive() {
 	emptyln();	
 	print("Archiving files...") 
-	str := "temp.tar.gz"
 	switch OS {
 		case "linux":
-			targz(str, "./pubsubsql")						
+			targz("temp.tar.gz", "./pubsubsql")						
+			dozip("temp.zip", "./pubsubsql")
 		case "windows":
-			zip()
+			dozip("temp.zip", "./pubsubsql")
 	}	
 	success()
 }
-
-
 
 // helpers
 
@@ -246,6 +245,7 @@ func create(path string) *os.File {
 func targz(archiveFile string, dir string) {
 	// file
 	file := create(archiveFile)	
+	defer file.Close()
 	// gzip
 	gzipWriter := gzip.NewWriter(file)	
 	defer gzipWriter.Close()
@@ -254,6 +254,9 @@ func targz(archiveFile string, dir string) {
 	defer tarWriter.Close()
 	//	
 	walk := func (path string, fileInfo os.FileInfo, err error) error {
+		if fileInfo.Mode().IsDir() {
+			return nil
+		}
 		if err != nil {
 			fail("Failed to traverse directory structure %v", err)
 		}
@@ -279,7 +282,35 @@ func targz(archiveFile string, dir string) {
 	}
 }
 
-func zip() {
-
+func dozip(archiveFile string, dir string) {
+	// file	
+	file := create(archiveFile)
+	defer file.Close()
+	// zip
+	zipWriter := zip.NewWriter(file)
+	defer zipWriter.Close()
+	//
+	walk := func (path string, fileInfo os.FileInfo, err error) error {
+		if fileInfo.Mode().IsDir() {
+			return nil
+		}
+		if err != nil {
+			fail("Failed to traverse directory structure %v", err)
+		}
+		print(path)
+		fileToWrite := open(path)
+		var w io.Writer 
+		w, err = zipWriter.Create(path)	
+		if err != nil {
+			fail("Failed to create zip writer %v", err)
+		}
+		_, err = io.Copy(w, fileToWrite)		
+		return nil
+	}
+	//
+	err := filepath.Walk(dir, walk)
+	if err != nil {
+		fail("Failed to traverse directory %v %v", dir, err)
+	}
 }
 
