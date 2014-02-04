@@ -1,16 +1,8 @@
-CC=g++
-CFLAGS= -Wall -pthread
-
-all: pubsubsqlsvc
-
-pubsubsqlsvc: pubsubsqlsvc.o
-	$(CC) $(CFLAGS) pubsubsqlsvc.o -o pubsubsqlsvc 
-
-pubsubsqlsvc.o: pubsubsqlsvc.cpp
-	$(CC) $(CFLAGS) -c pubsubsqlsvc.cpp -o pubsubsqlsvc.o
-
-clean:
-	-rm *.o pubsubsqlsvc
+ARCH=m64
 
 .PHONY: pubsubsqlsvc
-	
+pubsubsqlsvc: pubsubsqlsvc.cpp
+	echo $(ARCH)
+	rm -f pubsubsqlsvc
+	g++ -Wall -pthread -$(ARCH) pubsubsqlsvc.cpp -o pubsubsqlsvc
+
