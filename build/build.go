@@ -17,6 +17,7 @@
 package main
 
 import (
+	"flag"
 	"fmt"
 	"os"
 	"os/exec"
@@ -28,8 +29,15 @@ import (
 )
 
 var failCount = 0
-var OS = "windows"
-var architecture = "Win32"
+
+var OS = ""          //windows,linux
+var ARCH = ""        //32,64
+var VS_PLATFORM = "" //set automatically 
+var GOROOT = ""      // must match ARCH
+var PATH_SEPARATOR = ""
+var PATH_SLASH = ""
+var VERSION = "1.0.0"
+
 
 func main() {
 	start()	
@@ -83,7 +91,7 @@ func buildService() {
 
 func buildServiceWindows() {
 	bin := "../../build/pubsubsql/bin/"
-	execute("msbuild.exe", "/t:Clean,Build",  "/p:Configuration=Release", "/p:Platform=" + architecture)
+	execute("msbuild.exe", "/t:Clean,Build",  "/p:Configuration=Release", "/p:Platform=" + VS_PLATFORM)
 	svc := "pubsubsqlsvc.exe"
 	cp(svc, bin + svc, false)
 }
@@ -112,10 +120,9 @@ func createArchive() {
 	print("Archiving files...") 
 	switch OS {
 		case "linux":
-			targz("temp.tar.gz", "./pubsubsql")						
-			dozip("temp.zip", "./pubsubsql")
+			targz(getarchname() + ".tar.gz", "./pubsubsql")						
 		case "windows":
-			dozip("temp.zip", "./pubsubsql")
+			dozip(getarchname() + ".zip", "./pubsubsql")
 	}	
 	success()
 }
@@ -142,17 +149,48 @@ func success() {
 }
 
 func start() {
+	// read flags
+	flag.StringVar(&OS, "OS", "windows", "Operating System (linux,windows)")	
+	flag.StringVar(&ARCH, "ARCH", "", "Architecture (32,64)")
+	flag.StringVar(&GOROOT, "GOROOT", "", "Go root directory")
+	flag.Parse()
+	print("Usage")
+	flag.PrintDefaults()
+
 	print("BUILD STARTED")
 	emptyln();
 	// check OS 
 	switch OS {
 		case "windows":
-			;
+			PATH_SEPARATOR = ";"
+			PATH_SLASH = "\\";
 		case "linux":
-			;
+			PATH_SEPARATOR = ":"
+			PATH_SLASH = "/";
 		default:
 			fail("Unkown os %v", OS)
 	}
+
+	// set up go build env
+	setenv("GOROOT", GOROOT)
+	path := getenv("PATH")
+	setenv("PATH", GOROOT + PATH_SLASH + "bin" + PATH_SEPARATOR + path)	
+
+	// check ARCH
+	switch ARCH {
+		case "32":
+			setenv("GOARCH", "386")
+			VS_PLATFORM = "Win32"
+		case "64":
+			setenv("GOARCH", "amd64")
+			VS_PLATFORM = "x64"
+		default:
+			fail("Unkown architecture %v", ARCH)
+
+	}
+
+	// display current go env variables
+	execute("go", "env")
 	print("Preparing staging area...")
 	prepareStagingArea();	
 	success()
@@ -204,6 +242,17 @@ func execute(name string, arg ...string) {
 	}	
 }
 
+func setenv(key string, value string) {
+	err := os.Setenv(key, value)
+	if err != nil {
+		fail("Failed to set environment variable key:%v, value:% error:%v", key, value, err)	
+	}	
+}
+
+func getenv(key string) string {
+	return os.Getenv(key)
+}
+
 func copyFile(src string, dst string, execute bool)  (err error) {
     srcFile, err := os.Open(src)
     if err != nil {
@@ -249,6 +298,17 @@ func create(path string) *os.File {
 		fail("Failed to create file %v error %v", path, err)
 	}
 	return file
+}
+
+func getarchname() string {
+	name := "pubsubsql-v" + VERSION + "-" + OS + "-"
+	switch ARCH {
+	case "32":
+		name += "386"
+	case "64":
+		name += "amd64"
+	}
+	return name
 }
 
 func targz(archiveFile string, dir string) {
@@ -322,4 +382,6 @@ func dozip(archiveFile string, dir string) {
 		fail("Failed to traverse directory %v %v", dir, err)
 	}
 }
+
+
 
