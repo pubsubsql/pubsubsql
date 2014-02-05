@@ -20,7 +20,7 @@ import (
 	"bufio"
 	"net"
 	"os"
-	"pubsubsql/client"
+	"github.com/PubSubSQL/client"
 	"strconv"
 	"strings"
 	"time"

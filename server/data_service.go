@@ -17,7 +17,7 @@
 package pubsubsql
 
 import (
-	"pubsubsql/client"
+	"github.com/PubSubSQL/client"
 )
 
 // requestItem is a container for client request and sender used to send back responses

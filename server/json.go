@@ -18,7 +18,7 @@ package pubsubsql
 
 import (
 	"bytes"
-	"pubsubsql/client"
+	"github.com/PubSubSQL/client"
 	"strconv"
 	"unicode/utf8"
 )

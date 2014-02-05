@@ -18,7 +18,7 @@ package pubsubsql
 
 import (
 	"net"
-	"pubsubsql/client"
+	"github.com/PubSubSQL/client"
 	"strconv"
 	"sync"
 )
