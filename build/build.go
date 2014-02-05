@@ -28,8 +28,6 @@ import (
 	"path/filepath"
 )
 
-var failCount = 0
-
 var OS = ""          //windows,linux
 var ARCH = ""        //32,64
 var VS_PLATFORM = "" //set automatically 
@@ -97,9 +95,12 @@ func buildServiceWindows() {
 }
 
 func buildServiceLinux() {
+	m := "m64"
+	if ARCH == "32" {
+		m = "m32"
+	}	
 	bin := "../../build/pubsubsql/bin/"
-	execute("make", "clean")
-	execute("make")
+	execute("make", "ARCH=" + m)
 	svc := "pubsubsqlsvc"
 	cp(svc, bin + svc, true)
 }
@@ -135,7 +136,6 @@ func print(str string, v ...interface{}) {
 }
 
 func fail(str string, v ...interface{}) {
-	failCount++	
 	print("ERROR: " + str, v...)
 	os.Exit(1)
 }
@@ -198,11 +198,7 @@ func start() {
 
 func done() {
 	emptyln();
-	if failCount > 0 {
-		print("BUILD FAILED")
-	} else {
-		print("BUILD SUCCEEDED")
-	}
+	print("BUILD SUCCEEDED")
 }
 
 func prepareStagingArea() {
