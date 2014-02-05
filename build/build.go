@@ -17,14 +17,14 @@
 package main
 
 import (
-	"flag"
-	"fmt"
-	"os"
-	"os/exec"
-	"io"
 	"archive/tar"
 	"archive/zip"
 	"compress/gzip"
+	"flag"
+	"fmt"
+	"io"
+	"os"
+	"os/exec"
 	"path/filepath"
 )
 
@@ -36,13 +36,13 @@ var PATH_SEPARATOR = ""
 var PATH_SLASH = ""
 var VERSION = "1.0.0"
 
-
 func main() {
-	start()	
+	start()
 	//
-	buildServer()	
+	buildServer()
 	buildService()
 	copyRootFiles()
+	copyGo();
 	createArchive()
 	//
 	done()
@@ -51,80 +51,94 @@ func main() {
 // server
 
 func buildServer() {
-	emptyln();
+	emptyln()
 	print("Building pubsubsql server...")
 	bin := "build/pubsubsql/bin/"
 	cd("..")
 	rm(serverFileName())
 	execute("go", "build")
-	cp(serverFileName(), bin + serverFileName(), true)
+	cp(serverFileName(), bin+serverFileName(), true)
 	cd("build")
 	success()
 }
 
 func serverFileName() string {
 	switch OS {
-		case "windows":
-			return "pubsubsql.exe"
-		default:
-			return "pubsubsql"
+	case "windows":
+		return "pubsubsql.exe"
+	default:
+		return "pubsubsql"
 	}
 }
 
 // service installer
 
 func buildService() {
-	emptyln();
-	print("Building service/installer...") 
-	cd("../service/" + OS)		
+	emptyln()
+	print("Building service/installer...")
+	cd("../service/" + OS)
 	switch OS {
-		case "linux":
-			buildServiceLinux()
-		default:
-			buildServiceWindows()
+	case "linux":
+		buildServiceLinux()
+	default:
+		buildServiceWindows()
 	}
-	cd("../../build")		
+	cd("../../build")
 	success()
 }
 
 func buildServiceWindows() {
 	bin := "../../build/pubsubsql/bin/"
-	execute("msbuild.exe", "/t:Clean,Build",  "/p:Configuration=Release", "/p:Platform=" + VS_PLATFORM)
+	execute("msbuild.exe", "/t:Clean,Build", "/p:Configuration=Release", "/p:Platform="+VS_PLATFORM)
 	svc := "pubsubsqlsvc.exe"
-	cp(svc, bin + svc, false)
+	cp(svc, bin+svc, false)
 }
 
 func buildServiceLinux() {
 	m := "m64"
 	if ARCH == "32" {
 		m = "m32"
-	}	
+	}
 	bin := "../../build/pubsubsql/bin/"
-	execute("make", "ARCH=" + m)
+	execute("make", "ARCH="+m)
 	svc := "pubsubsqlsvc"
-	cp(svc, bin + svc, true)
+	cp(svc, bin+svc, true)
 }
 
 // copy README LICENSE etc..
 
 func copyRootFiles() {
-	emptyln();
-	print("Coping root files...") 
-	cp("../LICENSE", "./pubsubsql/LICENSE", false)		
+	emptyln()
+	print("Copying root files...")
+	cp("../LICENSE", "./pubsubsql/LICENSE", false)
+	success()
+}
+
+func copyGo() {
+	emptyln()
+	print("Copying go files...")
+	mkdir("./pubsubsql/go/bin")			
+	mkdir("./pubsubsql/go/src/github.com/PubSubSQL/client")			
+	mkdir("./pubsubsql/go/pkg")			
+	cp("../../client/client.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/client.go", false)
+	cp("../../client/client_test.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/client_test.go", false)
+	cp("../../client/netheader.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/netheader.go", false)
+	cp("../../client/netheader_test.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/netheader_test.go", false)
+	cp("../../client/nethelper.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/nethelper.go", false)
 	success()
 }
 
 // create archive
 
 func createArchive() {
-	emptyln();	
-	print("Archiving files...") 
+	emptyln()
+	print("Archiving files...")
 	switch OS {
-		case "linux":
-			targz(getarchname() + ".tar.gz", "./pubsubsql")						
-		case "windows":
-			dozip(getarchname() + ".zip", "./pubsubsql")
-	}	
+	case "linux":
+		targz(getarchname()+".tar.gz", "./pubsubsql")
+	case "windows":
+		dozip(getarchname()+".zip", "./pubsubsql")
+	}
 	success()
 }
 
@@ -136,7 +150,7 @@ func print(str string, v ...interface{}) {
 }
 
 func fail(str string, v ...interface{}) {
-	print("ERROR: " + str, v...)
+	print("ERROR: "+str, v...)
 	os.Exit(1)
 }
 
@@ -145,12 +159,12 @@ func emptyln() {
 }
 
 func success() {
-	print("SUCCESS")	
+	print("SUCCESS")
 }
 
 func start() {
 	// read flags
-	flag.StringVar(&OS, "OS", "windows", "Operating System (linux,windows)")	
+	flag.StringVar(&OS, "OS", "windows", "Operating System (linux,windows)")
 	flag.StringVar(&ARCH, "ARCH", "", "Architecture (32,64)")
 	flag.StringVar(&GOROOT, "GOROOT", "", "Go root directory")
 	flag.Parse()
@@ -158,63 +172,63 @@ func start() {
 	flag.PrintDefaults()
 
 	print("BUILD STARTED")
-	emptyln();
+	emptyln()
 	// check OS 
 	switch OS {
-		case "windows":
-			PATH_SEPARATOR = ";"
-			PATH_SLASH = "\\";
-		case "linux":
-			PATH_SEPARATOR = ":"
-			PATH_SLASH = "/";
-		default:
-			fail("Unkown os %v", OS)
+	case "windows":
+		PATH_SEPARATOR = ";"
+		PATH_SLASH = "\\"
+	case "linux":
+		PATH_SEPARATOR = ":"
+		PATH_SLASH = "/"
+	default:
+		fail("Unkown os %v", OS)
 	}
 
 	// set up go build env
 	setenv("GOROOT", GOROOT)
 	path := getenv("PATH")
-	setenv("PATH", GOROOT + PATH_SLASH + "bin" + PATH_SEPARATOR + path)	
+	setenv("PATH", GOROOT+PATH_SLASH+"bin"+PATH_SEPARATOR+path)
 
 	// check ARCH
 	switch ARCH {
-		case "32":
-			setenv("GOARCH", "386")
-			VS_PLATFORM = "Win32"
-		case "64":
-			setenv("GOARCH", "amd64")
-			VS_PLATFORM = "x64"
-		default:
-			fail("Unkown architecture %v", ARCH)
+	case "32":
+		setenv("GOARCH", "386")
+		VS_PLATFORM = "Win32"
+	case "64":
+		setenv("GOARCH", "amd64")
+		VS_PLATFORM = "x64"
+	default:
+		fail("Unkown architecture %v", ARCH)
 
 	}
 
 	// display current go env variables
 	execute("go", "env")
 	print("Preparing staging area...")
-	prepareStagingArea();	
+	prepareStagingArea()
 	success()
 }
 
 func done() {
-	emptyln();
+	emptyln()
 	print("BUILD SUCCEEDED")
 }
 
 func prepareStagingArea() {
 	rm("pubsubsql")
-	mkdir("./pubsubsql/bin")	
+	mkdir("./pubsubsql/bin")
 }
 
 func mkdir(path string) {
-	err := os.MkdirAll(path, os.ModeDir | os.ModePerm) 
+	err := os.MkdirAll(path, os.ModeDir|os.ModePerm)
 	if err != nil {
 		fail("Failed to create directory: %v error: %v", path, err)
 	}
 }
 
 func cd(path string) {
-	err := os.Chdir(path)  				
+	err := os.Chdir(path)
 	if err != nil {
 		fail("Failed to change directory: %v error: %v", path, err)
 	}
@@ -228,39 +242,39 @@ func rm(path string) {
 }
 
 func execute(name string, arg ...string) {
-	cmd := exec.Command(name, arg ...)
+	cmd := exec.Command(name, arg...)
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
 	err := cmd.Run()
 	if err != nil {
-		fail("Failed to execute command %v", err)	
-	}	
+		fail("Failed to execute command %v", err)
+	}
 }
 
 func setenv(key string, value string) {
 	err := os.Setenv(key, value)
 	if err != nil {
-		fail("Failed to set environment variable key:%v, value:% error:%v", key, value, err)	
-	}	
+		fail("Failed to set environment variable key:%v, value:% error:%v", key, value, err)
+	}
 }
 
 func getenv(key string) string {
 	return os.Getenv(key)
 }
 
-func copyFile(src string, dst string, execute bool)  (err error) {
-    srcFile, err := os.Open(src)
-    if err != nil {
+func copyFile(src string, dst string, execute bool) (err error) {
+	srcFile, err := os.Open(src)
+	if err != nil {
 		return err
-    }
-    defer srcFile.Close()
+	}
+	defer srcFile.Close()
 
-    dstFile, err := os.Create(dst)
-    if err != nil {
-        return
-    }
-    defer dstFile.Close()
+	dstFile, err := os.Create(dst)
+	if err != nil {
+		return
+	}
+	defer dstFile.Close()
 
 	if OS == "linux" {
 		err = dstFile.Chmod(os.ModePerm)
@@ -269,19 +283,19 @@ func copyFile(src string, dst string, execute bool)  (err error) {
 		}
 	}
 
-    _, err = io.Copy(dstFile, srcFile)
+	_, err = io.Copy(dstFile, srcFile)
 	return err
 }
 
 func cp(src string, dst string, execute bool) {
 	err := copyFile(src, dst, execute)
 	if err != nil {
-		fail("Failed to copy file %v", err)	
-	}	
+		fail("Failed to copy file %v", err)
+	}
 }
 
 func open(path string) *os.File {
-	file, err := os.Open(path)	
+	file, err := os.Open(path)
 	if err != nil {
 		fail("Failed to open file %v error %v", path, err)
 	}
@@ -309,16 +323,16 @@ func getarchname() string {
 
 func targz(archiveFile string, dir string) {
 	// file
-	file := create(archiveFile)	
+	file := create(archiveFile)
 	defer file.Close()
 	// gzip
-	gzipWriter := gzip.NewWriter(file)	
+	gzipWriter := gzip.NewWriter(file)
 	defer gzipWriter.Close()
 	// tar 
 	tarWriter := tar.NewWriter(gzipWriter)
 	defer tarWriter.Close()
 	//	
-	walk := func (path string, fileInfo os.FileInfo, err error) error {
+	walk := func(path string, fileInfo os.FileInfo, err error) error {
 		if fileInfo.Mode().IsDir() {
 			return nil
 		}
@@ -337,7 +351,7 @@ func targz(archiveFile string, dir string) {
 		if err != nil {
 			fail("Failed to write tar header %v", err)
 		}
-		_, err = io.Copy(tarWriter, fileToWrite)		
+		_, err = io.Copy(tarWriter, fileToWrite)
 		return nil
 	}
 	//
@@ -355,7 +369,7 @@ func dozip(archiveFile string, dir string) {
 	zipWriter := zip.NewWriter(file)
 	defer zipWriter.Close()
 	//
-	walk := func (path string, fileInfo os.FileInfo, err error) error {
+	walk := func(path string, fileInfo os.FileInfo, err error) error {
 		if fileInfo.Mode().IsDir() {
 			return nil
 		}
@@ -364,12 +378,12 @@ func dozip(archiveFile string, dir string) {
 		}
 		print(path)
 		fileToWrite := open(path)
-		var w io.Writer 
-		w, err = zipWriter.Create(path)	
+		var w io.Writer
+		w, err = zipWriter.Create(path)
 		if err != nil {
 			fail("Failed to create zip writer %v", err)
 		}
-		_, err = io.Copy(w, fileToWrite)		
+		_, err = io.Copy(w, fileToWrite)
 		return nil
 	}
 	//
@@ -378,6 +392,3 @@ func dozip(archiveFile string, dir string) {
 		fail("Failed to traverse directory %v %v", dir, err)
 	}
 }
-
-
-
