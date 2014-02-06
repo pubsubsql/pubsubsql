@@ -163,7 +163,7 @@ func buildJava() {
 	cp("../../java/src/ClientTest/run.sh", "./pubsubsql/java/src/ClientTest/run.sh", true)
 	cp("../../java/src/ClientTest/ClientTest.java", "./pubsubsql/java/src/ClientTest/ClientTest.java", false)
 	// copy PubSubSQLGUI 
-	cp("../../java/src/PubSubSQLGUI/run.sh", "./pubsubsql/java/src/PubSubSQLGUI/run.sh", false)
+	cp("../../java/src/PubSubSQLGUI/run.sh", "./pubsubsql/java/src/PubSubSQLGUI/run.sh", true)
 	cp("../../java/src/PubSubSQLGUI/AboutForm.java", "./pubsubsql/java/src/PubSubSQLGUI/AboutForm.java", false)
 	cp("../../java/src/PubSubSQLGUI/AboutPanel.java", "./pubsubsql/java/src/PubSubSQLGUI/AboutPanel.java", false)
 	cp("../../java/src/PubSubSQLGUI/ConnectForm.java", "./pubsubsql/java/src/PubSubSQLGUI/ConnectForm.java", false)
