@@ -142,7 +142,53 @@ func buildJava() {
 	shell("./build.sh")
 
 	cd("../../../pubsubsql/build")
+	// create directories
+	mkdir("./pubsubsql/java/bin")			
+	mkdir("./pubsubsql/java/lib")			
+	mkdir("./pubsubsql/java/src")			
+	mkdir("./pubsubsql/java/src/Client")			
+	mkdir("./pubsubsql/java/src/ClientTest")			
+	mkdir("./pubsubsql/java/src/PubSubSQLGUI")			
+	mkdir("./pubsubsql/java/src/PubSubSQLGUI/images")			
+	cp("../../java/src/manifest", "./pubsubsql/java/src/manifest", false)
+	// copy Client
+	cp("../../java/src/Client/build.sh", "./pubsubsql/java/src/Client/build.sh", true)
+	cp("../../java/src/Client/ClientImpl.java", "./pubsubsql/java/src/Client/ClientImpl.java", false)
+	cp("../../java/src/Client/Client.java", "./pubsubsql/java/src/Client/Client.java", false)
+	cp("../../java/src/Client/Factory.java", "./pubsubsql/java/src/Client/Factory.java", false)
+	cp("../../java/src/Client/NetHeader.java", "./pubsubsql/java/src/Client/NetHeader.java", false)
+	cp("../../java/src/Client/NetHelper.java", "./pubsubsql/java/src/Client/NetHelper.java", false)
+	cp("../../java/src/Client/ResponseData.java", "./pubsubsql/java/src/Client/ResponseData.java", false)
+	// copy ClientTest
+	cp("../../java/src/ClientTest/run.sh", "./pubsubsql/java/src/ClientTest/run.sh", true)
+	cp("../../java/src/ClientTest/ClientTest.java", "./pubsubsql/java/src/ClientTest/ClientTest.java", false)
+	// copy PubSubSQLGUI 
+	cp("../../java/src/PubSubSQLGUI/run.sh", "./pubsubsql/java/src/PubSubSQLGUI/run.sh", false)
+	cp("../../java/src/PubSubSQLGUI/AboutForm.java", "./pubsubsql/java/src/PubSubSQLGUI/AboutForm.java", false)
+	cp("../../java/src/PubSubSQLGUI/AboutPanel.java", "./pubsubsql/java/src/PubSubSQLGUI/AboutPanel.java", false)
+	cp("../../java/src/PubSubSQLGUI/ConnectForm.java", "./pubsubsql/java/src/PubSubSQLGUI/ConnectForm.java", false)
+	cp("../../java/src/PubSubSQLGUI/ConnectPanel.java", "./pubsubsql/java/src/PubSubSQLGUI/ConnectPanel.java", false)
+	cp("../../java/src/PubSubSQLGUI/SimulatorForm.java", "./pubsubsql/java/src/PubSubSQLGUI/SimulatorForm.java", false)
+	cp("../../java/src/PubSubSQLGUI/SimulatorPanel.java", "./pubsubsql/java/src/PubSubSQLGUI/SimulatorPanel.java", false)
+	cp("../../java/src/PubSubSQLGUI/Simulator.java", "./pubsubsql/java/src/PubSubSQLGUI/Simulator.java", false)
+	cp("../../java/src/PubSubSQLGUI/MainForm.java", "./pubsubsql/java/src/PubSubSQLGUI/MainForm.java", false)
+	cp("../../java/src/PubSubSQLGUI/PubSubSQLGUI.java", "./pubsubsql/java/src/PubSubSQLGUI/PubSubSQLGUI.java", false)
+	cp("../../java/src/PubSubSQLGUI/TableDataset.java", "./pubsubsql/java/src/PubSubSQLGUI/TableDataset.java", false)
+	cp("../../java/src/PubSubSQLGUI/TableView.java", "./pubsubsql/java/src/PubSubSQLGUI/TableView.java", false)
+	cp("../../java/src/PubSubSQLGUI/images/ConnectLocal.png", "./pubsubsql/java/src/PubSubSQLGUI/images/ConnectLocal.png", false)
+	cp("../../java/src/PubSubSQLGUI/images/Connect.png", "./pubsubsql/java/src/PubSubSQLGUI/images/Connect.png", false)
+	cp("../../java/src/PubSubSQLGUI/images/Disconnect.png", "./pubsubsql/java/src/PubSubSQLGUI/images/Disconnect.png", false)
+	cp("../../java/src/PubSubSQLGUI/images/Execute2.png", "./pubsubsql/java/src/PubSubSQLGUI/images/Execute2.png", false)
+	cp("../../java/src/PubSubSQLGUI/images/New.png", "./pubsubsql/java/src/PubSubSQLGUI/images/New.png", false)
+	cp("../../java/src/PubSubSQLGUI/images/Stop.png", "./pubsubsql/java/src/PubSubSQLGUI/images/Stop.png", false)
 
+	// copy binaries
+	cp("../../java/lib/gson-2.2.4.jar", "./pubsubsql/java/lib/gson-2.2.4.jar", false)
+	cp("../../java/lib/pubsubsql.jar", "./pubsubsql/java/lib/pubsubsql.jar", false)
+	cp("../../java/lib/gson-2.2.4.jar", "./pubsubsql/lib/gson-2.2.4.jar", false)
+	cp("../../java/lib/pubsubsql.jar", "./pubsubsql/lib/pubsubsql.jar", false)
+	cp("../../java/bin/pubsubsqlgui.jar", "./pubsubsql/bin/pubsubsqlgui.jar", false)
+	//
 	success()
 }
 
@@ -236,6 +282,7 @@ func done() {
 func prepareStagingArea() {
 	rm("pubsubsql")
 	mkdir("./pubsubsql/bin")
+	mkdir("./pubsubsql/lib")
 }
 
 func mkdir(path string) {
