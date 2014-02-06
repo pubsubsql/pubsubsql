@@ -43,6 +43,7 @@ func main() {
 	buildService()
 	copyRootFiles()
 	copyGo();
+	buildJava();	
 	createArchive()
 	//
 	done()
@@ -125,6 +126,23 @@ func copyGo() {
 	cp("../../client/netheader.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/netheader.go", false)
 	cp("../../client/netheader_test.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/netheader_test.go", false)
 	cp("../../client/nethelper.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/nethelper.go", false)
+	success()
+}
+
+func buildJava() {
+	emptyln()
+	print("Building Java binaries...")
+
+	print("Building Client...")
+	cd("../../java/src/Client")
+	shell("./build.sh")
+
+	print("Building PubSubSQLGUI...")
+	cd("../PubSubSQLGUI")
+	shell("./build.sh")
+
+	cd("../../../pubsubsql/build")
+
 	success()
 }
 
@@ -234,6 +252,14 @@ func cd(path string) {
 	}
 }
 
+func pwd() string {
+	dir, err := os.Getwd()
+	if err != nil {
+		fail("Failed to get current directory: error: %v", err)
+	}
+	return dir
+}
+
 func rm(path string) {
 	err := os.RemoveAll(path)
 	if err != nil {
@@ -249,6 +275,17 @@ func execute(name string, arg ...string) {
 	err := cmd.Run()
 	if err != nil {
 		fail("Failed to execute command %v", err)
+	}
+}
+
+func shell(arg string) {
+	cmd := exec.Command("/bin/sh", arg)		
+	cmd.Stdout = os.Stdout
+	cmd.Stderr = os.Stderr
+	cmd.Stdin = os.Stdin
+	err := cmd.Run()
+	if err != nil {
+		fail("Failed to execute shell %v", err)
 	}
 }
 
