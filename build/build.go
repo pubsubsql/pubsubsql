@@ -44,6 +44,7 @@ func main() {
 	copyRootFiles()
 	copyGo();
 	buildJava();	
+	buildDotnet();
 	createArchive()
 	//
 	done()
@@ -194,6 +195,16 @@ func buildJava() {
 	success()
 }
 
+func buildDotnet() {
+	cd("../../dotnet")
+	execute("msbuild.exe", "All.sln", "/t:Clean,Build", "/p:Configuration=Release", "/p:Platform=Any CPU")
+	//execute("msbuild.exe", "All.sln", )
+	bin := "../pubsubsql/build/pubsubsql/bin/"
+	cp("bin/pubsubsql.dll", bin + "pubsubsql.dll", false)
+	cp("bin/pubsubsqlgui.exe", bin + "pubsubsqlgui.exe", false)
+	cd("../pubsubsql/build")	
+}
+
 // create archive
 
 func createArchive() {
@@ -203,7 +214,7 @@ func createArchive() {
 	case "linux":
 		targz(getarchname()+".tar.gz", "./pubsubsql")
 	case "windows":
-		dozip(getarchname()+".zip", "./pubsubsql")
+		dozip(getarchname()+".zip", "pubsubsql")
 	}
 	success()
 }
@@ -488,11 +499,11 @@ func dozip(archiveFile string, dir string) {
 	defer zipWriter.Close()
 	//
 	walk := func(path string, fileInfo os.FileInfo, err error) error {
-		if fileInfo.Mode().IsDir() {
-			return nil
-		}
 		if err != nil {
 			fail("Failed to traverse directory structure %v", err)
+		}
+		if fileInfo.Mode().IsDir() {
+			return nil
 		}
 		print(path)
 		fileToWrite := open(path)
