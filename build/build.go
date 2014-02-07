@@ -137,11 +137,11 @@ func buildJava() {
 
 	print("Building Client...")
 	cd("../../java/src/Client")
-	shell(shellExt("build"))
+	shell(shellScript("build"))
 
 	print("Building PubSubSQLGUI...")
 	cd("../PubSubSQLGUI")
-	shell(shellExt("build"))
+	shell(shellScript("build"))
 
 	cd("../../../pubsubsql/build")
 	// create directories
@@ -154,7 +154,7 @@ func buildJava() {
 	mkdir("./pubsubsql/java/src/PubSubSQLGUI/images")			
 	cp("../../java/src/manifest", "./pubsubsql/java/src/manifest", false)
 	// copy Client
-	cp("../../java/src/Client/build.sh", "./pubsubsql/java/src/Client/build.sh", true)
+	cp(shellExt("../../java/src/Client/build"), shellExt("./pubsubsql/java/src/Client/build"), true)
 	cp("../../java/src/Client/ClientImpl.java", "./pubsubsql/java/src/Client/ClientImpl.java", false)
 	cp("../../java/src/Client/Client.java", "./pubsubsql/java/src/Client/Client.java", false)
 	cp("../../java/src/Client/Factory.java", "./pubsubsql/java/src/Client/Factory.java", false)
@@ -162,10 +162,10 @@ func buildJava() {
 	cp("../../java/src/Client/NetHelper.java", "./pubsubsql/java/src/Client/NetHelper.java", false)
 	cp("../../java/src/Client/ResponseData.java", "./pubsubsql/java/src/Client/ResponseData.java", false)
 	// copy ClientTest
-	cp("../../java/src/ClientTest/run.sh", "./pubsubsql/java/src/ClientTest/run.sh", true)
+	cp(shellExt("../../java/src/ClientTest/run"), shellExt("./pubsubsql/java/src/ClientTest/run"), true)
 	cp("../../java/src/ClientTest/ClientTest.java", "./pubsubsql/java/src/ClientTest/ClientTest.java", false)
 	// copy PubSubSQLGUI 
-	cp("../../java/src/PubSubSQLGUI/run.sh", "./pubsubsql/java/src/PubSubSQLGUI/run.sh", true)
+	cp(shellExt("../../java/src/PubSubSQLGUI/run"), shellExt("./pubsubsql/java/src/PubSubSQLGUI/run"), true)
 	cp("../../java/src/PubSubSQLGUI/AboutForm.java", "./pubsubsql/java/src/PubSubSQLGUI/AboutForm.java", false)
 	cp("../../java/src/PubSubSQLGUI/AboutPanel.java", "./pubsubsql/java/src/PubSubSQLGUI/AboutPanel.java", false)
 	cp("../../java/src/PubSubSQLGUI/ConnectForm.java", "./pubsubsql/java/src/PubSubSQLGUI/ConnectForm.java", false)
@@ -330,9 +330,20 @@ func execute(name string, arg ...string) {
 func shellExt(file string) string {
 	switch OS {
 	case "linux":
-		return "./" + file + ".sh"
+		return file + ".sh"
 	case "windows": 
 		return file + ".bat"
+	}
+	fail("Invalid OS")
+	return ""
+}
+
+func shellScript(file string) string {
+	switch OS {
+	case "linux":
+		return "./" + shellExt(file) 
+	case "windows": 
+		return shellExt(file)
 	}
 	fail("Invalid OS")
 	return ""
