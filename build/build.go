@@ -129,17 +129,19 @@ func copyGo() {
 	success()
 }
 
+
+
 func buildJava() {
 	emptyln()
 	print("Building Java binaries...")
 
 	print("Building Client...")
 	cd("../../java/src/Client")
-	shell("./build.sh")
+	shell(shellExt("build"))
 
 	print("Building PubSubSQLGUI...")
 	cd("../PubSubSQLGUI")
-	shell("./build.sh")
+	shell(shellExt("build"))
 
 	cd("../../../pubsubsql/build")
 	// create directories
@@ -325,8 +327,29 @@ func execute(name string, arg ...string) {
 	}
 }
 
+func shellExt(file string) string {
+	switch OS {
+	case "linux":
+		return "./" + file + ".sh"
+	case "windows": 
+		return file + ".bat"
+	}
+	fail("Invalid OS")
+	return ""
+}
+
 func shell(arg string) {
-	cmd := exec.Command("/bin/sh", arg)		
+	println(arg)
+	var cmd *exec.Cmd	
+	switch OS {
+	case "linux":
+		cmd = exec.Command("/bin/sh", arg)		
+	case "windows":
+		cmd = exec.Command(arg)		
+	default:
+		fail("Invalid OS")
+	}
+	//
 	cmd.Stdout = os.Stdout
 	cmd.Stderr = os.Stderr
 	cmd.Stdin = os.Stdin
