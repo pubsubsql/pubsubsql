@@ -59,7 +59,7 @@ func buildServer() {
 	cd("..")
 	rm(serverFileName())
 	execute("go", "build")
-	cp(serverFileName(), bin+serverFileName(), true)
+	cp(serverFileName(), bin+serverFileName())
 	cd("build")
 	success()
 }
@@ -93,7 +93,7 @@ func buildServiceWindows() {
 	bin := "../../build/pubsubsql/bin/"
 	execute("msbuild.exe", "/t:Clean,Build", "/p:Configuration=Release", "/p:Platform="+VS_PLATFORM)
 	svc := "pubsubsqlsvc.exe"
-	cp(svc, bin+svc, false)
+	cp(svc, bin+svc)
 }
 
 func buildServiceLinux() {
@@ -104,7 +104,7 @@ func buildServiceLinux() {
 	bin := "../../build/pubsubsql/bin/"
 	execute("make", "ARCH="+m)
 	svc := "pubsubsqlsvc"
-	cp(svc, bin+svc, true)
+	cp(svc, bin+svc)
 }
 
 // copy README LICENSE etc..
@@ -112,25 +112,26 @@ func buildServiceLinux() {
 func copyRootFiles() {
 	emptyln()
 	print("Copying root files...")
-	cp("../LICENSE", "./pubsubsql/LICENSE", false)
+	cp("../LICENSE", "./pubsubsql/LICENSE")
 	success()
 }
 
 func copyGo() {
 	emptyln()
 	print("Copying go files...")
-	mkdir("./pubsubsql/go/bin")			
-	mkdir("./pubsubsql/go/src/github.com/PubSubSQL/client")			
-	mkdir("./pubsubsql/go/pkg")			
-	cp("../../client/client.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/client.go", false)
-	cp("../../client/client_test.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/client_test.go", false)
-	cp("../../client/netheader.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/netheader.go", false)
-	cp("../../client/netheader_test.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/netheader_test.go", false)
-	cp("../../client/nethelper.go", "./pubsubsql/go/src/github.com/PubSubSQL/client/nethelper.go", false)
+	mkdir("./pubsubsql/samples/go/bin")			
+	mkdir("./pubsubsql/samples/go/src/github.com/pubsubsql/client")			
+	mkdir("./pubsubsql/samples/go/pkg")			
+	var f fileCopy
+	f.from = "../../client"
+	f.to = "./pubsubsql/samples/go/src/github.com/pubsubsql/client"
+	f.cp("client.go")
+	f.cp("client_test.go")
+	f.cp("netheader.go")
+	f.cp("netheader_test.go")
+	f.cp("nethelper.go")
 	success()
 }
-
-
 
 func buildJava() {
 	emptyln()
@@ -146,63 +147,156 @@ func buildJava() {
 
 	cd("../../../pubsubsql/build")
 	// create directories
-	mkdir("./pubsubsql/java/bin")			
-	mkdir("./pubsubsql/java/lib")			
-	mkdir("./pubsubsql/java/src")			
-	mkdir("./pubsubsql/java/src/Client")			
-	mkdir("./pubsubsql/java/src/ClientTest")			
-	mkdir("./pubsubsql/java/src/PubSubSQLGUI")			
-	mkdir("./pubsubsql/java/src/PubSubSQLGUI/images")			
-	cp("../../java/src/manifest", "./pubsubsql/java/src/manifest", false)
-	// copy Client
-	cp(shellExt("../../java/src/Client/build"), shellExt("./pubsubsql/java/src/Client/build"), true)
-	cp("../../java/src/Client/ClientImpl.java", "./pubsubsql/java/src/Client/ClientImpl.java", false)
-	cp("../../java/src/Client/Client.java", "./pubsubsql/java/src/Client/Client.java", false)
-	cp("../../java/src/Client/Factory.java", "./pubsubsql/java/src/Client/Factory.java", false)
-	cp("../../java/src/Client/NetHeader.java", "./pubsubsql/java/src/Client/NetHeader.java", false)
-	cp("../../java/src/Client/NetHelper.java", "./pubsubsql/java/src/Client/NetHelper.java", false)
-	cp("../../java/src/Client/ResponseData.java", "./pubsubsql/java/src/Client/ResponseData.java", false)
-	// copy ClientTest
-	cp(shellExt("../../java/src/ClientTest/run"), shellExt("./pubsubsql/java/src/ClientTest/run"), true)
-	cp("../../java/src/ClientTest/ClientTest.java", "./pubsubsql/java/src/ClientTest/ClientTest.java", false)
-	// copy PubSubSQLGUI 
-	cp(shellExt("../../java/src/PubSubSQLGUI/run"), shellExt("./pubsubsql/java/src/PubSubSQLGUI/run"), true)
-	cp("../../java/src/PubSubSQLGUI/AboutForm.java", "./pubsubsql/java/src/PubSubSQLGUI/AboutForm.java", false)
-	cp("../../java/src/PubSubSQLGUI/AboutPanel.java", "./pubsubsql/java/src/PubSubSQLGUI/AboutPanel.java", false)
-	cp("../../java/src/PubSubSQLGUI/ConnectForm.java", "./pubsubsql/java/src/PubSubSQLGUI/ConnectForm.java", false)
-	cp("../../java/src/PubSubSQLGUI/ConnectPanel.java", "./pubsubsql/java/src/PubSubSQLGUI/ConnectPanel.java", false)
-	cp("../../java/src/PubSubSQLGUI/SimulatorForm.java", "./pubsubsql/java/src/PubSubSQLGUI/SimulatorForm.java", false)
-	cp("../../java/src/PubSubSQLGUI/SimulatorPanel.java", "./pubsubsql/java/src/PubSubSQLGUI/SimulatorPanel.java", false)
-	cp("../../java/src/PubSubSQLGUI/Simulator.java", "./pubsubsql/java/src/PubSubSQLGUI/Simulator.java", false)
-	cp("../../java/src/PubSubSQLGUI/MainForm.java", "./pubsubsql/java/src/PubSubSQLGUI/MainForm.java", false)
-	cp("../../java/src/PubSubSQLGUI/PubSubSQLGUI.java", "./pubsubsql/java/src/PubSubSQLGUI/PubSubSQLGUI.java", false)
-	cp("../../java/src/PubSubSQLGUI/TableDataset.java", "./pubsubsql/java/src/PubSubSQLGUI/TableDataset.java", false)
-	cp("../../java/src/PubSubSQLGUI/TableView.java", "./pubsubsql/java/src/PubSubSQLGUI/TableView.java", false)
-	cp("../../java/src/PubSubSQLGUI/images/ConnectLocal.png", "./pubsubsql/java/src/PubSubSQLGUI/images/ConnectLocal.png", false)
-	cp("../../java/src/PubSubSQLGUI/images/Connect.png", "./pubsubsql/java/src/PubSubSQLGUI/images/Connect.png", false)
-	cp("../../java/src/PubSubSQLGUI/images/Disconnect.png", "./pubsubsql/java/src/PubSubSQLGUI/images/Disconnect.png", false)
-	cp("../../java/src/PubSubSQLGUI/images/Execute2.png", "./pubsubsql/java/src/PubSubSQLGUI/images/Execute2.png", false)
-	cp("../../java/src/PubSubSQLGUI/images/New.png", "./pubsubsql/java/src/PubSubSQLGUI/images/New.png", false)
-	cp("../../java/src/PubSubSQLGUI/images/Stop.png", "./pubsubsql/java/src/PubSubSQLGUI/images/Stop.png", false)
+	mkdir("./pubsubsql/samples/java/bin")			
+	mkdir("./pubsubsql/samples/java/lib")			
+	mkdir("./pubsubsql/samples/java/src")			
+	mkdir("./pubsubsql/samples/java/src/Client")			
+	mkdir("./pubsubsql/samples/java/src/ClientTest")			
+	mkdir("./pubsubsql/samples/java/src/PubSubSQLGUI")			
+	mkdir("./pubsubsql/samples/java/src/PubSubSQLGUI/images")			
+	cp("../../java/src/manifest", "./pubsubsql/samples/java/src/manifest")
 
+	var f fileCopy
+	// copy Client
+	f.from = "../../java/src/Client"
+	f.to = "./pubsubsql/samples/java/src/Client"
+	f.cp(shellExt("build"))
+	f.cp("ClientImpl.java")
+	f.cp("Client.java")
+	f.cp("Factory.java")
+	f.cp("NetHeader.java")
+	f.cp("NetHelper.java")
+	f.cp("ResponseData.java")
+	// copy ClientTest
+	f.from = "../../java/src/ClientTest"
+	f.to = "./pubsubsql/samples/java/src/ClientTest"
+	f.cp(shellExt("run"))
+	f.cp("ClientTest.java")
+	// copy PubSubSQLGUI 
+	f.from = "../../java/src/PubSubSQLGUI"
+	f.to = "./pubsubsql/samples/java/src/PubSubSQLGUI"
+	f.cp(shellExt("run"))
+	f.cp("AboutForm.java")
+	f.cp("AboutPanel.java")
+	f.cp("ConnectForm.java")
+	f.cp("ConnectPanel.java")
+	f.cp("SimulatorForm.java")
+	f.cp("SimulatorPanel.java")
+	f.cp("Simulator.java")
+	f.cp("MainForm.java")
+	f.cp("PubSubSQLGUI.java")
+	f.cp("TableDataset.java")
+	f.cp("TableView.java")
+	// images
+	f.from += "/images"
+	f.to += "/images"
+	f.cp("ConnectLocal.png")
+	f.cp("Connect.png")
+	f.cp("Disconnect.png")
+	f.cp("Execute2.png")
+	f.cp("New.png")
+	f.cp("Stop.png")
 	// copy binaries
-	cp("../../java/lib/gson-2.2.4.jar", "./pubsubsql/java/lib/gson-2.2.4.jar", false)
-	cp("../../java/lib/pubsubsql.jar", "./pubsubsql/java/lib/pubsubsql.jar", false)
-	cp("../../java/lib/gson-2.2.4.jar", "./pubsubsql/lib/gson-2.2.4.jar", false)
-	cp("../../java/lib/pubsubsql.jar", "./pubsubsql/lib/pubsubsql.jar", false)
-	cp("../../java/bin/pubsubsqlgui.jar", "./pubsubsql/bin/pubsubsqlgui.jar", false)
+	f.from = "../../java/lib"  
+	f.to = "./pubsubsql/samples/java/lib"
+	f.cp("gson-2.2.4.jar")
+	f.cp("pubsubsql.jar")
 	//
+	f.to = "./pubsubsql/lib"
+	f.cp("gson-2.2.4.jar")
+	f.cp("pubsubsql.jar")
+
+	cp("../../java/bin/pubsubsqlgui.jar", "./pubsubsql/bin/pubsubsqlgui.jar")
 	success()
 }
 
 func buildDotnet() {
+	emptyln()
+	print("Building .Net binaries...")
+	//
 	cd("../../dotnet")
 	execute("msbuild.exe", "All.sln", "/t:Clean,Build", "/p:Configuration=Release", "/p:Platform=Any CPU")
-	//execute("msbuild.exe", "All.sln", )
-	bin := "../pubsubsql/build/pubsubsql/bin/"
-	cp("bin/pubsubsql.dll", bin + "pubsubsql.dll", false)
-	cp("bin/pubsubsqlgui.exe", bin + "pubsubsqlgui.exe", false)
-	cd("../pubsubsql/build")	
+	// create directories
+	
+	cd("../../pubsubsql/pubsubsql/build/pubsubsql/samples")
+	mkdir("dotNet/bin")			
+	mkdir("dotNet/Client")			
+	mkdir("dotNet/ClientTest")			
+	mkdir("dotNet/PubSubSQLGUI")			
+	mkdir("dotNet/PubSubSQLGUI/Properties")			
+	mkdir("dotNet/PubSubSQLGUI/images")			
+
+	//root
+	cd("../../../..")
+
+	var f fileCopy
+	// copy binaries
+	f.from = "dotnet/bin"
+	f.to = "pubsubsql/build/pubsubsql/bin/"
+	f.cp("pubsubsql.dll")
+	f.cp("pubsubsqlgui.exe")
+
+	cp("dotnet/All.sln", "pubsubsql/build/pubsubsql/samples/dotNet/All.sln")
+	// copy Client
+	f.from = "dotnet/Client"
+	f.to = "pubsubsql/build/pubsubsql/samples/dotNet/Client"
+	f.cp("Client.csproj")
+	f.cp("AssemblyInfo.cs")
+	f.cp("Client.cs")
+	f.cp("NetHeader.cs")
+	f.cp("NetHelper.cs")
+	// ClientTest
+	f.from = "dotnet/ClientTest"
+	f.to = "pubsubsql/build/pubsubsql/samples/dotNet/ClientTest"
+	f.cp("ClientTest.csproj")
+	f.cp("AssemblyInfo.cs")
+	f.cp("ClientTest.cs")
+	f.cp("NetHeaderTest.cs")
+	f.cp("NetHelperTest.cs")
+	// PubSubSQLGUI	
+	f.from = "dotnet/PubSubSQLGUI"
+	f.to = "pubsubsql/build/pubsubsql/samples/dotNet/PubSubSQLGUI"
+	f.cp("PubSubSQLGUI.csproj")
+	f.cp("AboutForm.cs")		
+	f.cp("AboutForm.Designer.cs")		
+	f.cp("AboutForm.resx")		
+	f.cp("ConnectForm.cs")		
+	f.cp("ConnectForm.Designer.cs")		
+	f.cp("ConnectForm.resx")		
+	f.cp("SimulatorForm.cs")		
+	f.cp("SimulatorForm.Designer.cs")		
+	f.cp("SimulatorForm.resx")		
+	f.cp("MainForm.cs")		
+	f.cp("MainForm.Designer.cs")		
+	f.cp("MainForm.resx")		
+	f.cp("Simulator.cs")		
+	f.cp("ListViewDataset.cs")		
+	f.cp("ListViewDoubleBuffered.cs")		
+	f.cp("Program.cs")		
+	f.cp("Resources.Designer.cs")		
+	// PubSubSQLGUI/Properties
+	f.from = "dotnet/PubSubSQLGUI/Properties"
+	f.to = "pubsubsql/build/pubsubsql/samples/dotNet/PubSubSQLGUI/Properties"
+	f.cp("AssemblyInfo.cs")		
+	f.cp("Resources.Designer.cs")		
+	f.cp("Resources.resx")		
+	f.cp("Settings.Designer.cs")		
+	f.cp("Settings.settings")		
+	f.cp("Settings1.Designer.cs")		
+	// PubSubSQLGUI/images
+	f.from = "dotnet/PubSubSQLGUI/images"
+	f.to = "pubsubsql/build/pubsubsql/samples/dotNet/PubSubSQLGUI/images"
+	f.cp("Connect.bmp")		
+	f.cp("ConnectLocal.bmp")		
+	f.cp("Disconnect.bmp")		
+	f.cp("Execute.bmp")		
+	f.cp("Execute2.bmp")		
+	f.cp("New.bmp")		
+	f.cp("Stop.bmp")		
+	f.cp("pubsub.ico")		
+
+	cd("pubsubsql/build")
+	success()
 }
 
 // create archive
@@ -296,6 +390,7 @@ func prepareStagingArea() {
 	rm("pubsubsql")
 	mkdir("./pubsubsql/bin")
 	mkdir("./pubsubsql/lib")
+	mkdir("./pubsubsql/samples")
 }
 
 func mkdir(path string) {
@@ -392,7 +487,9 @@ func getenv(key string) string {
 	return os.Getenv(key)
 }
 
-func copyFile(src string, dst string, execute bool) (err error) {
+// copy
+
+func copyFile(src string, dst string) (err error) {
 	srcFile, err := os.Open(src)
 	if err != nil {
 		return err
@@ -416,12 +513,23 @@ func copyFile(src string, dst string, execute bool) (err error) {
 	return err
 }
 
-func cp(src string, dst string, execute bool) {
-	err := copyFile(src, dst, execute)
+func cp(src string, dst string) {
+	err := copyFile(src, dst)
 	if err != nil {
 		fail("Failed to copy file %v", err)
 	}
 }
+
+type fileCopy struct {
+	from string
+	to string
+}
+
+func (this *fileCopy) cp(file string) {
+	cp(this.from + "/" + file, this.to + "/" + file)	
+}
+
+//
 
 func open(path string) *os.File {
 	file, err := os.Open(path)
