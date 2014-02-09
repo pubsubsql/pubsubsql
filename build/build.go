@@ -199,10 +199,12 @@ func buildJava() {
 	f.to = "./pubsubsql/samples/java/lib"
 	f.cp("gson-2.2.4.jar")
 	f.cp("pubsubsql.jar")
+	f.cp("pubsubsql-javadoc.jar")
 	//
 	f.to = "./pubsubsql/lib"
 	f.cp("gson-2.2.4.jar")
 	f.cp("pubsubsql.jar")
+	f.cp("pubsubsql-javadoc.jar")
 
 	cp("../../java/bin/pubsubsqlgui.jar", "./pubsubsql/bin/pubsubsqlgui.jar")
 	success()
