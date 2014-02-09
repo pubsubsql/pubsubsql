@@ -161,9 +161,7 @@ func buildJava() {
 	f.from = "../../java/src/Client"
 	f.to = "./pubsubsql/samples/java/src/Client"
 	f.cp(shellExt("build"))
-	f.cp("ClientImpl.java")
 	f.cp("Client.java")
-	f.cp("Factory.java")
 	f.cp("NetHeader.java")
 	f.cp("NetHelper.java")
 	f.cp("ResponseData.java")
@@ -211,6 +209,9 @@ func buildJava() {
 }
 
 func buildDotnet() {
+	if OS != "windows" {
+		return
+	}
 	emptyln()
 	print("Building .Net binaries...")
 	//
