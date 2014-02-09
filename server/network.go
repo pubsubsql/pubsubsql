@@ -18,7 +18,6 @@ package pubsubsql
 
 import (
 	"net"
-	"github.com/PubSubSQL/client"
 	"strconv"
 	"sync"
 )
@@ -195,7 +194,7 @@ func (this *networkConnection) Done() bool {
 	return this.sender.quit.Done() || this.quit.Done()
 }
 
-func (c *networkConnection) route(header *pubsubsql.NetHeader, req request) {
+func (c *networkConnection) route(header *netHeader, req request) {
 	item := &requestItem{
 		header: header,
 		req:    req,
@@ -207,18 +206,18 @@ func (c *networkConnection) route(header *pubsubsql.NetHeader, req request) {
 func (this *networkConnection) read() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	reader := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	reader := newnetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	//
 	var err error
 	var message []byte
-	var header *pubsubsql.NetHeader
+	var header *netHeader
 	tokens := newTokens()
 	for {
 		err = nil
 		if this.Done() {
 			break
 		}
-		header, message, err = reader.ReadMessage()
+		header, message, err = reader.readMessage()
 		if err != nil {
 			break
 		}
@@ -238,7 +237,7 @@ func (this *networkConnection) read() {
 func (this *networkConnection) write() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	writer := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	writer := newnetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	var err error
 	for {
 		select {
@@ -257,7 +256,7 @@ func (this *networkConnection) write() {
 					return
 				}
 				msg, more = res.toNetworkReadyJSON()
-				err = writer.WriteMessage(msg)
+				err = writer.writeMessage(msg)
 				if err != nil {
 					break
 				}

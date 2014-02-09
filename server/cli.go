@@ -20,7 +20,6 @@ import (
 	"bufio"
 	"net"
 	"os"
-	"github.com/PubSubSQL/client"
 	"strconv"
 	"strings"
 	"time"
@@ -83,14 +82,14 @@ func (this *cli) runOnce(command string) {
 		return
 	}
 	this.requestId++
-	rw := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	rw := newnetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	bytes := []byte(command)
-	err := rw.WriteHeaderAndMessage(this.requestId, bytes)
+	err := rw.writeHeaderAndMessage(this.requestId, bytes)
 	if err != nil {
 		logerror(err)
 		return
 	}
-	_, bytes, err = rw.ReadMessage()
+	_, bytes, err = rw.readMessage()
 	if err != nil && command != "stop" {
 		logerror(err)
 	}
@@ -179,10 +178,10 @@ func (this *cli) readInput() {
 func (this *cli) readMessages() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	reader := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	reader := newnetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 LOOP:
 	for {
-		_, bytes, err := reader.ReadMessage()
+		_, bytes, err := reader.readMessage()
 		if err != nil {
 			this.outputError(err)
 			break LOOP
@@ -201,14 +200,14 @@ LOOP:
 func (this *cli) writeMessages() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	writer := pubsubsql.NewNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	writer := newnetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 LOOP:
 	for {
 		select {
 		case message := <-this.toServer:
 			bytes := []byte(message)
 			this.requestId++
-			err := writer.WriteHeaderAndMessage(this.requestId, bytes)
+			err := writer.writeHeaderAndMessage(this.requestId, bytes)
 			if err != nil {
 				this.outputError(err)
 				break LOOP

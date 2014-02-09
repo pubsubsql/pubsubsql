@@ -18,7 +18,6 @@ package pubsubsql
 
 import (
 	"bytes"
-	"github.com/PubSubSQL/client"
 	"strconv"
 	"unicode/utf8"
 )
@@ -30,7 +29,7 @@ type JSONBuilder struct {
 
 func networkReadyJSONBuilder() *JSONBuilder {
 	builder := new(JSONBuilder)
-	builder.Write(pubsubsql.EMPTY_HEADER)
+	builder.Write(_EMPTY_HEADER)
 	return builder
 }
 
@@ -137,10 +136,10 @@ func (this *JSONBuilder) nameIntValue(name string, val int) {
 
 func (this *JSONBuilder) getNetworkBytes(requestId uint32) []byte {
 	bytes := this.Bytes()
-	var header pubsubsql.NetHeader
-	header.MessageSize = uint32(len(bytes)) - uint32(pubsubsql.HEADER_SIZE)
+	var header netHeader
+	header.MessageSize = uint32(len(bytes)) - uint32(_HEADER_SIZE)
 	header.RequestId = requestId
-	header.WriteTo(bytes)
+	header.writeTo(bytes)
 	return bytes
 }
 
@@ -150,8 +149,8 @@ func (this *JSONBuilder) getBytes() []byte {
 }
 
 func fromNetworkBytes(bytes []byte) []byte {
-	if len(bytes) > pubsubsql.HEADER_SIZE {
-		return bytes[pubsubsql.HEADER_SIZE:]
+	if len(bytes) > _HEADER_SIZE {
+		return bytes[_HEADER_SIZE:]
 	}
 	return nil
 }

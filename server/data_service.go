@@ -1,4 +1,4 @@
-/* Copyright (C) 2013 CompleteD LLC.
+/* Copyright (C) 2013 CompleteDB LLC.
  *
  * This program is free software: you can redistribute it and/or modify
  * it under the terms of the GNU Affero General Public License as
@@ -16,13 +16,9 @@
 
 package pubsubsql
 
-import (
-	"github.com/PubSubSQL/client"
-)
-
 // requestItem is a container for client request and sender used to send back responses
 type requestItem struct {
-	header *pubsubsql.NetHeader
+	header *netHeader
 	req    request
 	sender *responseSender
 }

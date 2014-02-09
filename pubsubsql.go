@@ -16,7 +16,7 @@
 
 package main
 
-import "github.com/PubSubSQL/pubsubsql/server"
+import "github.com/pubsubsql/pubsubsql/server"
 import "runtime"
 
 func main() {
