@@ -103,9 +103,11 @@ func newNetwork(context *networkContext) *network {
 func (this *network) start(address string) bool {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		logerror("Failed to listen to incoming connections ", err.Error())
+		logerror("Failed to listen for incoming connections ", err.Error())
 		return false
 	}
+	//host, port := net.SplitHostPort(address)
+	loginfo("listening for incoming connections on ", address)	
 	this.listener = listener
 	var connectionId uint64 = 0
 	// accept connections
@@ -188,7 +190,7 @@ func (this *networkConnection) run() {
 }
 
 func (this *networkConnection) Done() bool {
-	// connection can be stoped becuase of global shutdown sequence
+	// connection can be stopped becuase of global shutdown sequence
 	// or response sender is full
 	// or socket error
 	return this.sender.quit.Done() || this.quit.Done()

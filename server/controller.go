@@ -109,7 +109,7 @@ LOOP:
 	this.network.stop()
 	this.quit.Quit(0)
 	this.quit.Wait(time.Millisecond * config.WAIT_MILLISECOND_SERVER_SHUTDOWN)
-	info("stoped")
+	info("stopped")
 }
 
 // readInput reads a command line input from the standard until quit (q) input.

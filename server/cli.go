@@ -98,6 +98,11 @@ func (this *cli) runOnce(command string) {
 // run is an event loop function that recieves a command line input and forwards it to the server.
 func (this *cli) run() {
 	this.initConsolePrefix()
+	// by default connect to local host
+	if config.IP == "" {
+		config.IP = "localhost"
+	}
+	//
 	if !this.connect() {
 		return
 	}
