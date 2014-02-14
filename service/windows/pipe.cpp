@@ -61,7 +61,7 @@ const char* pipe::readLine() {
 }
 
 void pipe::writeLine(const char* line) {
-	WriteFile(writeHandle, line, strlen(line), 0, NULL);
+	WriteFile(writeHandle, line, (DWORD)strlen(line), 0, NULL);
 	WriteFile(writeHandle, "\n", 1, 0, NULL);
 }
 	

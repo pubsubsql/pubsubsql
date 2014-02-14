@@ -37,8 +37,7 @@ void initGlobals() {
 	serviceStatus.dwServiceSpecificExitCode = 0;
 }
 
-int main(int argc, char* argv[])
-{
+int main(int argc, char* argv[]) {
 	initGlobals();
 	// validate command line input
 	std::string usage = " valid commands [install, uninstall]";
@@ -53,9 +52,15 @@ int main(int argc, char* argv[])
 		options.append(arg);
 	}
 	std::cout << options << std::endl;
+	// 
+	const DWORD nSize = 4000;
+	char exepath[nSize] = {0};	
+	if (0 == GetModuleFileName(NULL, exepath, nSize)) {
+		std::cerr << "failed to retreive qualified exe path" << std::endl;
+	}
 	// execute
 	std::string command(argv[1]);
-	if (command == "install") return install(argv[0], options);
+	if (command == "install") return install(exepath, options);
 	else if (command == "uninstall") return uninstall();
 	else if (command == "svc") return runAsService();
 	// invalid command
@@ -81,6 +86,7 @@ int install(const char* serviceFile, const std::string& options) {
 		servicePath.append(serviceFile);
 		servicePath.append(" svc ");
 		servicePath.append(options);
+		std::cout << "path to executable: " << servicePath << std::endl;
 		// install service
 		service = CreateService(manager, SERVICE_NAME, SERVICE_NAME, SERVICE_START | SERVICE_STOP | DELETE,
 			SERVICE_WIN32_OWN_PROCESS, SERVICE_DEMAND_START, SERVICE_ERROR_NORMAL, servicePath.c_str(),
