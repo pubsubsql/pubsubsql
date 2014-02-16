@@ -121,8 +121,12 @@ func copyGo() {
 	print("Copying go files...")
 	mkdir("./pubsubsql/samples/go/bin")			
 	mkdir("./pubsubsql/samples/go/src/github.com/pubsubsql/client")			
+	mkdir("./pubsubsql/samples/go/src/github.com/pubsubsql/QuickStart")			
 	mkdir("./pubsubsql/samples/go/pkg")			
+
 	var f fileCopy
+
+	// client
 	f.from = "../../client"
 	f.to = "./pubsubsql/samples/go/src/github.com/pubsubsql/client"
 	f.cp("client.go")
@@ -130,6 +134,11 @@ func copyGo() {
 	f.cp("netheader.go")
 	f.cp("netheader_test.go")
 	f.cp("nethelper.go")
+	// QuickStart
+	f.from = "../../samples/QuickStart"
+	f.to = "./pubsubsql/samples/go/src/github.com/pubsubsql/QuickStart"
+	f.cp("QuickStart.go")
+
 	success()
 }
 
@@ -152,11 +161,13 @@ func buildJava() {
 	mkdir("./pubsubsql/samples/java/src")			
 	mkdir("./pubsubsql/samples/java/src/Client")			
 	mkdir("./pubsubsql/samples/java/src/ClientTest")			
+	mkdir("./pubsubsql/samples/java/src/QuickStart")			
 	mkdir("./pubsubsql/samples/java/src/PubSubSQLGUI")			
 	mkdir("./pubsubsql/samples/java/src/PubSubSQLGUI/images")			
 	cp("../../java/src/manifest", "./pubsubsql/samples/java/src/manifest")
 
 	var f fileCopy
+
 	// copy Client
 	f.from = "../../java/src/Client"
 	f.to = "./pubsubsql/samples/java/src/Client"
@@ -165,11 +176,19 @@ func buildJava() {
 	f.cp("NetHeader.java")
 	f.cp("NetHelper.java")
 	f.cp("ResponseData.java")
+
 	// copy ClientTest
 	f.from = "../../java/src/ClientTest"
 	f.to = "./pubsubsql/samples/java/src/ClientTest"
 	f.cp(shellExt("run"))
 	f.cp("ClientTest.java")
+
+	// copy QuickStart
+	f.from = "../../java/src/QuickStart"
+	f.to = "./pubsubsql/samples/java/src/QuickStart"
+	f.cp(shellExt("run"))
+	f.cp("QuickStart.java")
+
 	// copy PubSubSQLGUI 
 	f.from = "../../java/src/PubSubSQLGUI"
 	f.to = "./pubsubsql/samples/java/src/PubSubSQLGUI"
@@ -200,13 +219,17 @@ func buildJava() {
 	f.cp("gson-2.2.4.jar")
 	f.cp("pubsubsql.jar")
 	f.cp("pubsubsql-javadoc.jar")
-	//
+
+	// lib
 	f.to = "./pubsubsql/lib"
 	f.cp("gson-2.2.4.jar")
 	f.cp("pubsubsql.jar")
 	f.cp("pubsubsql-javadoc.jar")
 
-	cp("../../java/bin/pubsubsqlgui.jar", "./pubsubsql/bin/pubsubsqlgui.jar")
+	if OS != "windows" {
+		cp("../../java/bin/pubsubsqlgui.jar", "./pubsubsql/bin/pubsubsqlgui.jar")
+	}
+
 	success()
 }
 
@@ -225,6 +248,7 @@ func buildDotnet() {
 	mkdir("dotNet/bin")			
 	mkdir("dotNet/Client")			
 	mkdir("dotNet/ClientTest")			
+	mkdir("dotNet/QuickStart")			
 	mkdir("dotNet/PubSubSQLGUI")			
 	mkdir("dotNet/PubSubSQLGUI/Properties")			
 	mkdir("dotNet/PubSubSQLGUI/images")			
@@ -248,6 +272,7 @@ func buildDotnet() {
 	f.cp("Client.cs")
 	f.cp("NetHeader.cs")
 	f.cp("NetHelper.cs")
+
 	// ClientTest
 	f.from = "dotnet/ClientTest"
 	f.to = "pubsubsql/build/pubsubsql/samples/dotNet/ClientTest"
@@ -256,6 +281,14 @@ func buildDotnet() {
 	f.cp("ClientTest.cs")
 	f.cp("NetHeaderTest.cs")
 	f.cp("NetHelperTest.cs")
+
+	// QuickStart
+	f.from = "dotnet/QuickStart"
+	f.to = "pubsubsql/build/pubsubsql/samples/dotNet/QuickStart"
+	f.cp("QuickStart.csproj")
+	f.cp("AssemblyInfo.cs")
+	f.cp("Program.cs")
+
 	// PubSubSQLGUI	
 	f.from = "dotnet/PubSubSQLGUI"
 	f.to = "pubsubsql/build/pubsubsql/samples/dotNet/PubSubSQLGUI"
@@ -554,9 +587,9 @@ func getarchname() string {
 	name := "pubsubsql-v" + VERSION + "-" + OS + "-"
 	switch ARCH {
 	case "32":
-		name += "386"
+		name += "x86"
 	case "64":
-		name += "amd64"
+		name += "x64"
 	}
 	return name
 }
