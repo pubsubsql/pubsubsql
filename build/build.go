@@ -112,7 +112,25 @@ func buildServiceLinux() {
 func copyRootFiles() {
 	emptyln()
 	print("Copying root files...")
-	cp("../LICENSE", "./pubsubsql/LICENSE")
+	var f fileCopy
+
+	switch OS {
+	case "windows":
+		f.from = "./windows"
+		f.to = "./pubsubsql"
+		f.cp("README.txt")
+		f.cp("CHANGES.txt")
+		f.cp("NOTICES.txt")
+		f.cp("LICENSE.txt")
+	case "linux":
+		f.from = "./linux"
+		f.to = "./pubsubsql"
+		f.cp("README")
+		f.cp("CHANGES")
+		f.cp("NOTICES")
+		f.cp("LICENSE")
+	}
+
 	success()
 }
 
