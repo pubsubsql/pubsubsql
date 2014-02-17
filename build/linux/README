@@ -10,8 +10,8 @@ pubsubsql/
     lib/
         pubsubsql.jar       # client api java library
         gson-2.4.1.jar      # third party gson java library
-    samples/                # sources for samples and client api 
-        go/...                   
+    samples/                # sources for samples and client api
+        go/...               
         java/...
 ------------------------------------------------------------------------------------------
 Getting Started on Linux http://www.pubsubsql.com/runlinux.html 
@@ -21,3 +21,4 @@ Forum http://groups.google.com/group/pubsubsql
 Twitter @PubSubSQL 
 Email oleg@pubsubsql.com
 ------------------------------------------------------------------------------------------
+
