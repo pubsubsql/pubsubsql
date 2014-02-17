@@ -69,9 +69,10 @@ func serverFileName() string {
 	switch OS {
 	case "windows":
 		return "pubsubsql.exe"
-	default:
+	case "linux":
 		return "pubsubsql"
 	}
+	return "invalid server name"
 }
 
 // service installer
@@ -151,12 +152,11 @@ func copyDocFiles() {
 		f.cp("Java_API.html")
 		f.cp("dot.Net_API.html")
 	case "linux":
-		f.from = "./linux/doc"
-		f.to = "./pubsubsql/doc"
-		f.cp("Getting Started.html")
-		f.cp("Go API.html")
-		f.cp("Java API.html")
-		f.cp("dot.Net API.html")
+		f.from = "./linux/docs"
+		f.to = "./pubsubsql/docs"
+		f.cp("Getting_Started.html")
+		f.cp("Go_API.html")
+		f.cp("Java_API.html")
 	}
 }
 
