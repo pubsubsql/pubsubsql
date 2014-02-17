@@ -42,6 +42,7 @@ func main() {
 	buildServer()
 	buildService()
 	copyRootFiles()
+	copyDocFiles()
 	copyGo();
 	buildJava();	
 	buildDotnet();
@@ -132,6 +133,31 @@ func copyRootFiles() {
 	}
 
 	success()
+}
+
+func copyDocFiles() {
+	emptyln()
+	print("Copying doc files...")
+	var f fileCopy
+
+	mkdir("./pubsubsql/docs")			
+	
+	switch OS {
+	case "windows":
+		f.from = "./windows/docs"
+		f.to = "./pubsubsql/docs"
+		f.cp("Getting_Started.html")
+		f.cp("Go_API.html")
+		f.cp("Java_API.html")
+		f.cp("dot.Net_API.html")
+	case "linux":
+		f.from = "./linux/doc"
+		f.to = "./pubsubsql/doc"
+		f.cp("Getting Started.html")
+		f.cp("Go API.html")
+		f.cp("Java API.html")
+		f.cp("dot.Net API.html")
+	}
 }
 
 func copyGo() {
