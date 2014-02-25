@@ -52,8 +52,8 @@ type table struct {
 	//
 	requestId uint32
 	//
-	count uint32
-	streaming bool	
+	count     uint32
+	streaming bool
 }
 
 // table factory
@@ -66,7 +66,7 @@ func newTable(name string) *table {
 		tagedColumns:  make([]*column, 0, config.TABLE_COLUMNS_CAPACITY),
 		subscriptions: make(mapSubscriptionByConnection),
 		requestId:     0,
-		streaming:	   false,
+		streaming:     false,
 	}
 	table.addColumn("id")
 	return table
