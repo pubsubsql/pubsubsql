@@ -84,7 +84,7 @@ func (this *dataService) onSqlRequest(item *requestItem) {
 		this.tables[tableName] = tbl
 		tbl.quit = this.quit
 		tbl.requests = make(chan *requestItem, config.CHAN_TABLE_REQUESTS_BUFFER_SIZE)
-		loginfo("table", tableName, " was created; connection:", item.sender.connectionId) 
+		loginfo("table", tableName, " was created; connection:", item.sender.connectionId)
 		go tbl.run()
 	}
 	// forward sql request to the table

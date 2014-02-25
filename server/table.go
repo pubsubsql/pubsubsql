@@ -52,7 +52,7 @@ type table struct {
 	//
 	requestId uint32
 	//
-	count uint32;
+	count uint32
 }
 
 // table factory
@@ -134,7 +134,7 @@ func (this *table) prepareRecord() (*record, int) {
 
 // adNewRecord add newly created record to the table
 func (this *table) addNewRecord(rec *record) {
-	this.count++;
+	this.count++
 	addRecordToSlice(&this.records, rec)
 }
 
@@ -172,7 +172,7 @@ func (this *table) deleteRecord(rec *record) {
 	}
 	// delete record
 	if this.records[rec.id()] != nil {
-		this.count--;
+		this.count--
 		this.records[rec.id()] = nil
 	}
 }
@@ -665,7 +665,7 @@ func (this *table) sqlSubscribe(req *sqlSubscribeRequest) {
 	}
 	// subscribe
 	sub, records := this.subscribe(col, req.filter.val, req.sender, req.skip)
-	if sub != nil && len(records) > 0 && this.count >  0 {
+	if sub != nil && len(records) > 0 && this.count > 0 {
 		// publish initial action add
 		this.publishActionAdd(sub, records)
 	}

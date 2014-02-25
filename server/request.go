@@ -54,7 +54,7 @@ func (this *errorRequest) isStreaming() bool {
 // sqlRequest is a generic sql request.
 type sqlRequest struct {
 	request
-	table string
+	table     string
 	streaming bool
 }
 
@@ -63,7 +63,7 @@ func (this *sqlRequest) setStreaming() {
 }
 
 func (this *sqlRequest) isStreaming() bool {
-	return this.streaming 
+	return this.streaming
 }
 
 func (this *sqlRequest) getRequestType() requestType {
@@ -90,10 +90,10 @@ func (this *cmdRequest) setStreaming() {
 }
 
 func (this *cmdRequest) isStreaming() bool {
-	return this.streaming 
+	return this.streaming
 }
 
-// 
+//
 type cmdStatusRequest struct {
 	cmdRequest
 }

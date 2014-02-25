@@ -19,10 +19,10 @@ package pubsubsql
 import (
 	"flag"
 	"fmt"
+	"net"
 	"strconv"
 	"strings"
 	"time"
-	"net"
 )
 
 type configuration struct {

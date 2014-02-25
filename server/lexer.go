@@ -54,7 +54,7 @@ const (
 	tokenTypeSqlValueWithSingleQuote                  // '' becomes ' inside the string, parser will need to replace the string
 	tokenTypeSqlKey                                   // key
 	tokenTypeSqlTag                                   // tag
-	tokenTypeSqlStream								  // stream
+	tokenTypeSqlStream                                // stream
 )
 
 // String converts tokenType value to a string.

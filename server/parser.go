@@ -25,7 +25,7 @@ type tokenProducer interface {
 
 // parser
 type parser struct {
-	tokens tokenProducer
+	tokens    tokenProducer
 	streaming bool
 }
 
@@ -494,7 +494,7 @@ func (this *parser) run() request {
 // Parses tokens and returns an request.
 func parse(tokens tokenProducer) request {
 	parser := &parser{
-		tokens: tokens,
+		tokens:    tokens,
 		streaming: false,
 	}
 	req := parser.run()

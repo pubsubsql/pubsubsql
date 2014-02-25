@@ -41,4 +41,3 @@ func TestOkResponseJSON(t *testing.T) {
 	res := &okResponse{}
 	validateResponseJSON(t, res)
 }
-

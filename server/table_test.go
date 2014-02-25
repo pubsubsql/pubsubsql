@@ -903,7 +903,7 @@ func TestgTableActionAddOnTagUpdate(t *testing.T) {
 	validateActionDelete(t, senders)
 }
 
-func TestIssue34 (t *testing.T) {
+func TestIssue34(t *testing.T) {
 	senders := make([]*responseSender, 0)
 	var sender *responseSender
 	tbl := newTable("stocks")

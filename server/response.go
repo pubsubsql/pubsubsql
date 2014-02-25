@@ -42,7 +42,7 @@ func (this *requestIdResponse) setRequestId(requestId uint32) {
 	this.requestId = requestId
 }
 
-func (this *requestIdResponse) merge(res response) bool {		
+func (this *requestIdResponse) merge(res response) bool {
 	return false
 }
 
@@ -186,9 +186,9 @@ func (this *sqlSelectResponse) data(builder *JSONBuilder, pubsub bool) bool {
 		}
 		builder.string(col.name)
 	}
-	builder.endArray()	
+	builder.endArray()
 	builder.objectSeparator()
-	// now write data (records)	
+	// now write data (records)
 	if !this.init {
 		this.init = true
 		this.rows = len(this.records)
@@ -211,8 +211,8 @@ func (this *sqlSelectResponse) data(builder *JSONBuilder, pubsub bool) bool {
 	fromrow := this.fromrow
 	torow := this.torow
 	if pubsub && fromrow > 0 {
-		rows = torow - fromrow + 1;
-		torow = rows 
+		rows = torow - fromrow + 1
+		torow = rows
 		fromrow = 1
 	}
 	builder.nameIntValue("rows", rows)
@@ -230,10 +230,10 @@ func (this *sqlSelectResponse) data(builder *JSONBuilder, pubsub bool) bool {
 		if recIndex != 0 {
 			builder.valueSeparator()
 		}
-		builder.newLine()	
+		builder.newLine()
 		row(builder, this.columns, rec)
 	}
-	builder.newLine()	
+	builder.newLine()
 	builder.endArray()
 	return more
 }
@@ -342,15 +342,15 @@ func (this *sqlActionDataResponse) toNetworkReadyJSONHelper(act string) ([]byte,
 }
 
 func mergeHelper(res1 *sqlActionDataResponse, res2 *sqlActionDataResponse) bool {
-	if (res1.pubsubid != res2.pubsubid) {
+	if res1.pubsubid != res2.pubsubid {
 		return false
 	}
-	if (len(res1.columns) != len(res2.columns)) {
+	if len(res1.columns) != len(res2.columns) {
 		return false
 	}
 	res1.records = append(res1.records, res2.records...)
-	return true;
-} 
+	return true
+}
 
 // sqlActionAddResponse
 type sqlActionAddResponse struct {
@@ -361,11 +361,11 @@ func (this *sqlActionAddResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("add")
 }
 
-func (this *sqlActionAddResponse) merge(res response) bool {		
+func (this *sqlActionAddResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionAddResponse:
 		source := res.(*sqlActionAddResponse)
-		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
+		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse)
 	}
 	return false
 }
@@ -379,11 +379,11 @@ func (this *sqlActionInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("insert")
 }
 
-func (this *sqlActionInsertResponse) merge(res response) bool {		
+func (this *sqlActionInsertResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionInsertResponse:
 		source := res.(*sqlActionInsertResponse)
-		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
+		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse)
 	}
 	return false
 }
@@ -397,11 +397,11 @@ func (this *sqlActionDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("delete")
 }
 
-func (this *sqlActionDeleteResponse) merge(res response) bool {		
+func (this *sqlActionDeleteResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionDeleteResponse:
 		source := res.(*sqlActionDeleteResponse)
-		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
+		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse)
 	}
 	return false
 }
@@ -415,11 +415,11 @@ func (this *sqlActionRemoveResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("remove")
 }
 
-func (this *sqlActionRemoveResponse) merge(res response) bool {		
+func (this *sqlActionRemoveResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionRemoveResponse:
 		source := res.(*sqlActionRemoveResponse)
-		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse);
+		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse)
 	}
 	return false
 }
@@ -433,24 +433,24 @@ func (this *sqlActionUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return this.toNetworkReadyJSONHelper("update")
 }
 
-func (this *sqlActionUpdateResponse) merge(res response) bool {		
+func (this *sqlActionUpdateResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionUpdateResponse:
 		source := res.(*sqlActionUpdateResponse)
 		if this.pubsubid != source.pubsubid {
-			return false;
+			return false
 		}
 		if len(this.columns) != len(source.columns) {
-			return false;
+			return false
 		}
 		// now check if columns are the same
 		for idx, col := range this.columns {
 			if col.ordinal != source.columns[idx].ordinal {
-				return false;
-			}			
+				return false
+			}
 		}
 		this.records = append(this.records, source.records...)
-		return true;
+		return true
 	}
 	return false
 }
