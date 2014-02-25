@@ -53,6 +53,7 @@ type table struct {
 	requestId uint32
 	//
 	count uint32
+	streaming bool	
 }
 
 // table factory
@@ -65,6 +66,7 @@ func newTable(name string) *table {
 		tagedColumns:  make([]*column, 0, config.TABLE_COLUMNS_CAPACITY),
 		subscriptions: make(mapSubscriptionByConnection),
 		requestId:     0,
+		streaming:	   false,
 	}
 	table.addColumn("id")
 	return table
@@ -634,6 +636,10 @@ func (this *table) subscribeToId(id string, sender *responseSender, skip bool) (
 }
 
 func (this *table) send(sender *responseSender, res response) {
+	// do not send response when streaming
+	if this.streaming {
+		return
+	}
 	res.setRequestId(this.requestId)
 	sender.send(res)
 }
@@ -804,6 +810,7 @@ func (this *table) run() {
 }
 
 func (this *table) onSqlRequest(req request, sender *responseSender) {
+	this.streaming = req.isStreaming()
 	switch req.(type) {
 	case *sqlInsertRequest:
 		this.onSqlInsert(req.(*sqlInsertRequest), sender)
