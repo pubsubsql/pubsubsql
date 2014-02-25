@@ -18,7 +18,6 @@ package pubsubsql
 
 import (
 	"net"
-	"github.com/PubSubSQL/client"
 	"testing"
 	"time"
 )
@@ -65,14 +64,14 @@ func TestNetworkConnections(t *testing.T) {
 }
 
 func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId uint32) {
-	rw := pubsubsql.NewNetHelper(conn, config.NET_READWRITE_BUFFER_SIZE)
+	rw := newnetHelper(conn, config.NET_READWRITE_BUFFER_SIZE)
 	bytes := []byte(message)
-	var header *pubsubsql.NetHeader
-	err := rw.WriteHeaderAndMessage(requestId, bytes)
+	var header *netHeader
+	err := rw.writeHeaderAndMessage(requestId, bytes)
 	if err != nil {
 		t.Error(err)
 	}
-	header, bytes, err = rw.ReadMessage()
+	header, bytes, err = rw.readMessage()
 	if err != nil {
 		t.Error(err)
 	}
@@ -83,8 +82,8 @@ func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId ui
 }
 
 func validateRead(t *testing.T, conn net.Conn, requestId uint32) {
-	rw := pubsubsql.NewNetHelper(conn, config.NET_READWRITE_BUFFER_SIZE)
-	header, bytes, err := rw.ReadMessage()
+	rw := newnetHelper(conn, config.NET_READWRITE_BUFFER_SIZE)
+	header, bytes, err := rw.readMessage()
 	if err != nil {
 		t.Error(err)
 	}

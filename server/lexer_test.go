@@ -361,3 +361,18 @@ func TestSqlTagStatement(t *testing.T) {
 
 	validateTokens(t, expected, consumer.channel)
 }
+
+// STREAM
+func TestSqlStream(t *testing.T) {
+	// any operation can be streamed
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("stream tag stocks sector", &consumer)
+	expected := []token{
+		{tokenTypeSqlStream, "stream"},
+		{tokenTypeSqlTag, "tag"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlColumn, "sector"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}

@@ -54,6 +54,7 @@ const (
 	tokenTypeSqlValueWithSingleQuote                  // '' becomes ' inside the string, parser will need to replace the string
 	tokenTypeSqlKey                                   // key
 	tokenTypeSqlTag                                   // tag
+	tokenTypeSqlStream								  // stream
 )
 
 // String converts tokenType value to a string.
@@ -115,6 +116,8 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlKey"
 	case tokenTypeSqlTag:
 		return "tokenTypeSqlTag"
+	case tokenTypeSqlStream:
+		return "tokenTypeSqlStream"
 	}
 	return "not implemented"
 }
@@ -621,6 +624,8 @@ func lexSqlUnsubscribeFrom(this *lexer) stateFn {
 // Helper function to process status stop start commands.
 func lexCommandST(this *lexer) stateFn {
 	switch this.next() {
+	case 'r':
+		return this.lexMatch(tokenTypeSqlStream, "stream", 3, lexCommand)
 	case 'a':
 		return this.lexMatch(tokenTypeCmdStatus, "status", 3, nil)
 	case 'o':
@@ -651,7 +656,7 @@ func lexCommand(this *lexer) stateFn {
 			return this.lexMatch(tokenTypeSqlUpdate, "update", 2, lexSqlUpdateTable)
 		}
 		return this.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 2, lexSqlUnsubscribeFrom)
-	case 's': // select subscribe status stop start
+	case 's': // select subscribe status stop start stream
 		return lexCommandS(this)
 	case 'i': // insert
 		return this.lexMatch(tokenTypeSqlInsert, "insert", 1, lexSqlInsertInto)
