@@ -26,6 +26,7 @@ type tokenProducer interface {
 // parser
 type parser struct {
 	tokens tokenProducer
+	streaming bool
 }
 
 // Indicates that error happened during parse phase and returns errorRequest
@@ -461,6 +462,9 @@ func (this *parser) parseSqlUnsubscribe() request {
 func (this *parser) run() request {
 	tok := this.tokens.Produce()
 	switch tok.typ {
+	case tokenTypeSqlStream:
+		this.streaming = true
+		return this.run()
 	case tokenTypeSqlInsert:
 		return this.parseSqlInsert()
 	case tokenTypeSqlSelect:
@@ -491,6 +495,11 @@ func (this *parser) run() request {
 func parse(tokens tokenProducer) request {
 	parser := &parser{
 		tokens: tokens,
+		streaming: false,
 	}
-	return parser.run()
+	req := parser.run()
+	if parser.streaming {
+		req.setStreaming()
+	}
+	return req
 }

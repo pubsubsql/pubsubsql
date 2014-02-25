@@ -661,6 +661,7 @@ func TestParseSqlTagStatement1(t *testing.T) {
 	y.table = "stocks"
 	y.column = "sector"
 	validateTag(t, x, &y)
+	ASSERT_FALSE(t, x.isStreaming(), "isStreaming failed")
 }
 
 func TestParseSqlTagStatement2(t *testing.T) {
@@ -673,4 +674,25 @@ func TestParseSqlTagStatement2(t *testing.T) {
 	lex(" tag stocks", pc)
 	x = parse(pc)
 	expectedError(t, x)
+}
+
+// STREAM
+
+func TestParseSqlStream1(t *testing.T) {
+	pc := newTokens()
+	lex("stream tag stocks sector", pc)
+	x := parse(pc)
+	var y sqlTagRequest
+	y.table = "stocks"
+	y.column = "sector"
+	validateTag(t, x, &y)
+	ASSERT_TRUE(t, x.isStreaming(), "isStreaming failed")
+}
+
+func TestParseSqlStream2(t *testing.T) {
+	pc := newTokens()
+	lex("stream stop ", pc)
+	req := parse(pc)
+	validateStop(t, req)
+	ASSERT_TRUE(t, req.isStreaming(), "isStreaming failed")
 }

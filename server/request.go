@@ -28,6 +28,8 @@ const (
 type request interface {
 	getRequestType() requestType
 	getTableName() string
+	setStreaming()
+	isStreaming() bool
 }
 
 // errorRequest is an error request.
@@ -37,14 +39,31 @@ type errorRequest struct {
 }
 
 // Returns type of a request.
-func (act errorRequest) getRequestType() requestType {
+func (this *errorRequest) getRequestType() requestType {
 	return requestTypeError
+}
+
+func (this *errorRequest) setStreaming() {
+	// no-op
+}
+
+func (this *errorRequest) isStreaming() bool {
+	return false
 }
 
 // sqlRequest is a generic sql request.
 type sqlRequest struct {
 	request
 	table string
+	streaming bool
+}
+
+func (this *sqlRequest) setStreaming() {
+	this.streaming = true
+}
+
+func (this *sqlRequest) isStreaming() bool {
+	return this.streaming 
 }
 
 func (this *sqlRequest) getRequestType() requestType {
@@ -59,10 +78,19 @@ func (this *sqlRequest) getTableName() string {
 type cmdRequest struct {
 	request
 	requestId uint32
+	streaming bool
 }
 
 func (this *cmdRequest) getRequestType() requestType {
 	return requestTypeCmd
+}
+
+func (this *cmdRequest) setStreaming() {
+	this.streaming = true
+}
+
+func (this *cmdRequest) isStreaming() bool {
+	return this.streaming 
 }
 
 // 
