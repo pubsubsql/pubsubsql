@@ -55,6 +55,11 @@ const (
 	tokenTypeSqlKey                                   // key
 	tokenTypeSqlTag                                   // tag
 	tokenTypeSqlStream                                // stream
+	tokenTypeSqlPush								  // push
+	tokenTypeSqlPop									  // pop
+	tokenTypeSqlPeek								  // peek
+	tokenTypeSqlBack								  // back
+	tokenTypeSqlFront								  // front
 )
 
 // String converts tokenType value to a string.
@@ -118,6 +123,16 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlTag"
 	case tokenTypeSqlStream:
 		return "tokenTypeSqlStream"
+	case tokenTypeSqlPush:
+		return "tokenTypeSqlPush"
+	case tokenTypeSqlPop:
+		return "tokenTypeSqlPush"
+	case tokenTypeSqlPeek:
+		return "tokenTypeSqlPeek"
+	case tokenTypeSqlBack:
+		return "tokenTypeSqlBack"
+	case tokenTypeSqlFront:
+		return "tokenTypeSqlFront"
 	}
 	return "not implemented"
 }
@@ -443,6 +458,19 @@ func lexEof(this *lexer) stateFn {
 
 // INSERT sql statement scan state functions.
 
+func lexSqlPushInto(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	switch this.next() {
+	case 'b':
+		return this.lexMatch(tokenTypeSqlBack, "back", 1, lexSqlInsertInto)
+	case 'f':
+		return this.lexMatch(tokenTypeSqlFront, "front", 1, lexSqlInsertInto)
+	case 'i':
+		return this.lexMatch(tokenTypeSqlInto, "into", 1, lexSqlInsertIntoTable)
+	}
+	return this.errorToken("unexpected token expected front, back or into")
+}
+
 func lexSqlInsertInto(this *lexer) stateFn {
 	this.skipWhiteSpaces()
 	return this.lexMatch(tokenTypeSqlInto, "into", 0, lexSqlInsertIntoTable)
@@ -526,6 +554,48 @@ func lexSqlSelectStar(this *lexer) stateFn {
 	}
 	this.backup()
 	return lexSqlSelectColumn(this)
+}
+
+func lexSqlPopFrom(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() == '*' {
+		this.emit(tokenTypeSqlStar)
+		return lexSqlFrom
+	}
+	this.backup()
+	// back
+	if this.tryMatch("back") {
+		this.emit(tokenTypeSqlBack)
+		return lexSqlSelectStar
+	}
+	// front
+	if this.tryMatch("front") {
+		this.emit(tokenTypeSqlFront)
+		return lexSqlSelectStar
+	}
+	// columns
+	return lexSqlSelectColumn(this)	
+}
+
+func lexSqlPeekFrom(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() == '*' {
+		this.emit(tokenTypeSqlStar)
+		return lexSqlFrom
+	}
+	this.backup()
+	// back
+	if this.tryMatch("back") {
+		this.emit(tokenTypeSqlBack)
+		return lexSqlSelectStar
+	}
+	// front
+	if this.tryMatch("front") {
+		this.emit(tokenTypeSqlFront)
+		return lexSqlSelectStar
+	}
+	// columns
+	return lexSqlSelectColumn(this)	
 }
 
 // UPDATE sql statement scan state functions.
@@ -647,6 +717,19 @@ func lexCommandS(this *lexer) stateFn {
 	return this.errorToken("Invalid command:" + this.current())
 }
 
+// Helper function to process push, pop, peek commands.
+func lexCommandP(this *lexer) stateFn {
+	switch this.next() {
+		case 'u':
+			return this.lexMatch(tokenTypeSqlPush, "push", 2, lexSqlPushInto)
+		case 'o':
+			return this.lexMatch(tokenTypeSqlPop, "pop", 2, lexSqlPopFrom)
+		case 'e':
+			return this.lexMatch(tokenTypeSqlPeek, "peek", 2, lexSqlPeekFrom)
+	}
+	return this.errorToken("Invalid command:" + this.current())
+}
+
 // Initial state function.
 func lexCommand(this *lexer) stateFn {
 	this.skipWhiteSpaces()
@@ -668,6 +751,8 @@ func lexCommand(this *lexer) stateFn {
 		return this.lexMatch(tokenTypeSqlTag, "tag", 1, lexSqlKeyTable)
 	case 'c': // close
 		return this.lexMatch(tokenTypeCmdClose, "close", 1, nil)
+	case 'p': // pop, push, peek
+		return lexCommandP(this)
 	}
 	return this.errorToken("Invalid command:" + this.current())
 }
