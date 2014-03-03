@@ -127,6 +127,7 @@ func (this *sqlFilter) addFilter(col string, val string) {
 type sqlInsertRequest struct {
 	sqlRequest
 	colVals []*columnValue
+	front bool
 }
 
 // Adds column to columnValue slice.
@@ -145,10 +146,17 @@ func (this *sqlInsertRequest) setValueAt(idx int, val string) {
 }
 
 // sqlSelectRequest is a request for sql select statement.
+const (
+	selectFrom                  int = iota
+	selectFromBack                   
+	selectFromFront                 
+)
+	
 type sqlSelectRequest struct {
 	sqlRequest
 	cols   []string
 	filter sqlFilter
+	from int	
 }
 
 func (req *sqlSelectRequest) addColumn(col string) {

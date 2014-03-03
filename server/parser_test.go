@@ -696,3 +696,118 @@ func TestParseSqlStream2(t *testing.T) {
 	validateStop(t, req)
 	ASSERT_TRUE(t, req.isStreaming(), "isStreaming failed")
 }
+
+// PUSH
+
+func TestParseSqlPushStatement1(t *testing.T) {
+	pc := newTokens()
+	lex(" push into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
+	x := parse(pc)
+	var y sqlInsertRequest
+	y.table = "stocks"
+	y.addColVal("ticker", "IBM")
+	y.addColVal("bid", "12")
+	y.addColVal("ask", "14.5645")
+	validateInsert(t, x, &y)
+	ASSERT_FALSE(t, x.(*sqlInsertRequest).front, "expected front to be false")
+}
+
+func TestParseSqlPushStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" push back into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
+	x := parse(pc)
+	var y sqlInsertRequest
+	y.table = "stocks"
+	y.addColVal("ticker", "IBM")
+	y.addColVal("bid", "12")
+	y.addColVal("ask", "14.5645")
+	validateInsert(t, x, &y)
+	ASSERT_FALSE(t, x.(*sqlInsertRequest).front, "expected front to be false")
+}
+
+func TestParseSqlPushStatement3(t *testing.T) {
+	pc := newTokens()
+	lex(" push front into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
+	x := parse(pc)
+	var y sqlInsertRequest
+	y.table = "stocks"
+	y.addColVal("ticker", "IBM")
+	y.addColVal("bid", "12")
+	y.addColVal("ask", "14.5645")
+	validateInsert(t, x, &y)
+	ASSERT_TRUE(t, x.(*sqlInsertRequest).front, "expected front to be true")
+}
+
+// POP
+
+// PEEK
+
+func TestParseSqlPeekStatement1(t *testing.T) {
+	pc := newTokens()
+	lex(" peek * from stocks ", pc)
+	x := parse(pc)
+	var y sqlSelectRequest
+	y.table = "stocks"
+	validateSelect(t, x, &y)
+	ASSERT_TRUE(t, x.(*sqlSelectRequest).from == selectFromBack , "expected selectFromBack")
+}
+
+func TestParseSqlPeekStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" peek ticker, bid, ask  from stocks ", pc)
+	x := parse(pc)
+	var y sqlSelectRequest
+	y.table = "stocks"
+	y.addColumn("ticker")
+	y.addColumn("bid")
+	y.addColumn("ask")
+	validateSelect(t, x, &y)
+	ASSERT_TRUE(t, x.(*sqlSelectRequest).from == selectFromBack , "expected selectFromBack")
+}
+
+func TestParseSqlPeekStatement3(t *testing.T) {
+	pc := newTokens()
+	lex(" peek back * from stocks ", pc)
+	x := parse(pc)
+	var y sqlSelectRequest
+	y.table = "stocks"
+	validateSelect(t, x, &y)
+	ASSERT_TRUE(t, x.(*sqlSelectRequest).from == selectFromBack , "expected selectFromBack")
+}
+
+func TestParseSqlPeekStatement4(t *testing.T) {
+	pc := newTokens()
+	lex(" peek back ticker, bid, ask  from stocks ", pc)
+	x := parse(pc)
+	var y sqlSelectRequest
+	y.table = "stocks"
+	y.addColumn("ticker")
+	y.addColumn("bid")
+	y.addColumn("ask")
+	validateSelect(t, x, &y)
+	ASSERT_TRUE(t, x.(*sqlSelectRequest).from == selectFromBack , "expected selectFromBack")
+}
+
+func TestParseSqlPeekStatement5(t *testing.T) {
+	pc := newTokens()
+	lex(" peek front * from stocks ", pc)
+	x := parse(pc)
+	var y sqlSelectRequest
+	y.table = "stocks"
+	validateSelect(t, x, &y)
+	ASSERT_TRUE(t, x.(*sqlSelectRequest).from == selectFromFront , "expected selectFromFront")
+}
+
+func TestParseSqlPeekStatement6(t *testing.T) {
+	pc := newTokens()
+	lex(" peek front ticker, bid, ask  from stocks ", pc)
+	x := parse(pc)
+	var y sqlSelectRequest
+	y.table = "stocks"
+	y.addColumn("ticker")
+	y.addColumn("bid")
+	y.addColumn("ask")
+	validateSelect(t, x, &y)
+	ASSERT_TRUE(t, x.(*sqlSelectRequest).from == selectFromFront , "expected selectFromFront")
+}
+
