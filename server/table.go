@@ -54,6 +54,9 @@ type table struct {
 	//
 	count     uint32
 	streaming bool
+	//
+	last *record
+	first *record
 }
 
 // table factory
@@ -135,9 +138,25 @@ func (this *table) prepareRecord() (*record, int) {
 }
 
 // adNewRecord add newly created record to the table
-func (this *table) addNewRecord(rec *record) {
+func (this *table) addNewRecord(rec *record, back bool) {
 	this.count++
 	addRecordToSlice(&this.records, rec)
+	// initial record
+	if this.first == nil {
+		this.first = rec
+		this.last = rec
+		return
+	} 
+	//
+	if back {
+		this.last.next = rec
+		rec.prev = this.last
+		this.last = rec
+	} else {
+		rec.next = this.first
+		this.first.prev = rec
+		this.first = rec	
+	}		
 }
 
 // addRecordToSlice generic helper function that adds record to the slice and
@@ -176,6 +195,19 @@ func (this *table) deleteRecord(rec *record) {
 	if this.records[rec.id()] != nil {
 		this.count--
 		this.records[rec.id()] = nil
+	}
+	//
+	if rec == this.last {
+		this.last = rec.prev
+	}
+	if rec == this.first {
+		this.first = rec.next
+	}
+	if rec.prev != nil {
+		rec.prev.next = rec.next
+	}
+	if rec.next != nil {
+		rec.next.prev = rec.prev
 	}
 }
 
@@ -404,7 +436,7 @@ func (this *table) sqlInsert(req *sqlInsertRequest) response {
 	}
 	// ready to insert
 	this.bindRecord(cols, req.colVals, rec, id)
-	this.addNewRecord(rec)
+	this.addNewRecord(rec, true)
 	res := new(sqlInsertResponse)
 	this.copyRecordToSqlSelectResponse(&res.sqlSelectResponse, rec)
 	this.onInsert(rec)
@@ -509,7 +541,7 @@ func (this *table) sqlUpdate(req *sqlUpdateRequest) response {
 
 // DELETE sql statement
 
-// Processes sql delete requesthis.
+// Processes sql delete reques.
 // On success returns sqlDeleteResponse.
 func (this *table) sqlDelete(req *sqlDeleteRequest) response {
 	records, errResponse := this.getRecordsBySqlFilter(req.filter)
