@@ -126,7 +126,7 @@ func (this *parser) parseCmdClose() request {
 	return new(cmdCloseRequest)
 }
 
-// INSERT PUSHsql statement
+// INSERT PUSH sql statement
 
 // Parses sql insert statement and returns sqlInsertRequest on success.
 func (this *parser) parseSqlInsert() request {
@@ -193,6 +193,8 @@ func (this *parser) parseSqlInsert() request {
 
 // Parses sql push statement and returns sqlInsertRequest on success.
 func (this *parser) parseSqlPush() request {
+	return this.parseSqlInsert()
+/*
 	req := &sqlInsertRequest{
 		colVals: make([]*columnValue, 0, config.PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY),
 	}
@@ -261,6 +263,7 @@ func (this *parser) parseSqlPush() request {
 	}
 	// done
 	return req
+*/
 }
 
 
@@ -299,7 +302,7 @@ func (this *parser) parseSqlInsertValue() (request, tokenType, string) {
 
 // SELECT sql statement
 
-func (this *parser) parseSelectColumns(tok **token, req *sqlSelectRequest) request {
+func (this *parser) parseReturningColumns(tok **token, retColumns *returningColumns) request {
 	nextIsColumn := true
 	for {
 		if nextIsColumn {
@@ -307,7 +310,7 @@ func (this *parser) parseSelectColumns(tok **token, req *sqlSelectRequest) reque
 				return this.parseError("expected column name")
 			}
 			nextIsColumn = false
-			req.addColumn((*tok).val)
+			retColumns.addColumn((*tok).val)
 		} else {
 			if (*tok).typ != tokenTypeSqlComma {
 				break
@@ -321,13 +324,11 @@ func (this *parser) parseSelectColumns(tok **token, req *sqlSelectRequest) reque
 
 // Parses sql select statement and returns sqlSelectRequest on success.
 func (this *parser) parseSqlSelect() request {
-	req := &sqlSelectRequest{
-		cols: make([]string, 0, config.PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY),
-	}
 	// *
+	req := newSqlSelectRequest()
 	tok := this.tokens.Produce()
 	if tok.typ != tokenTypeSqlStar {
-		if errreq := this.parseSelectColumns(&tok, req); errreq != nil {
+		if errreq := this.parseReturningColumns(&tok, &req.returningColumns); errreq != nil {
 			return errreq
 		}
 	} else {
@@ -356,10 +357,12 @@ func (this *parser) parseSqlSelect() request {
 
 // Parses sql peek statement and returns sqlSelectRequest on success.
 func (this *parser) parseSqlPeek() request {
+	return this.parseSqlSelect()
+/*
 	req := &sqlSelectRequest{
 		cols: make([]string, 0, config.PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY),
-		from: selectFrom,
 	}
+	/*
 	tok := this.tokens.Produce()
 	switch tok.typ {
 	case tokenTypeSqlFront:
@@ -371,6 +374,8 @@ func (this *parser) parseSqlPeek() request {
 	default:
 		req.from = selectFromBack
 	}	
+	*/
+/*
 	// *
 	if tok.typ != tokenTypeSqlStar {
 		if errreq := this.parseSelectColumns(&tok, req); errreq != nil {
@@ -393,6 +398,7 @@ func (this *parser) parseSqlPeek() request {
 		return req
 	}
 	return this.parseError("unexpected token after table name")
+*/
 }
 
 // UPDATE sql statement

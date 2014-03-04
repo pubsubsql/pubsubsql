@@ -699,6 +699,7 @@ func TestParseSqlStream2(t *testing.T) {
 
 // PUSH
 
+/*
 func TestParseSqlPushStatement1(t *testing.T) {
 	pc := newTokens()
 	lex(" push into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) ", pc)
@@ -810,4 +811,4 @@ func TestParseSqlPeekStatement6(t *testing.T) {
 	validateSelect(t, x, &y)
 	ASSERT_TRUE(t, x.(*sqlSelectRequest).from == selectFromFront , "expected selectFromFront")
 }
-
+*/

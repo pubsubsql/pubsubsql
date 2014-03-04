@@ -60,6 +60,7 @@ const (
 	tokenTypeSqlPeek								  // peek
 	tokenTypeSqlBack								  // back
 	tokenTypeSqlFront								  // front
+	tokenTypeSqlReturning						      // returning
 )
 
 // String converts tokenType value to a string.
@@ -443,7 +444,7 @@ func lexSqlWhereColumnEqual(this *lexer) stateFn {
 
 func lexSqlWhereColumnEqualValue(this *lexer) stateFn {
 	this.skipWhiteSpaces()
-	return this.lexSqlValue(lexEof)
+	return this.lexSqlValue(lexSqlReturning)
 }
 
 func lexEof(this *lexer) stateFn {
@@ -523,10 +524,45 @@ func lexSqlInsertValueCommaOrRigthParenthesis(this *lexer) stateFn {
 		return lexSqlInsertVal
 	case ')':
 		this.emit(tokenTypeSqlRightParenthesis)
-		// we are done with insert
-		return nil
+		return lexSqlReturning
 	}
 	return this.errorToken("expected , or ) ")
+}
+
+// returning
+
+func lexSqlReturning(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.end() {
+		return nil
+	}	
+	return this.lexMatch(tokenTypeSqlReturning, "returning", 0, lexSqlReturningStar)
+}
+
+func lexSqlReturningStar(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.next() == '*' {
+		this.emit(tokenTypeSqlStar)
+		return nil
+	}
+	this.backup()
+	return lexSqlReturningColumn(this)
+}
+
+func lexSqlReturningColumn(this *lexer) stateFn {	
+	return this.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlReturningCommaOrEnd)
+}
+
+func lexSqlReturningCommaOrEnd(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	if this.end() {
+		return nil
+	}	
+	if this.next() == ',' {
+		this.emit(tokenTypeSqlComma)
+		return lexSqlReturningColumn
+	}
+	return this.errorToken("expected , ")
 }
 
 // SELECT sql statement scan state functions.
@@ -624,7 +660,7 @@ func lexSqlColumnEqual(this *lexer) stateFn {
 		this.emit(tokenTypeSqlEqual)
 		return lexSqlColumnEqualValue
 	}
-	return this.errorToken("expecgted = ")
+	return this.errorToken("expected = ")
 }
 
 func lexSqlColumnEqualValue(this *lexer) stateFn {
@@ -654,7 +690,7 @@ func lexSqlFromTable(this *lexer) stateFn {
 }
 
 func lexSqlWhere(this *lexer) stateFn {
-	return this.lexTryMatch(tokenTypeSqlWhere, "where", lexSqlWhereColumn, nil)
+	return this.lexTryMatch(tokenTypeSqlWhere, "where", lexSqlWhereColumn, lexSqlReturning)
 }
 
 // KEY and TAG sql statement scan state functions.

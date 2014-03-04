@@ -126,8 +126,8 @@ func (this *sqlFilter) addFilter(col string, val string) {
 // sqlInsertRequest is a request for sql insert statement.
 type sqlInsertRequest struct {
 	sqlRequest
+	returningColumns
 	colVals []*columnValue
-	front bool
 }
 
 // Adds column to columnValue slice.
@@ -145,22 +145,34 @@ func (this *sqlInsertRequest) setValueAt(idx int, val string) {
 	this.colVals[idx].val = val
 }
 
-// sqlSelectRequest is a request for sql select statement.
-const (
-	selectFrom                  int = iota
-	selectFromBack                   
-	selectFromFront                 
-)
-	
-type sqlSelectRequest struct {
-	sqlRequest
+// contains column names and use flag indicator
+type returningColumns struct {
 	cols   []string
-	filter sqlFilter
-	from int	
+	use bool
 }
 
-func (req *sqlSelectRequest) addColumn(col string) {
-	req.cols = append(req.cols, col)
+func (this *returningColumns) useColumns() bool {
+	return this.use
+}
+
+func (this *returningColumns) addColumn(col string) {
+	this.cols = append(this.cols, col)
+	this.use = true
+}
+
+// sqlSelectRequest is a request for sql select statement.
+
+func newSqlSelectRequest() *sqlSelectRequest {
+	req := &sqlSelectRequest{}
+	req.cols = make([]string, 0, config.PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY)
+	req.use = true
+	return req
+}
+
+type sqlSelectRequest struct {
+	sqlRequest
+	returningColumns
+	filter sqlFilter
 }
 
 // sqlUpdateRequest is a request for sql update statement.

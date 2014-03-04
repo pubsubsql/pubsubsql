@@ -127,7 +127,7 @@ func TestCloseCommand(t *testing.T) {
 }
 
 // INSERT
-func TestSqlInsertStatement(t *testing.T) {
+func TestSqlInsertStatement1(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("insert into stocks (	ticker,bid, ask		 ) values (IBM, '34.43', 465.123)", &consumer)
 	expected := []token{
@@ -149,6 +149,66 @@ func TestSqlInsertStatement(t *testing.T) {
 		{tokenTypeSqlComma, ","},
 		{tokenTypeSqlValue, "465.123"},
 		{tokenTypeSqlRightParenthesis, ")"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+func TestSqlInsertStatement2(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("insert into stocks (	ticker,bid, ask		 ) values (IBM, '34.43', 465.123) returning id, ticker", &consumer)
+	expected := []token{
+		{tokenTypeSqlInsert, "insert"},
+		{tokenTypeSqlInto, "into"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlLeftParenthesis, "("},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "bid"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "ask"},
+		{tokenTypeSqlRightParenthesis, ")"},
+		{tokenTypeSqlValues, "values"},
+		{tokenTypeSqlLeftParenthesis, "("},
+		{tokenTypeSqlValue, "IBM"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlValue, "34.43"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlValue, "465.123"},
+		{tokenTypeSqlRightParenthesis, ")"},
+		{tokenTypeSqlReturning, "returning"},
+		{tokenTypeSqlColumn, "id"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+func TestSqlInsertStatement3(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("insert into stocks (	ticker,bid, ask		 ) values (IBM, '34.43', 465.123) returning *", &consumer)
+	expected := []token{
+		{tokenTypeSqlInsert, "insert"},
+		{tokenTypeSqlInto, "into"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlLeftParenthesis, "("},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "bid"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "ask"},
+		{tokenTypeSqlRightParenthesis, ")"},
+		{tokenTypeSqlValues, "values"},
+		{tokenTypeSqlLeftParenthesis, "("},
+		{tokenTypeSqlValue, "IBM"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlValue, "34.43"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlValue, "465.123"},
+		{tokenTypeSqlRightParenthesis, ")"},
+		{tokenTypeSqlReturning, "returning"},
+		{tokenTypeSqlStar, "*"},
 		{tokenTypeEOF, ""}}
 
 	validateTokens(t, expected, consumer.channel)
@@ -183,6 +243,39 @@ func TestSqlDeleteStatement2(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
+func TestSqlDeleteStatement3(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex(" delete	 from stocks returning id, bid", &consumer)
+	expected := []token{
+		{tokenTypeSqlDelete, "delete"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlReturning, "returning"},
+		{tokenTypeSqlColumn, "id"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "bid"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+func TestSqlDeleteStatement4(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex(" delete	 	 from stocks where ticker = 'IBM' returning * ", &consumer)
+	expected := []token{
+		{tokenTypeSqlDelete, "delete"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlWhere, "where"},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "IBM"},
+		{tokenTypeSqlReturning, "returning"},
+		{tokenTypeSqlStar, "*"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
 // SELECT
 func TestSqlSelectStatement1(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
@@ -336,6 +429,51 @@ func TestSqlUpdateStatement2(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
+func TestSqlUpdateStatement3(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex(" update stocks set bid = 140.45, ask = 142.01 returning id ", &consumer)
+	expected := []token{
+		{tokenTypeSqlUpdate, "update"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlSet, "set"},
+		{tokenTypeSqlColumn, "bid"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "140.45"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "ask"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "142.01"},
+		{tokenTypeSqlReturning, "returning"},
+		{tokenTypeSqlColumn, "id"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+func TestSqlUpdateStatement4(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex(" update stocks set bid = 140.45, ask = '142.01' where ticker = 'GOOG' returning *", &consumer)
+	expected := []token{
+		{tokenTypeSqlUpdate, "update"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeSqlSet, "set"},
+		{tokenTypeSqlColumn, "bid"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "140.45"},
+		{tokenTypeSqlComma, ","},
+		{tokenTypeSqlColumn, "ask"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "142.01"},
+		{tokenTypeSqlWhere, "where"},
+		{tokenTypeSqlColumn, "ticker"},
+		{tokenTypeSqlEqual, "="},
+		{tokenTypeSqlValue, "GOOG"},
+		{tokenTypeSqlReturning, "returning"},
+		{tokenTypeSqlStar, "*"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
 // KEY
 func TestSqlKeyStatement(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
