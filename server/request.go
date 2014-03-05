@@ -130,6 +130,18 @@ type sqlInsertRequest struct {
 	colVals []*columnValue
 }
 
+// sqlPushRequest is a request for sql push statement.
+func newSqlPushRequest() *sqlPushRequest {
+	req := &sqlPushRequest{}
+	req.colVals = make([]*columnValue, 0, config.PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY)
+	return req
+}
+
+type sqlPushRequest struct {
+	sqlInsertRequest
+	front bool
+}
+
 // Adds column to columnValue slice.
 func (this *sqlInsertRequest) addColumn(col string) {
 	this.colVals = append(this.colVals, &columnValue{col: col})
@@ -161,7 +173,6 @@ func (this *returningColumns) addColumn(col string) {
 }
 
 // sqlSelectRequest is a request for sql select statement.
-
 func newSqlSelectRequest() *sqlSelectRequest {
 	req := &sqlSelectRequest{}
 	req.cols = make([]string, 0, config.PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY)
@@ -173,6 +184,19 @@ type sqlSelectRequest struct {
 	sqlRequest
 	returningColumns
 	filter sqlFilter
+}
+
+// sqlPeekRequest is a request for sql peek statement.
+func newSqlPeekRequest() *sqlPeekRequest {
+	req := &sqlPeekRequest{}
+	req.cols = make([]string, 0, config.PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY)
+	req.use = true
+	return req
+}
+
+type sqlPeekRequest struct {
+	sqlSelectRequest
+	front bool
 }
 
 // sqlUpdateRequest is a request for sql update statement.
