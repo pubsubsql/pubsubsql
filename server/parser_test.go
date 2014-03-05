@@ -368,8 +368,8 @@ func validateUpdate(t *testing.T, a request, y *sqlUpdateRequest) {
 		// filter
 		if x.filter != y.filter {
 			t.Errorf("parse error: filters do not match")
-
 		}
+		validateReturningColumns(t, &x.returningColumns, &y.returningColumns)
 
 	default:
 		t.Errorf("parse error: invalid request type expected sqlUpdateRequest")
@@ -403,6 +403,34 @@ func TestParseSqlUpdateStatement2(t *testing.T) {
 
 func TestParseSqlUpdateStatement3(t *testing.T) {
 	pc := newTokens()
+	lex(" update stocks set bid = 140.45, ask = 142.01, sector = 'TECH' where ticker = IBM returning id, bid", pc)
+	x := parse(pc)
+	var y sqlUpdateRequest
+	y.table = "stocks"
+	y.addColVal("bid", "140.45")
+	y.addColVal("ask", "142.01")
+	y.addColVal("sector", "TECH")
+	y.filter.addFilter("ticker", "IBM")
+	y.returningColumns.addColumn("id")
+	y.returningColumns.addColumn("bid")
+	validateUpdate(t, x, &y)
+}
+
+func TestParseSqlUpdateStatement4(t *testing.T) {
+	pc := newTokens()
+	lex(" update stocks set bid = 140.45, ask = 142.01 returning * ", pc)
+	x := parse(pc)
+	var y sqlUpdateRequest
+	y.table = "stocks"
+	y.addColVal("bid", "140.45")
+	y.addColVal("ask", "142.01")
+	y.use = true
+	validateUpdate(t, x, &y)
+
+}
+
+func TestParseSqlUpdateStatement5(t *testing.T) {
+	pc := newTokens()
 	lex(" update stocks set bid = ", pc)
 	x := parse(pc)
 	expectedError(t, x)
@@ -435,6 +463,7 @@ func validateDelete(t *testing.T, a request, y *sqlDeleteRequest) {
 		if x.filter != y.filter {
 			t.Errorf("parse error: filters do not match")
 		}
+		validateReturningColumns(t, &x.returningColumns, &y.returningColumns)
 
 	default:
 		t.Errorf("parse error: invalid request type expected sqlDeleteRequest")
@@ -461,6 +490,29 @@ func TestParseSqlDeleteStatement2(t *testing.T) {
 }
 
 func TestParseSqlDeleteStatement3(t *testing.T) {
+	pc := newTokens()
+	lex(" delete  from stocks returning id, bid", pc)
+	x := parse(pc)
+	var y sqlDeleteRequest
+	y.table = "stocks"
+	y.returningColumns.addColumn("id")
+	y.returningColumns.addColumn("bid")
+	validateDelete(t, x, &y)
+}
+
+func TestParseSqlDeleteStatement4(t *testing.T) {
+	pc := newTokens()
+	lex(" delete  from stocks where  ticker = 'IBM' returning *", pc)
+	x := parse(pc)
+	var y sqlDeleteRequest
+	y.table = "stocks"
+	y.filter.addFilter("ticker", "IBM")
+	y.use = true
+	validateDelete(t, x, &y)
+}
+
+
+func TestParseSqlDeleteStatement5(t *testing.T) {
 	pc := newTokens()
 	lex(" delete ", pc)
 	x := parse(pc)
