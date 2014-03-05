@@ -881,6 +881,91 @@ func TestParseSqlPushStatement5(t *testing.T) {
 
 // POP
 
+func validatePop(t *testing.T, a request , y *sqlPopRequest) {
+	switch a.(type) {
+	case *errorRequest:
+		e := a.(*errorRequest)
+		t.Errorf("parse error: " + e.err)
+	case *sqlPopRequest:
+		x := a.(*sqlPopRequest)
+		validateSelect(t, &x.sqlSelectRequest, &y.sqlSelectRequest)
+		if x.front != y.front {
+			t.Error("front does not match")
+		}	
+	default:
+		t.Errorf("invalid request expected sqlPopRequest")
+		return
+	}
+}
+
+func TestParseSqlPopStatement1(t *testing.T) {
+	pc := newTokens()
+	lex(" pop * from stocks ", pc)
+	x := parse(pc)
+	var y sqlPopRequest
+	y.table = "stocks"
+	y.use = true
+	validatePop(t, x, &y)
+}
+
+func TestParseSqlPopStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" pop ticker, bid, ask  from stocks ", pc)
+	x := parse(pc)
+	var y sqlPopRequest
+	y.table = "stocks"
+	y.sqlSelectRequest.addColumn("ticker")
+	y.sqlSelectRequest.addColumn("bid")
+	y.sqlSelectRequest.addColumn("ask")
+	validatePop(t, x, &y)
+}
+
+func TestParseSqlPopStatement3(t *testing.T) {
+	pc := newTokens()
+	lex(" pop back * from stocks ", pc)
+	x := parse(pc)
+	var y sqlPopRequest
+	y.table = "stocks"
+	y.use = true
+	validatePop(t, x, &y)
+}
+
+func TestParseSqlPopStatement4(t *testing.T) {
+	pc := newTokens()
+	lex(" pop back ticker, bid, ask  from stocks ", pc)
+	x := parse(pc)
+	var y sqlPopRequest
+	y.table = "stocks"
+	y.sqlSelectRequest.addColumn("ticker")
+	y.sqlSelectRequest.addColumn("bid")
+	y.sqlSelectRequest.addColumn("ask")
+	validatePop(t, x, &y)
+}
+
+func TestParseSqlPopStatement5(t *testing.T) {
+	pc := newTokens()
+	lex(" pop front * from stocks ", pc)
+	x := parse(pc)
+	var y sqlPopRequest
+	y.table = "stocks"
+	y.front = true
+	y.use = true
+	validatePop(t, x, &y)
+}
+
+func TestParseSqlPopStatement6(t *testing.T) {
+	pc := newTokens()
+	lex(" pop front ticker, bid, ask  from stocks ", pc)
+	x := parse(pc)
+	var y sqlPopRequest
+	y.table = "stocks"
+	y.front = true
+	y.sqlSelectRequest.addColumn("ticker")
+	y.sqlSelectRequest.addColumn("bid")
+	y.sqlSelectRequest.addColumn("ask")
+	validatePop(t, x, &y)
+}
+
 // PEEK
 
 func validatePeek(t *testing.T, a request , y *sqlPeekRequest) {

@@ -199,6 +199,18 @@ type sqlPeekRequest struct {
 	front bool
 }
 
+// sqlPopRequest is a request for sql pop statement.
+func newSqlPopRequest() *sqlPopRequest {
+	req := &sqlPopRequest{}
+	req.cols = make([]string, 0, config.PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY)
+	return req
+}
+
+type sqlPopRequest struct {
+	sqlSelectRequest
+	front bool
+}
+
 // sqlUpdateRequest is a request for sql update statement.
 type sqlUpdateRequest struct {
 	sqlRequest

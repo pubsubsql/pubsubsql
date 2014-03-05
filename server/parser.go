@@ -368,7 +368,7 @@ func (this *parser) parseSqlSelect() request {
 	return req
 }
 
-// Parses sql peek statement and returns sqlSelectRequest on success.
+// Parses sql peek statement and returns sqlPeekRequest on success.
 func (this *parser) parseSqlPeek() request {
 	req := newSqlPeekRequest()
 	tok := this.tokens.Produce()
@@ -402,6 +402,44 @@ func (this *parser) parseSqlPeek() request {
 	return req	
 }
 
+// Parses sql pop statement and returns sqlPopRequest on success.
+func (this *parser) parseSqlPop() request {
+	req := newSqlPopRequest()
+	tok := this.tokens.Produce()
+	switch tok.typ {
+	case tokenTypeSqlFront:
+		req.front = true
+		tok = this.tokens.Produce()
+	case tokenTypeSqlBack:
+		req.front = false
+		tok = this.tokens.Produce()
+	}
+
+	switch tok.typ {
+	case tokenTypeSqlStar:
+		req.use = true	
+		tok = this.tokens.Produce()
+	case tokenTypeSqlFrom:
+		req.use = false
+	default:
+		if errreq := this.parseReturningColumns(&tok, &req.returningColumns); errreq != nil {
+			return errreq
+		}
+	}
+	// from
+	if tok.typ != tokenTypeSqlFrom {
+		return this.parseError("expected from")
+	}
+	// table name
+	if errreq := this.parseTableName(&req.table); errreq != nil {
+		return errreq
+	}
+	tok = this.tokens.Produce()
+	if tok.typ != tokenTypeEOF {
+		return this.parseError("expected eof token")
+	}
+	return req	
+}
 // UPDATE sql statement
 
 // Parses sql update statement and returns sqlUpdateRequest on success.
@@ -600,10 +638,8 @@ func (this *parser) run() request {
 		return this.parseSqlDelete()
 	case tokenTypeSqlPush:
 		return this.parseSqlPush()
-		/*
-			case tokenTypeSqlPop:
-				return this.parseSqlPop()
-		*/
+	case tokenTypeSqlPop:
+		return this.parseSqlPop()
 	case tokenTypeSqlPeek:
 		return this.parseSqlPeek()
 	case tokenTypeSqlSubscribe:
