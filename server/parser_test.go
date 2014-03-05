@@ -92,6 +92,24 @@ func TestParseCmdClose(t *testing.T) {
 }
 
 // INSERT
+
+func validateReturningColumns(t *testing.T, x *returningColumns, y *returningColumns) {
+	if x.use != y.use {
+		t.Errorf("returningColumns use does not match")
+		return
+	}
+	if len(x.cols) != len(y.cols) {
+		t.Errorf("returningColumns len does not match")
+		return
+	}
+	for i := 0; i < len(x.cols); i++ {
+		if y.cols[i] != x.cols[i] {
+			t.Errorf("returningColumns: colVals do not match")
+			t.Errorf("x.col:%s vs y.col:%s", x.cols[i], y.cols[i])
+		}
+	}
+}
+
 func validateInsert(t *testing.T, a request, y *sqlInsertRequest) {
 	switch a.(type) {
 	case *errorRequest:
@@ -116,6 +134,7 @@ func validateInsert(t *testing.T, a request, y *sqlInsertRequest) {
 				t.Errorf("x.col:%s vs y.col:%s", x.colVals[i].col, y.colVals[i].col)
 			}
 		}
+		validateReturningColumns(t, &x.returningColumns, &y.returningColumns)
 	default:
 		t.Errorf("parse error: invalid request type expected sqlInsertRequest")
 	}
@@ -134,6 +153,33 @@ func TestParseSqlInsertStatement1(t *testing.T) {
 }
 
 func TestParseSqlInsertStatement2(t *testing.T) {
+	pc := newTokens()
+	lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) returning *", pc)
+	x := parse(pc)
+	var y sqlInsertRequest
+	y.table = "stocks"
+	y.addColVal("ticker", "IBM")
+	y.addColVal("bid", "12")
+	y.addColVal("ask", "14.5645")
+	y.use = true
+	validateInsert(t, x, &y)
+}
+
+func TestParseSqlInsertStatement3(t *testing.T) {
+	pc := newTokens()
+	lex(" insert into stocks (ticker, bid, ask) values (IBM, 12, 14.5645) returning id, ticker", pc)
+	x := parse(pc)
+	var y sqlInsertRequest
+	y.table = "stocks"
+	y.addColVal("ticker", "IBM")
+	y.addColVal("bid", "12")
+	y.addColVal("ask", "14.5645")
+	y.returningColumns.addColumn("id")
+	y.returningColumns.addColumn("ticker")
+	validateInsert(t, x, &y)
+}
+
+func TestParseSqlInsertStatement4(t *testing.T) {
 	pc := newTokens()
 	lex(" insert ", pc)
 	x := parse(pc)

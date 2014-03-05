@@ -55,12 +55,12 @@ const (
 	tokenTypeSqlKey                                   // key
 	tokenTypeSqlTag                                   // tag
 	tokenTypeSqlStream                                // stream
-	tokenTypeSqlPush								  // push
-	tokenTypeSqlPop									  // pop
-	tokenTypeSqlPeek								  // peek
-	tokenTypeSqlBack								  // back
-	tokenTypeSqlFront								  // front
-	tokenTypeSqlReturning						      // returning
+	tokenTypeSqlPush                                  // push
+	tokenTypeSqlPop                                   // pop
+	tokenTypeSqlPeek                                  // peek
+	tokenTypeSqlBack                                  // back
+	tokenTypeSqlFront                                 // front
+	tokenTypeSqlReturning                             // returning
 )
 
 // String converts tokenType value to a string.
@@ -535,7 +535,7 @@ func lexSqlReturning(this *lexer) stateFn {
 	this.skipWhiteSpaces()
 	if this.end() {
 		return nil
-	}	
+	}
 	return this.lexMatch(tokenTypeSqlReturning, "returning", 0, lexSqlReturningStar)
 }
 
@@ -549,7 +549,7 @@ func lexSqlReturningStar(this *lexer) stateFn {
 	return lexSqlReturningColumn(this)
 }
 
-func lexSqlReturningColumn(this *lexer) stateFn {	
+func lexSqlReturningColumn(this *lexer) stateFn {
 	return this.lexSqlIdentifier(tokenTypeSqlColumn, lexSqlReturningCommaOrEnd)
 }
 
@@ -557,7 +557,7 @@ func lexSqlReturningCommaOrEnd(this *lexer) stateFn {
 	this.skipWhiteSpaces()
 	if this.end() {
 		return nil
-	}	
+	}
 	if this.next() == ',' {
 		this.emit(tokenTypeSqlComma)
 		return lexSqlReturningColumn
@@ -610,7 +610,7 @@ func lexSqlPopFrom(this *lexer) stateFn {
 		return lexSqlSelectStar
 	}
 	// columns
-	return lexSqlSelectColumn(this)	
+	return lexSqlSelectColumn(this)
 }
 
 func lexSqlPeekFrom(this *lexer) stateFn {
@@ -631,7 +631,7 @@ func lexSqlPeekFrom(this *lexer) stateFn {
 		return lexSqlSelectStar
 	}
 	// columns
-	return lexSqlSelectColumn(this)	
+	return lexSqlSelectColumn(this)
 }
 
 // UPDATE sql statement scan state functions.
@@ -756,12 +756,12 @@ func lexCommandS(this *lexer) stateFn {
 // Helper function to process push, pop, peek commands.
 func lexCommandP(this *lexer) stateFn {
 	switch this.next() {
-		case 'u':
-			return this.lexMatch(tokenTypeSqlPush, "push", 2, lexSqlPushInto)
-		case 'o':
-			return this.lexMatch(tokenTypeSqlPop, "pop", 2, lexSqlPopFrom)
-		case 'e':
-			return this.lexMatch(tokenTypeSqlPeek, "peek", 2, lexSqlPeekFrom)
+	case 'u':
+		return this.lexMatch(tokenTypeSqlPush, "push", 2, lexSqlPushInto)
+	case 'o':
+		return this.lexMatch(tokenTypeSqlPop, "pop", 2, lexSqlPopFrom)
+	case 'e':
+		return this.lexMatch(tokenTypeSqlPeek, "peek", 2, lexSqlPeekFrom)
 	}
 	return this.errorToken("Invalid command:" + this.current())
 }

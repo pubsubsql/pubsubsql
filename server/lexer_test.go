@@ -276,6 +276,7 @@ func TestSqlDeleteStatement4(t *testing.T) {
 
 	validateTokens(t, expected, consumer.channel)
 }
+
 // SELECT
 func TestSqlSelectStatement1(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
@@ -474,6 +475,7 @@ func TestSqlUpdateStatement4(t *testing.T) {
 
 	validateTokens(t, expected, consumer.channel)
 }
+
 // KEY
 func TestSqlKeyStatement(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
@@ -693,6 +695,7 @@ func TestSqlPopStatement6(t *testing.T) {
 
 	validateTokens(t, expected, consumer.channel)
 }
+
 // PEEK
 func TestSqliPeekStatement1(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}

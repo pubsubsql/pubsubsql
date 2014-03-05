@@ -147,8 +147,8 @@ func (this *sqlInsertRequest) setValueAt(idx int, val string) {
 
 // contains column names and use flag indicator
 type returningColumns struct {
-	cols   []string
-	use bool
+	cols []string
+	use  bool
 }
 
 func (this *returningColumns) useColumns() bool {
@@ -178,6 +178,7 @@ type sqlSelectRequest struct {
 // sqlUpdateRequest is a request for sql update statement.
 type sqlUpdateRequest struct {
 	sqlRequest
+	returningColumns
 	colVals []*columnValue
 	filter  sqlFilter
 }
@@ -190,6 +191,7 @@ func (this *sqlUpdateRequest) addColVal(col string, val string) {
 // sqlDeleteRequest is a request for sql delete statement.
 type sqlDeleteRequest struct {
 	sqlRequest
+	returningColumns
 	filter sqlFilter
 }
 

@@ -33,8 +33,8 @@ func (this *link) clear() {
 type record struct {
 	values []string
 	links  []link
-	prev *record
-	next *record
+	prev   *record
+	next   *record
 }
 
 // record factory

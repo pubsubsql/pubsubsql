@@ -55,7 +55,7 @@ type table struct {
 	count     uint32
 	streaming bool
 	//
-	last *record
+	last  *record
 	first *record
 }
 
@@ -146,7 +146,7 @@ func (this *table) addNewRecord(rec *record, back bool) {
 		this.first = rec
 		this.last = rec
 		return
-	} 
+	}
 	//
 	if back {
 		this.last.next = rec
@@ -155,8 +155,8 @@ func (this *table) addNewRecord(rec *record, back bool) {
 	} else {
 		rec.next = this.first
 		this.first.prev = rec
-		this.first = rec	
-	}		
+		this.first = rec
+	}
 }
 
 // addRecordToSlice generic helper function that adds record to the slice and
