@@ -283,8 +283,8 @@ func validateSqlDelete(t *testing.T, res response, expected int) {
 	switch res.(type) {
 	case *sqlDeleteResponse:
 		x := res.(*sqlDeleteResponse)
-		if x.deleted != expected {
-			t.Errorf("table delete error: expected deleted %d but got %d", expected, x.deleted)
+		if x.rows != expected {
+			t.Errorf("table delete error: expected deleted %d but got %d", expected, x.rows)
 		}
 		validateResponseJSON(t, res)
 	case *errorResponse:

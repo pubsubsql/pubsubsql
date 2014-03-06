@@ -463,7 +463,8 @@ func (this *table) sqlInsert(req *sqlInsertRequest) response {
 	this.bindRecord(cols, req.colVals, rec, id)
 	this.addNewRecord(rec, true)
 	res := new(sqlInsertResponse)
-	this.copyReturningRecordToSelectResponse(&res.sqlSelectResponse, rec, retCols)
+	this.prepareSelectResponse(&res.sqlSelectResponse, retCols, 1)
+	this.addRecordToSelectResponse(&res.sqlSelectResponse, rec)
 	this.onInsert(rec)
 	return res
 }
@@ -489,13 +490,20 @@ func (this *table) copyRecordToSqlSelectResponse(res *sqlSelectResponse, rec *re
 	res.copyRecordData(rec)
 }
 
-func (this *table) copyReturningRecordToSelectResponse(res *sqlSelectResponse, rec *record, columns *[]*column) {
+func (this *table) prepareSelectResponse(res *sqlSelectResponse, columns *[]*column, rows int) bool {
 	if columns != nil && len(*columns) > 0 {
 		res.columns = *columns
-		res.records = make([]*record, 0, 1)
+		res.records = make([]*record, 0, rows)
+		return true
+	}
+	return false
+}
+
+func (this *table) addRecordToSelectResponse(res *sqlSelectResponse, rec *record) {
+	if len(res.columns) > 0 {
 		res.copyRecordData(rec)
 	} else {
-		res.rows = 1
+		res.rows++
 	}
 }
 
@@ -583,16 +591,22 @@ func (this *table) sqlDelete(req *sqlDeleteRequest) response {
 	if errResponse != nil {
 		return errResponse
 	}
-	deleted := 0
+	// validate returning columns
+	errres, retCols := this.setReturningColumns(&(req.returningColumns))
+	if errres != nil {
+		return errres
+	}
+	res := sqlDeleteResponse{}
+	this.prepareSelectResponse(&res.sqlSelectResponse, retCols, len(records))
 	for _, rec := range records {
 		if rec != nil {
-			deleted++
+			this.addRecordToSelectResponse(&res.sqlSelectResponse, rec)
 			this.onDelete(rec)
 			this.deleteRecord(rec)
 			rec.free()
 		}
 	}
-	return &sqlDeleteResponse{deleted: deleted}
+	return &res
 }
 
 // Key sql statement

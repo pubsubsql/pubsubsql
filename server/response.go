@@ -268,8 +268,7 @@ func (this *sqlSelectResponse) copyRecordData(source *record) {
 
 // sqlDeleteResponse
 type sqlDeleteResponse struct {
-	requestIdResponse
-	deleted int
+	sqlSelectResponse
 }
 
 func (this *sqlDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -279,9 +278,9 @@ func (this *sqlDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	action(builder, "delete")
 	builder.valueSeparator()
-	builder.nameIntValue("rows", this.deleted)
+	more := this.data(builder, false)
 	builder.endObject()
-	return builder.getNetworkBytes(this.requestId), false
+	return builder.getNetworkBytes(this.requestId), more
 }
 
 // sqlUpdateResponse
