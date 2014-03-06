@@ -428,7 +428,7 @@ func (this *table) setReturningColumns(ret *returningColumns) (response, *[]*col
 	for idx, colName := range ret.cols {
 		col := this.getColumn(colName)
 		if col == nil {
-			return newErrorResponse("insert failed, returning column " + colName + " does not exist"), nil
+			return newErrorResponse("operation failed, returning column " + colName + " does not exist"), nil
 		}
 		columns[idx] = col
 	}
@@ -537,6 +537,7 @@ func (this *table) sqlSelect(req *sqlSelectRequest) response {
 	return &res
 }
 
+// PEEK
 func (this *table) sqlPeek(req *sqlPeekRequest) response {
 	var rec *record
 	if req.front {
@@ -564,7 +565,6 @@ func (this *table) sqlPeek(req *sqlPeekRequest) response {
 }
 
 // UPDATE sql statement
-
 // Processes sql update requesthis.
 // On success returns sqlUpdateResponse.
 func (this *table) sqlUpdate(req *sqlUpdateRequest) response {
@@ -644,6 +644,30 @@ func (this *table) sqlDelete(req *sqlDeleteRequest) response {
 			this.deleteRecord(rec)
 			rec.free()
 		}
+	}
+	return res
+}
+
+// POP
+func (this *table) sqlPop(req *sqlPopRequest) response {
+	var rec *record
+	if req.front {
+		rec = this.first
+	} else {
+		rec = this.last
+	}
+	// validate returning columns
+	errres, retCols := this.setReturningColumns(&(req.returningColumns))
+	if errres != nil {
+		return errres
+	}
+	res := newPopResponse()
+	if rec != nil {
+		this.prepareSelectResponse(&res.sqlSelectResponse, retCols, 1)
+		this.addRecordToSelectResponse(&res.sqlSelectResponse, rec)
+		this.onDelete(rec)
+		this.deleteRecord(rec)
+		rec.free()
 	}
 	return res
 }
@@ -940,6 +964,8 @@ func (this *table) onSqlRequest(req request, sender *responseSender) {
 		this.onSqlSelect(req.(*sqlSelectRequest), sender)
 	case *sqlPeekRequest:
 		this.onSqlPeek(req.(*sqlPeekRequest), sender)
+	case *sqlPopRequest:
+		this.onSqlPop(req.(*sqlPopRequest), sender)
 	case *sqlUpdateRequest:
 		this.onSqlUpdate(req.(*sqlUpdateRequest), sender)
 	case *sqlDeleteRequest:
@@ -971,6 +997,10 @@ func (this *table) onSqlSelect(req *sqlSelectRequest, sender *responseSender) {
 
 func (this *table) onSqlPeek(req *sqlPeekRequest, sender *responseSender) {
 	this.send(sender, this.sqlPeek(req))
+}
+
+func (this *table) onSqlPop(req *sqlPopRequest, sender *responseSender) {
+	this.send(sender, this.sqlPop(req))
 }
 
 func (this *table) onSqlUpdate(req *sqlUpdateRequest, sender *responseSender) {
