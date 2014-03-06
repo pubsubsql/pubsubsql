@@ -129,27 +129,6 @@ func (this *cmdStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return builder.getNetworkBytes(this.requestId), false
 }
 
-// sqlInsertResponse is a response for sql insert statement
-type sqlInsertResponse struct {
-	sqlSelectResponse
-}
-
-func (this *sqlInsertResponse) getResponsStatus() responseStatusType {
-	return responseStatusOk
-}
-
-func (this *sqlInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
-	builder := networkReadyJSONBuilder()
-	builder.beginObject()
-	ok(builder)
-	builder.valueSeparator()
-	action(builder, "insert")
-	builder.valueSeparator()
-	more := this.data(builder, false)
-	builder.endObject()
-	return builder.getNetworkBytes(this.requestId), more
-}
-
 // sqlSelectResponse is a response for sql select statement
 type sqlSelectResponse struct {
 	requestIdResponse
@@ -266,34 +245,54 @@ func (this *sqlSelectResponse) copyRecordData(source *record) {
 	addRecordToSlice(&this.records, dest)
 }
 
-// sqlDeleteResponse
-type sqlDeleteResponse struct {
+// sqlActionDataResponse
+type sqlActionDataResponse struct {
 	sqlSelectResponse
+	action string
 }
 
-func (this *sqlDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
+func newUpdateResponse() *sqlActionDataResponse {
+	return &sqlActionDataResponse{
+		action: "update",
+	}
+}
+
+func newDeleteResponse() *sqlActionDataResponse {
+	return &sqlActionDataResponse{
+		action: "delete",
+	}
+}
+
+func newInsertResponse() *sqlActionDataResponse {
+	return &sqlActionDataResponse{
+		action: "insert",
+	}
+}
+
+func newPushResponse() *sqlActionDataResponse {
+	return &sqlActionDataResponse{
+		action: "push",
+	}
+}
+
+func newPopResponse() *sqlActionDataResponse {
+	return &sqlActionDataResponse{
+		action: "pop",
+	}
+}
+
+func newPeekResponse() *sqlActionDataResponse {
+	return &sqlActionDataResponse{
+		action: "peek",
+	}
+}
+
+func (this *sqlActionDataResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
 	builder.valueSeparator()
-	action(builder, "delete")
-	builder.valueSeparator()
-	more := this.data(builder, false)
-	builder.endObject()
-	return builder.getNetworkBytes(this.requestId), more
-}
-
-// sqlUpdateResponse
-type sqlUpdateResponse struct {
-	sqlSelectResponse
-}
-
-func (this *sqlUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {
-	builder := networkReadyJSONBuilder()
-	builder.beginObject()
-	ok(builder)
-	builder.valueSeparator()
-	action(builder, "update")
+	action(builder, this.action)
 	builder.valueSeparator()
 	more := this.data(builder, false)
 	builder.endObject()
@@ -324,13 +323,13 @@ func newSubscribeResponse(sub *subscription) response {
 	}
 }
 
-// sqlActionDataResponse
-type sqlActionDataResponse struct {
+// sqlPubSubResponse
+type sqlPubSubResponse struct {
 	sqlSelectResponse
 	pubsubid uint64
 }
 
-func (this *sqlActionDataResponse) toNetworkReadyJSONHelper(act string) ([]byte, bool) {
+func (this *sqlPubSubResponse) toNetworkReadyJSONHelper(act string) ([]byte, bool) {
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)
@@ -344,7 +343,7 @@ func (this *sqlActionDataResponse) toNetworkReadyJSONHelper(act string) ([]byte,
 	return builder.getNetworkBytes(0), more
 }
 
-func mergeHelper(res1 *sqlActionDataResponse, res2 *sqlActionDataResponse) bool {
+func mergeHelper(res1 *sqlPubSubResponse, res2 *sqlPubSubResponse) bool {
 	if res1.pubsubid != res2.pubsubid {
 		return false
 	}
@@ -357,7 +356,7 @@ func mergeHelper(res1 *sqlActionDataResponse, res2 *sqlActionDataResponse) bool 
 
 // sqlActionAddResponse
 type sqlActionAddResponse struct {
-	sqlActionDataResponse
+	sqlPubSubResponse
 }
 
 func (this *sqlActionAddResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -368,14 +367,14 @@ func (this *sqlActionAddResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionAddResponse:
 		source := res.(*sqlActionAddResponse)
-		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse)
+		return mergeHelper(&this.sqlPubSubResponse, &source.sqlPubSubResponse)
 	}
 	return false
 }
 
 // sqlActionInsertResponse
 type sqlActionInsertResponse struct {
-	sqlActionDataResponse
+	sqlPubSubResponse
 }
 
 func (this *sqlActionInsertResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -386,14 +385,14 @@ func (this *sqlActionInsertResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionInsertResponse:
 		source := res.(*sqlActionInsertResponse)
-		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse)
+		return mergeHelper(&this.sqlPubSubResponse, &source.sqlPubSubResponse)
 	}
 	return false
 }
 
 // sqlActonDeleteResponse
 type sqlActionDeleteResponse struct {
-	sqlActionDataResponse
+	sqlPubSubResponse
 }
 
 func (this *sqlActionDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -404,14 +403,14 @@ func (this *sqlActionDeleteResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionDeleteResponse:
 		source := res.(*sqlActionDeleteResponse)
-		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse)
+		return mergeHelper(&this.sqlPubSubResponse, &source.sqlPubSubResponse)
 	}
 	return false
 }
 
 // sqlActionRemoveResponse
 type sqlActionRemoveResponse struct {
-	sqlActionDataResponse
+	sqlPubSubResponse
 }
 
 func (this *sqlActionRemoveResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -422,14 +421,14 @@ func (this *sqlActionRemoveResponse) merge(res response) bool {
 	switch res.(type) {
 	case *sqlActionRemoveResponse:
 		source := res.(*sqlActionRemoveResponse)
-		return mergeHelper(&this.sqlActionDataResponse, &source.sqlActionDataResponse)
+		return mergeHelper(&this.sqlPubSubResponse, &source.sqlPubSubResponse)
 	}
 	return false
 }
 
 // sqlActionUpdateResponse
 type sqlActionUpdateResponse struct {
-	sqlActionDataResponse
+	sqlPubSubResponse
 }
 
 func (this *sqlActionUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {

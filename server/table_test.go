@@ -29,7 +29,7 @@ func validateTableRecordsCount(t *testing.T, tbl *table, expected int) {
 
 func validateSqlInsertResponse(t *testing.T, res response) {
 	switch typ := res.(type) {
-	case *sqlInsertResponse:
+	case *sqlActionDataResponse:
 		return
 	default:
 		t.Errorf("table insert error: invalid response type expected sqlInsertResponse but got %T", typ)
@@ -204,8 +204,8 @@ func updateHelper(t *table, sqlUpdate string) response {
 
 func validateSqlUpdate(t *testing.T, res response, expected int) {
 	switch typ := res.(type) {
-	case *sqlUpdateResponse:
-		x := res.(*sqlUpdateResponse)
+	case *sqlActionDataResponse:
+		x := res.(*sqlActionDataResponse)
 		if x.rows != expected {
 			t.Errorf("table update error: expected update %d but got %d", expected, x.rows)
 		}
@@ -281,8 +281,8 @@ func deleteHelper(t *table, sqlDelete string) response {
 
 func validateSqlDelete(t *testing.T, res response, expected int) {
 	switch res.(type) {
-	case *sqlDeleteResponse:
-		x := res.(*sqlDeleteResponse)
+	case *sqlActionDataResponse:
+		x := res.(*sqlActionDataResponse)
 		if x.rows != expected {
 			t.Errorf("table delete error: expected deleted %d but got %d", expected, x.rows)
 		}

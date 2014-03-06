@@ -438,8 +438,11 @@ func (this *table) setReturningColumns(ret *returningColumns) (response, *[]*col
 // Proceses sql insert request by inserting record in the table.
 // On success returns sqlInsertResponse.
 func (this *table) sqlInsert(req *sqlInsertRequest) response {
-	rec, id := this.prepareRecord()
+	return this.sqlInsertHelper(req, "insert", true)
+}
 
+func (this *table) sqlInsertHelper(req *sqlInsertRequest, action string, back bool) response {
+	rec, id := this.prepareRecord()
 	// validate unique keys constrain
 	cols := make([]*column, len(req.colVals))
 	originalColLen := len(this.colSlice)
@@ -461,12 +464,16 @@ func (this *table) sqlInsert(req *sqlInsertRequest) response {
 	}
 	// ready to insert
 	this.bindRecord(cols, req.colVals, rec, id)
-	this.addNewRecord(rec, true)
-	res := new(sqlInsertResponse)
+	this.addNewRecord(rec, back)
+	res := &sqlActionDataResponse{action: action}
 	this.prepareSelectResponse(&res.sqlSelectResponse, retCols, 1)
 	this.addRecordToSelectResponse(&res.sqlSelectResponse, rec)
 	this.onInsert(rec)
 	return res
+}
+
+func (this *table) sqlPush(req *sqlPushRequest) response {
+	return this.sqlInsertHelper(&req.sqlInsertRequest, "push", !req.front)
 }
 
 // SELECT sql statement
@@ -538,12 +545,12 @@ func (this *table) sqlUpdate(req *sqlUpdateRequest) response {
 	if errResponse != nil {
 		return errResponse
 	}
-	var res sqlUpdateResponse
+	res := newUpdateResponse()
 	var onlyRecord *record
 	l := len(records)
 	switch l {
 	case 0:
-		return &res
+		return res
 	case 1:
 		onlyRecord = records[0]
 	}
@@ -584,7 +591,7 @@ func (this *table) sqlUpdate(req *sqlUpdateRequest) response {
 			this.onUpdate(cols, rec, added)
 		}
 	}
-	return &res
+	return res
 }
 
 // DELETE sql statement
@@ -601,7 +608,7 @@ func (this *table) sqlDelete(req *sqlDeleteRequest) response {
 	if errres != nil {
 		return errres
 	}
-	res := sqlDeleteResponse{}
+	res := newDeleteResponse()
 	this.prepareSelectResponse(&res.sqlSelectResponse, retCols, len(records))
 	for _, rec := range records {
 		if rec != nil {
@@ -611,7 +618,7 @@ func (this *table) sqlDelete(req *sqlDeleteRequest) response {
 			rec.free()
 		}
 	}
-	return &res
+	return res
 }
 
 // Key sql statement
@@ -900,6 +907,8 @@ func (this *table) onSqlRequest(req request, sender *responseSender) {
 	switch req.(type) {
 	case *sqlInsertRequest:
 		this.onSqlInsert(req.(*sqlInsertRequest), sender)
+	case *sqlPushRequest:
+		this.onSqlPush(req.(*sqlPushRequest), sender)
 	case *sqlSelectRequest:
 		this.onSqlSelect(req.(*sqlSelectRequest), sender)
 	case *sqlUpdateRequest:
@@ -919,6 +928,11 @@ func (this *table) onSqlRequest(req request, sender *responseSender) {
 
 func (this *table) onSqlInsert(req *sqlInsertRequest, sender *responseSender) {
 	res := this.sqlInsert(req)
+	this.send(sender, res)
+}
+
+func (this *table) onSqlPush(req *sqlPushRequest, sender *responseSender) {
+	res := this.sqlPush(req)
 	this.send(sender, res)
 }
 
