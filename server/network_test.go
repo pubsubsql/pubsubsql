@@ -163,7 +163,6 @@ func TestNetworkBatchRead(t *testing.T) {
 	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (MSFT, 120)", 2)
 	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (GOOG, 120)", 3)
 	validateWriteRead(t, c, "insert into stocks (ticker, bid) values (ORCL, 120)", 4)
-
 	//expected another 3 messages
 	validateWriteRead(t, c, "select * from stocks", 5)
 	validateRead(t, c, 5)

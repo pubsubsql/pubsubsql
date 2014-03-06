@@ -417,11 +417,29 @@ func (this *table) deleteTag(rec *record, col *column) *pubsub {
 }
 
 // INSERT sql statement
+func (this *table) setReturningColumns(ret *returningColumns) (response, *[]*column) {
+	if !ret.use {
+		return nil, nil
+	}
+	if len(ret.cols) == 0 {
+		return nil, &this.colSlice
+	}
+	columns := make([]*column, len(ret.cols))
+	for idx, colName := range ret.cols {
+		col := this.getColumn(colName)
+		if col == nil {
+			return newErrorResponse("insert failed, returning column " + colName + " does not exist"), nil
+		}
+		columns[idx] = col
+	}
+	return nil, &columns
+}
 
 // Proceses sql insert request by inserting record in the table.
 // On success returns sqlInsertResponse.
 func (this *table) sqlInsert(req *sqlInsertRequest) response {
 	rec, id := this.prepareRecord()
+
 	// validate unique keys constrain
 	cols := make([]*column, len(req.colVals))
 	originalColLen := len(this.colSlice)
@@ -434,11 +452,18 @@ func (this *table) sqlInsert(req *sqlInsertRequest) response {
 		}
 		cols[idx] = col
 	}
+	// validate returning columns
+	errres, retCols := this.setReturningColumns(&(req.returningColumns))
+	if errres != nil {
+		//remove created columns
+		this.removeColumns(originalColLen)
+		return errres
+	}
 	// ready to insert
 	this.bindRecord(cols, req.colVals, rec, id)
 	this.addNewRecord(rec, true)
 	res := new(sqlInsertResponse)
-	this.copyRecordToSqlSelectResponse(&res.sqlSelectResponse, rec)
+	this.copyReturningRecordToSelectResponse(&res.sqlSelectResponse, rec, retCols)
 	this.onInsert(rec)
 	return res
 }
@@ -462,6 +487,16 @@ func (this *table) copyRecordToSqlSelectResponse(res *sqlSelectResponse, rec *re
 	res.columns = this.colSlice
 	res.records = make([]*record, 0, 1)
 	res.copyRecordData(rec)
+}
+
+func (this *table) copyReturningRecordToSelectResponse(res *sqlSelectResponse, rec *record, columns *[]*column) {
+	if columns != nil && len(*columns) > 0 {
+		res.columns = *columns
+		res.records = make([]*record, 0, 1)
+		res.copyRecordData(rec)
+	} else {
+		res.rows = 1
+	}
 }
 
 // Processes sql select request.

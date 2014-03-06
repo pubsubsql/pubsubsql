@@ -511,7 +511,6 @@ func TestParseSqlDeleteStatement4(t *testing.T) {
 	validateDelete(t, x, &y)
 }
 
-
 func TestParseSqlDeleteStatement5(t *testing.T) {
 	pc := newTokens()
 	lex(" delete ", pc)
@@ -797,7 +796,7 @@ func TestParseSqlStream2(t *testing.T) {
 
 // PUSH
 
-func validatePush(t *testing.T, a request , y *sqlPushRequest) {
+func validatePush(t *testing.T, a request, y *sqlPushRequest) {
 	switch a.(type) {
 	case *errorRequest:
 		e := a.(*errorRequest)
@@ -807,7 +806,7 @@ func validatePush(t *testing.T, a request , y *sqlPushRequest) {
 		validateInsert(t, &x.sqlInsertRequest, &y.sqlInsertRequest)
 		if x.front != y.front {
 			t.Error("front does not match")
-		}	
+		}
 	default:
 		t.Errorf("invalid request expected sqlPushRequest")
 		return
@@ -878,10 +877,9 @@ func TestParseSqlPushStatement5(t *testing.T) {
 	validatePush(t, x, &y)
 }
 
-
 // POP
 
-func validatePop(t *testing.T, a request , y *sqlPopRequest) {
+func validatePop(t *testing.T, a request, y *sqlPopRequest) {
 	switch a.(type) {
 	case *errorRequest:
 		e := a.(*errorRequest)
@@ -891,7 +889,7 @@ func validatePop(t *testing.T, a request , y *sqlPopRequest) {
 		validateSelect(t, &x.sqlSelectRequest, &y.sqlSelectRequest)
 		if x.front != y.front {
 			t.Error("front does not match")
-		}	
+		}
 	default:
 		t.Errorf("invalid request expected sqlPopRequest")
 		return
@@ -968,7 +966,7 @@ func TestParseSqlPopStatement6(t *testing.T) {
 
 // PEEK
 
-func validatePeek(t *testing.T, a request , y *sqlPeekRequest) {
+func validatePeek(t *testing.T, a request, y *sqlPeekRequest) {
 	switch a.(type) {
 	case *errorRequest:
 		e := a.(*errorRequest)
@@ -978,7 +976,7 @@ func validatePeek(t *testing.T, a request , y *sqlPeekRequest) {
 		validateSelect(t, &x.sqlSelectRequest, &y.sqlSelectRequest)
 		if x.front != y.front {
 			t.Error("front does not match")
-		}	
+		}
 	default:
 		t.Errorf("invalid request expected sqlPeekRequest")
 		return
@@ -1049,4 +1047,3 @@ func TestParseSqlPeekStatement6(t *testing.T) {
 	y.sqlSelectRequest.addColumn("ask")
 	validatePeek(t, x, &y)
 }
-

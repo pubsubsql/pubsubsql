@@ -210,8 +210,8 @@ func (this *parser) returningColumnsHelper(tok *token, req request, r *returning
 		s := fmt.Sprintf("invalid token %v: expected returning", tok.val)
 		return this.parseError(s)
 	}
-	return req;
-} 
+	return req
+}
 
 // Parses sql push statement and returns sqlInsertRequest on success.
 func (this *parser) parseSqlPush() request {
@@ -220,10 +220,10 @@ func (this *parser) parseSqlPush() request {
 	tok := this.tokens.Produce()
 	switch tok.typ {
 	case tokenTypeSqlBack:
-		req.front = false	
+		req.front = false
 		tok = this.tokens.Produce()
 	case tokenTypeSqlFront:
-		req.front = true	
+		req.front = true
 		tok = this.tokens.Produce()
 	}
 	if tok.typ != tokenTypeSqlInto {
@@ -399,7 +399,7 @@ func (this *parser) parseSqlPeek() request {
 	if tok.typ != tokenTypeEOF {
 		return this.parseError("expected eof token")
 	}
-	return req	
+	return req
 }
 
 // Parses sql pop statement and returns sqlPopRequest on success.
@@ -417,7 +417,7 @@ func (this *parser) parseSqlPop() request {
 
 	switch tok.typ {
 	case tokenTypeSqlStar:
-		req.use = true	
+		req.use = true
 		tok = this.tokens.Produce()
 	case tokenTypeSqlFrom:
 		req.use = false
@@ -438,8 +438,9 @@ func (this *parser) parseSqlPop() request {
 	if tok.typ != tokenTypeEOF {
 		return this.parseError("expected eof token")
 	}
-	return req	
+	return req
 }
+
 // UPDATE sql statement
 
 // Parses sql update statement and returns sqlUpdateRequest on success.
@@ -517,7 +518,7 @@ func (this *parser) parseSqlDelete() request {
 	case tokenTypeEOF:
 		return req
 	case tokenTypeSqlWhere:
-		if errreq := this.parseSqlWhere(&(req.filter), tok);  errreq != nil {
+		if errreq := this.parseSqlWhere(&(req.filter), tok); errreq != nil {
 			return errreq
 		}
 		tok = this.tokens.Produce()

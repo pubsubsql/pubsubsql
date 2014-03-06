@@ -175,6 +175,11 @@ func row(builder *JSONBuilder, columns []*column, rec *record) {
 }
 
 func (this *sqlSelectResponse) data(builder *JSONBuilder, pubsub bool) bool {
+	// we are not returning data but only number of rows affected
+	if len(this.columns) == 0 {
+		builder.nameIntValue("rows", this.rows)
+		return false
+	}
 	// write the columns first
 	builder.string("columns")
 	builder.nameSeparator()
