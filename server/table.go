@@ -538,11 +538,12 @@ func (this *table) sqlUpdate(req *sqlUpdateRequest) response {
 	if errResponse != nil {
 		return errResponse
 	}
-	res := &sqlUpdateResponse{updated: 0}
+	var res sqlUpdateResponse
 	var onlyRecord *record
-	switch len(records) {
+	l := len(records)
+	switch l {
 	case 0:
-		return res
+		return &res
 	case 1:
 		onlyRecord = records[0]
 	}
@@ -561,11 +562,15 @@ func (this *table) sqlUpdate(req *sqlUpdateRequest) response {
 		}
 		cols[idx+1] = col
 	}
+	// validate returning columns
+	errres, retCols := this.setReturningColumns(&(req.returningColumns))
+	if errres != nil {
+		return errres
+	}
 	// all is valid ready to update
-	updated := 0
+	this.prepareSelectResponse(&res.sqlSelectResponse, retCols, l)
 	for _, rec := range records {
 		if rec != nil {
-			updated++
 			ra := this.updateRecord(cols[1:], req.colVals, rec, int(rec.id()))
 			if hasWhatToRemove(ra) {
 				this.onRemove(ra.removed, rec)
@@ -575,11 +580,11 @@ func (this *table) sqlUpdate(req *sqlUpdateRequest) response {
 				added = &ra.added
 				this.onAdd(ra.added, rec)
 			}
+			this.addRecordToSelectResponse(&res.sqlSelectResponse, rec)
 			this.onUpdate(cols, rec, added)
 		}
 	}
-	res.updated = updated
-	return res
+	return &res
 }
 
 // DELETE sql statement

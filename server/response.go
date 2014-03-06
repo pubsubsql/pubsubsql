@@ -285,8 +285,7 @@ func (this *sqlDeleteResponse) toNetworkReadyJSON() ([]byte, bool) {
 
 // sqlUpdateResponse
 type sqlUpdateResponse struct {
-	requestIdResponse
-	updated int
+	sqlSelectResponse
 }
 
 func (this *sqlUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {
@@ -296,9 +295,9 @@ func (this *sqlUpdateResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	action(builder, "update")
 	builder.valueSeparator()
-	builder.nameIntValue("rows", this.updated)
+	more := this.data(builder, false)
 	builder.endObject()
-	return builder.getNetworkBytes(this.requestId), false
+	return builder.getNetworkBytes(this.requestId), more
 }
 
 // sqlSubscribeResponse

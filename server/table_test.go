@@ -206,8 +206,8 @@ func validateSqlUpdate(t *testing.T, res response, expected int) {
 	switch typ := res.(type) {
 	case *sqlUpdateResponse:
 		x := res.(*sqlUpdateResponse)
-		if x.updated != expected {
-			t.Errorf("table update error: expected update %d but got %d", expected, x.updated)
+		if x.rows != expected {
+			t.Errorf("table update error: expected update %d but got %d", expected, x.rows)
 		}
 		validateResponseJSON(t, res)
 	case *errorResponse:
