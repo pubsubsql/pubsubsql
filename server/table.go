@@ -516,6 +516,7 @@ func (this *table) addRecordToSelectResponse(res *sqlSelectResponse, rec *record
 
 // Processes sql select request.
 // On success returns sqlSelectResponse.
+
 func (this *table) sqlSelect(req *sqlSelectRequest) response {
 	records, errResponse := this.getRecordsBySqlFilter(req.filter)
 	if errResponse != nil {
@@ -534,6 +535,32 @@ func (this *table) sqlSelect(req *sqlSelectRequest) response {
 	var res sqlSelectResponse
 	this.copyRecordsToSqlSelectResponse(&res, records, columns)
 	return &res
+}
+
+func (this *table) sqlPeek(req *sqlPeekRequest) response {
+	var rec *record
+	if req.front {
+		rec = this.first
+	} else {
+		rec = this.last
+	}
+	// precreate columns
+	var columns []*column
+	if len(req.cols) > 0 {
+		columns = make([]*column, 0, cap(req.cols))
+		for _, colName := range req.cols {
+			col, _ := this.getAddColumn(colName)
+			columns = append(columns, col)
+		}
+	} else {
+		columns = this.colSlice
+	}
+	res := newPeekResponse()
+	this.prepareSelectResponse(&res.sqlSelectResponse, &columns, 1)
+	if rec != nil {
+		this.addRecordToSelectResponse(&res.sqlSelectResponse, rec)
+	}
+	return res
 }
 
 // UPDATE sql statement
@@ -911,6 +938,8 @@ func (this *table) onSqlRequest(req request, sender *responseSender) {
 		this.onSqlPush(req.(*sqlPushRequest), sender)
 	case *sqlSelectRequest:
 		this.onSqlSelect(req.(*sqlSelectRequest), sender)
+	case *sqlPeekRequest:
+		this.onSqlPeek(req.(*sqlPeekRequest), sender)
 	case *sqlUpdateRequest:
 		this.onSqlUpdate(req.(*sqlUpdateRequest), sender)
 	case *sqlDeleteRequest:
@@ -938,6 +967,10 @@ func (this *table) onSqlPush(req *sqlPushRequest, sender *responseSender) {
 
 func (this *table) onSqlSelect(req *sqlSelectRequest, sender *responseSender) {
 	this.send(sender, this.sqlSelect(req))
+}
+
+func (this *table) onSqlPeek(req *sqlPeekRequest, sender *responseSender) {
+	this.send(sender, this.sqlPeek(req))
 }
 
 func (this *table) onSqlUpdate(req *sqlUpdateRequest, sender *responseSender) {
