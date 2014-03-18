@@ -964,6 +964,16 @@ func TestParseSqlPopStatement6(t *testing.T) {
 	validatePop(t, x, &y)
 }
 
+func TestParseSqlPopStatement7(t *testing.T) {
+	pc := newTokens()
+	lex(" pop from stocks ", pc)
+	x := parse(pc)
+	var y sqlPopRequest
+	y.table = "stocks"
+	y.use = true
+	validatePop(t, x, &y)
+}
+
 // PEEK
 
 func validatePeek(t *testing.T, a request, y *sqlPeekRequest) {
