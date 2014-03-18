@@ -34,7 +34,7 @@ var VS_PLATFORM = "" //set automatically
 var GOROOT = ""      // must match ARCH
 var PATH_SEPARATOR = ""
 var PATH_SLASH = ""
-var VERSION = "1.0.0"
+var VERSION = "1.1.0"
 
 func main() {
 	start()
