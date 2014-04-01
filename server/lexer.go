@@ -154,7 +154,7 @@ func (this token) String() string {
 	return this.val
 }
 
-// tokenConsumer consumes tokens emited by lexer.
+// tokenConsumer consumes tokens emitted by lexer.
 type tokenConsumer interface {
 	Consume(t *token)
 }
