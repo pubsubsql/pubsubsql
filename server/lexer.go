@@ -164,6 +164,15 @@ type tokensProducerConsumer struct {
 	tokens []*token
 }
 
+// String converts token to a string.
+func (this tokensProducerConsumer) String() string {
+	return fmt.Sprintf(
+		"tokensProducerConsumer: idx=%d; tokens(%d)=%s",
+		this.idx,
+		len(this.tokens),
+		this.tokens)
+}
+
 func newTokens() *tokensProducerConsumer {
 	return &tokensProducerConsumer{
 		idx:    0,
@@ -325,7 +334,7 @@ func (this *lexer) tryMatch(val string) bool {
 	return true
 }
 
-// lexMatch matches expected string value emiting the token on success
+// lexMatch matches expected string value emitting the token on success
 // and returning passed state function.
 func (this *lexer) lexMatch(typ tokenType, value string, skip int, fn stateFn) stateFn {
 	if this.match(value, skip) {
@@ -335,7 +344,7 @@ func (this *lexer) lexMatch(typ tokenType, value string, skip int, fn stateFn) s
 	return this.errorToken("Unexpected token:" + this.current())
 }
 
-// lexSqlIndentifier scans input for valid sql identifier emiting the token on success
+// lexSqlIndentifier scans input for valid sql identifier emitting the token on success
 // and returning passed state function.
 func (this *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
 	this.skipWhiteSpaces()
@@ -351,7 +360,7 @@ func (this *lexer) lexSqlIdentifier(typ tokenType, fn stateFn) stateFn {
 	return fn
 }
 
-// lexSqlLeftParenthesis scans input for '(' emiting the token on success
+// lexSqlLeftParenthesis scans input for '(' emitting the token on success
 // and returning passed state function.
 func (this *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 	this.skipWhiteSpaces()
@@ -362,7 +371,7 @@ func (this *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 	return fn
 }
 
-// lexSqlValue scans input for valid sql value emiting the token on success
+// lexSqlValue scans input for valid sql value emitting the token on success
 // and returing passed state function.
 func (this *lexer) lexSqlValue(fn stateFn) stateFn {
 	this.skipWhiteSpaces()
@@ -594,6 +603,12 @@ func lexSqlSelectStar(this *lexer) stateFn {
 
 func lexSqlPopFrom(this *lexer) stateFn {
 	this.skipWhiteSpaces()
+	// from
+	if this.tryMatch("from") {
+		this.emit(tokenTypeSqlFrom)
+		return lexSqlFromTable
+	}
+	// *
 	if this.next() == '*' {
 		this.emit(tokenTypeSqlStar)
 		return lexSqlFrom
