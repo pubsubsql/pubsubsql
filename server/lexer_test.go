@@ -374,6 +374,16 @@ func TestSqlSubscribeStatement3(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
+func TestSqlSubscribeTopic(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("subscribe topicname", &consumer)
+	expected := []token{
+		{tokenTypeSqlSubscribe, "subscribe"},
+		{tokenTypeSqlTopic, "topicname"}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
 // UNSUBSCRIBE
 func TestSqlUnrsubscribeStatement1(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}

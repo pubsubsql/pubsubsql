@@ -61,6 +61,7 @@ const (
 	tokenTypeSqlBack                                  // back
 	tokenTypeSqlFront                                 // front
 	tokenTypeSqlReturning                             // returning
+	tokenTypeSqlTopic                                 // topic
 )
 
 // String converts tokenType value to a string.
@@ -134,6 +135,8 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlBack"
 	case tokenTypeSqlFront:
 		return "tokenTypeSqlFront"
+	case tokenTypeSqlTopic:
+		return "tokenTypeSqlTopic"
 	}
 	return "not implemented"
 }
@@ -731,7 +734,11 @@ func lexSqlSubscribe(this *lexer) stateFn {
 		return lexSqlSelectStar
 	}
 	this.backup()
-	return lexSqlSubscribeSkip(this)
+	return this.lexTryMatch(tokenTypeSqlSkip, "skip", lexSqlSelectStar, lexSqlTopic)
+}
+
+func lexSqlTopic(this *lexer) stateFn {
+	return this.lexSqlIdentifier(tokenTypeSqlTopic, nil)
 }
 
 // UNSUBSCRIBE
