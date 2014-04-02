@@ -164,7 +164,7 @@ type tokensProducerConsumer struct {
 	tokens []*token
 }
 
-// String converts token to a string.
+// String converts tokensProducerConsumer to a string.
 func (this tokensProducerConsumer) String() string {
 	return fmt.Sprintf(
 		"tokensProducerConsumer: idx=%d; tokens(%d)=%s",
