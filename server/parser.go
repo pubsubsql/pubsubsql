@@ -563,6 +563,9 @@ func (this *parser) parseSqlTag() request {
 // Parses sql subscribe statement and returns sqlSubscribeRequest on success.
 func (this *parser) parseSqlSubscribe() request {
 	tok := this.tokens.Produce()
+	if tok.typ == tokenTypeSqlTopic {
+		return &sqlSubscribeTopicRequest { topic: tok.val }
+	}
 	req := new(sqlSubscribeRequest)
 	// skip
 	if tok.typ == tokenTypeSqlSkip {

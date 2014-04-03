@@ -259,3 +259,12 @@ type sqlUnsubscribeRequest struct {
 	connectionId uint64
 	filter       sqlFilter
 }
+
+
+// sqlSubscribeTopicRequest is a request for sql subscribe topic statement.
+type sqlSubscribeTopicRequest struct {
+	sqlRequest
+	topic string
+	sender *responseSender
+}
+

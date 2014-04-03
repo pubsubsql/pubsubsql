@@ -626,6 +626,35 @@ func TestParseSqlSubscribeStatement4(t *testing.T) {
 	expectedError(t, x)
 }
 
+// SUBSCRIBE TOPIC
+func validateSubscribeTopic(t *testing.T, a request, y *sqlSubscribeTopicRequest) {
+	switch a.(type) {
+	case *errorRequest:
+		e := a.(*errorRequest)
+		t.Errorf("parse error: " + e.err)
+
+	case *sqlSubscribeTopicRequest:
+		x := a.(*sqlSubscribeTopicRequest)
+		// table name
+		if x.topic != y.topic {
+			t.Errorf("parse error: topic names do not match " + x.topic)
+		}
+
+	default:
+		t.Errorf("parse error: invalid request type expected sqlSubscribeTopicRequest")
+	}
+
+}
+
+func TestParseSqlSubscribeTopic(t *testing.T) {
+	pc := newTokens()
+	lex(" subscribe topic1 ", pc)
+	x := parse(pc)
+	var y sqlSubscribeTopicRequest
+	y.topic = "topic1"
+	validateSubscribeTopic(t, x, &y)
+}
+
 // UNSUBSCRIBE
 func validateUnsubscribe(t *testing.T, a request, y *sqlUnsubscribeRequest) {
 	switch a.(type) {
