@@ -43,9 +43,10 @@ func main() {
 	buildService()
 	copyRootFiles()
 	copyDocFiles()
-	copyGo();
-	buildJava();	
-	buildDotnet();
+	copyGo()
+	buildJava()	
+	buildDotnet()
+	buildPython()
 	createArchive()
 	//
 	done()
@@ -377,6 +378,10 @@ func buildDotnet() {
 
 	cd("pubsubsql/build")
 	success()
+}
+
+func buildPython() {
+	pass
 }
 
 // create archive
