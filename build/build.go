@@ -381,7 +381,41 @@ func buildDotnet() {
 }
 
 func buildPython() {
-	pass
+	emptyln()
+	print("Building Python...")
+	
+	// create directories
+	mkdir("./pubsubsql")
+	mkdir("./pubsubsql/samples")
+	mkdir("./pubsubsql/samples/python")
+	mkdir("./pubsubsql/samples/python/src")
+	mkdir("./pubsubsql/samples/python/src/pubsubsql")
+	mkdir("./pubsubsql/samples/python/src/pubsubsql/net")
+	
+	var f fileCopy
+	
+	// copy files: src/*
+	f.from = "../../python/src"
+	f.to = "./pubsubsql/samples/python/src"
+	f.cp("quickstart.py")
+
+	// copy files: src/pubsubsql/*
+	f.from = "../../python/src/pubsubsql"
+	f.to = "./pubsubsql/samples/python/src/pubsubsql"
+	f.cp("__init__.py")
+	f.cp("client.py")
+	f.cp("testclient.py")
+
+	// copy files: src/pubsubsql/net/*
+	f.from = "../../python/src/pubsubsql/net"
+	f.to = "./pubsubsql/samples/python/src/pubsubsql/net"
+	f.cp("__init__.py")
+	f.cp("header.py")
+	f.cp("helper.py")
+	f.cp("response.py")
+	f.cp("testheader.py")
+	
+	success()
 }
 
 // create archive
