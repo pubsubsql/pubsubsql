@@ -301,6 +301,11 @@ func buildJava() {
 	f.cp("New.png")
 	f.cp("Stop.png")
 	
+	// copy bin
+	f.from = "../../java/bin"  
+	f.to = "./pubsubsql/samples/java/bin"
+	f.cp("gitempty")
+	
 	// copy lib
 	f.from = "../../java/lib"  
 	f.to = "./pubsubsql/samples/java/lib"
