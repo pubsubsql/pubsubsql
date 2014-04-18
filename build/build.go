@@ -148,16 +148,18 @@ func copyDocFiles() {
 	case "windows":
 		f.from = "./windows/docs"
 		f.to = "./pubsubsql/docs"
+		f.cp("dot.Net_API.html")
 		f.cp("Getting_Started.html")
 		f.cp("Go_API.html")
 		f.cp("Java_API.html")
-		f.cp("dot.Net_API.html")
+		f.cp("Python_API.html")
 	case "linux":
 		f.from = "./linux/docs"
 		f.to = "./pubsubsql/docs"
 		f.cp("Getting_Started.html")
 		f.cp("Go_API.html")
 		f.cp("Java_API.html")
+		f.cp("Python_API.html")
 	}
 }
 
