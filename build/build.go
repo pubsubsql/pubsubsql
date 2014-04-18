@@ -23,6 +23,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
+	"time"
 	"os"
 	"os/exec"
 	"path/filepath"
@@ -670,15 +671,20 @@ func copyFile(src string, dst string) (err error) {
 		return
 	}
 	defer dstFile.Close()
-
+	
 	if OS == "linux" {
 		err = dstFile.Chmod(os.ModePerm)
 		if err != nil {
 			return
 		}
 	}
-
+	
 	_, err = io.Copy(dstFile, srcFile)
+	if err != nil {
+		return
+	}
+	
+	err = os.Chtimes(dst, time.Now(), time.Now())	
 	return err
 }
 
@@ -712,6 +718,11 @@ func create(path string) *os.File {
 	file, err := os.Create(path)
 	if err != nil {
 		fail("Failed to create file %v error %v", path, err)
+	}
+	err = os.Chtimes(path, time.Now(), time.Now())
+	if err != nil {
+		file.Close()
+		fail("Failed to update time of file %v error %v", path, err)
 	}
 	return file
 }
@@ -758,6 +769,9 @@ func targz(archiveFile string, dir string) {
 			fail("Failed to write tar header %v", err)
 		}
 		_, err = io.Copy(tarWriter, fileToWrite)
+		if err != nil {
+			fail("Failed to copy tar header %v", err)
+		}
 		return nil
 	}
 	//
@@ -784,12 +798,23 @@ func dozip(archiveFile string, dir string) {
 		}
 		print(path)
 		fileToWrite := open(path)
+		//
+		var fileHeader *zip.FileHeader 
+		fileHeader, err = zip.FileInfoHeader(fileInfo)
+		if err != nil {
+			fail("Failed to create file info header %v", err)
+		}
+		fileHeader.Name = path
+		//		
 		var w io.Writer
-		w, err = zipWriter.Create(path)
+		w, err = zipWriter.CreateHeader(fileHeader)
 		if err != nil {
 			fail("Failed to create zip writer %v", err)
 		}
 		_, err = io.Copy(w, fileToWrite)
+		if err != nil {
+			fail("Failed to copy (zip writer) %v", err)
+		}
 		return nil
 	}
 	//
