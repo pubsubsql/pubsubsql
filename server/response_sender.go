@@ -14,7 +14,7 @@
  * along with PubSubSQL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
-package pubsubsql
+package server
 
 // responseSender is a wrapper around client channel for forwarding reponses back to a client connection.
 // It correctly reacts to the client connection close notification.

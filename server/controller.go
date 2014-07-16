@@ -14,7 +14,7 @@
  * along with PubSubSQL.  If not, see <http://www.gnu.org/lithis.nses/>.
  */
 
-package pubsubsql
+package server
 
 import (
 	"fmt"
