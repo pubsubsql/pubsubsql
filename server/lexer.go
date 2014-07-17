@@ -26,7 +26,7 @@ import (
 type tokenType uint8
 
 const (
-	tokenTypeError                   tokenType = iota // error occured
+	tokenTypeError                   tokenType = iota // error occurred
 	tokenTypeEOF                                      // last token
 	tokenTypeCmdStatus                                // status
 	tokenTypeCmdStop                                  // stop
@@ -50,7 +50,7 @@ const (
 	tokenTypeSqlLeftParenthesis                       // (
 	tokenTypeSqlRightParenthesis                      // )
 	tokenTypeSqlComma                                 // ,
-	tokenTypeSqlValue                                 // 'some string' string or continous sequence of chars delimited by WHITE SPACE | ' | , | ( | )
+	tokenTypeSqlValue                                 // 'some string' string or continuous sequence of chars delimited by WHITE SPACE | ' | , | ( | )
 	tokenTypeSqlValueWithSingleQuote                  // '' becomes ' inside the string, parser will need to replace the string
 	tokenTypeSqlKey                                   // key
 	tokenTypeSqlTag                                   // tag
@@ -62,6 +62,9 @@ const (
 	tokenTypeSqlFront                                 // front
 	tokenTypeSqlReturning                             // returning
 	tokenTypeSqlTopic                                 // topic
+	tokenTypeSqlMysql                                 // mysql
+	tokenTypeSqlConnect                               // connect
+	tokenTypeSqlDisconnect                            // disconnect
 )
 
 // String converts tokenType value to a string.
@@ -137,6 +140,12 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlFront"
 	case tokenTypeSqlTopic:
 		return "tokenTypeSqlTopic"
+	case tokenTypeSqlMysql:
+		return "tokenTypeSqlMysql"
+	case tokenTypeSqlConnect:
+		return "tokenTypeSqlConnect"
+	case tokenTypeSqlDisconnect:
+		return "tokenTypeSqlDisconnect"
 	}
 	return "not implemented"
 }
@@ -207,7 +216,7 @@ func (this *tokensProducerConsumer) Produce() *token {
 type lexer struct {
 	input  string        // the string being scanned
 	start  int           // start position of this item
-	pos    int           // currenty position in the input
+	pos    int           // currently position in the input
 	width  int           // width of last rune read from input
 	tokens tokenConsumer // consumed tokens
 	err    string        // error message
@@ -218,7 +227,7 @@ type lexer struct {
 type stateFn func(*lexer) stateFn
 
 // Emits an error token and terminates the scan
-// by passing back a nil ponter that will be the next state
+// by passing back a nil pointer that will be the next state
 // terminating lexer.run function
 func (this *lexer) errorToken(format string, args ...interface{}) stateFn {
 	this.err = fmt.Sprintf(format, args...)
@@ -288,7 +297,7 @@ func isWhiteSpace(rune int32) bool {
 // as defined by isWhiteSpace function
 func (this *lexer) scanTillWhiteSpace() {
 	for rune := this.next(); !isWhiteSpace(rune); rune = this.next() {
-
+		// void
 	}
 }
 
@@ -375,7 +384,7 @@ func (this *lexer) lexSqlLeftParenthesis(fn stateFn) stateFn {
 }
 
 // lexSqlValue scans input for valid sql value emitting the token on success
-// and returing passed state function.
+// and returning passed state function.
 func (this *lexer) lexSqlValue(fn stateFn) stateFn {
 	this.skipWhiteSpaces()
 	if this.end() {
@@ -467,7 +476,7 @@ func lexEof(this *lexer) stateFn {
 	return this.errorToken("unexpected token at the end of statement")
 }
 
-// BEGING SQL
+// BEGINNING SQL
 
 // INSERT sql statement scan state functions.
 
@@ -747,7 +756,30 @@ func lexSqlUnsubscribeFrom(this *lexer) stateFn {
 	return lexSqlFrom(this)
 }
 
+// CONNECT
+
+func lexSqlConnectValue(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexSqlValue(nil)
+}
+
 // END SQL
+
+// Helper function to process subscribe unsubscribe connect disconnect commands.
+func lexCommandMysql(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	switch this.next() {
+	case 's':
+		return this.lexMatch(tokenTypeSqlSubscribe, "subscribe", 1, lexSqlSubscribe)
+	case 'u':
+		return this.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 1, lexSqlUnsubscribeFrom)
+	case 'c':
+		return this.lexMatch(tokenTypeSqlConnect, "connect", 1, lexSqlConnectValue)
+	case 'd':
+		return this.lexMatch(tokenTypeSqlDisconnect, "disconnect", 1, nil)
+	}
+	return this.errorToken("Invalid command:" + this.current())
+}
 
 // Helper function to process status stop start commands.
 func lexCommandST(this *lexer) stateFn {
@@ -811,11 +843,13 @@ func lexCommand(this *lexer) stateFn {
 		return this.lexMatch(tokenTypeCmdClose, "close", 1, nil)
 	case 'p': // pop, push, peek
 		return lexCommandP(this)
+	case 'm': // mysql
+		return this.lexMatch(tokenTypeSqlMysql, "mysql", 1, lexCommandMysql)
 	}
 	return this.errorToken("Invalid command:" + this.current())
 }
 
-// Scans the input by executing state functon untithis.
+// Scans the input by executing state function untithis.
 // the state is nil
 func (this *lexer) run() {
 	for state := lexCommand; state != nil; {

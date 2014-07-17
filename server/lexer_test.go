@@ -19,7 +19,7 @@ package server
 import "testing"
 import "fmt"
 
-// ignores consumed tokens usifull in benchmark code
+// ignores consumed tokens useful in benchmark code
 type ignoreTokenConsumer struct {
 }
 
@@ -92,6 +92,60 @@ func BenchmarkUpdate4(b *testing.B) {
 }
 
 // END BENCHMARKS
+
+// MYSQL CONNECT xyz123
+func TestMysqlConnect(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("mysql connect xyz123", &consumer)
+	expected := []token{
+		{tokenTypeSqlMysql, "mysql"},
+		{tokenTypeSqlConnect, "connect"},
+		{tokenTypeSqlValue, "xyz123"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+// MYSQL DISCONNECT
+func TestMysqlDisconnect(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("mysql disconnect", &consumer)
+	expected := []token{
+		{tokenTypeSqlMysql, "mysql"},
+		{tokenTypeSqlDisconnect, "disconnect"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+// MYSQL UNSUBSCRIBE
+func TestMysqlUnsubscribe(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("mysql unsubscribe from stocks", &consumer)
+	expected := []token{
+		{tokenTypeSqlMysql, "mysql"},
+		{tokenTypeSqlUnsubscribe, "unsubscribe"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
+// MYSQL SUBSCRIBE
+func TestMysqlSubscribe(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("mysql subscribe * from stocks", &consumer)
+	expected := []token{
+		{tokenTypeSqlMysql, "mysql"},
+		{tokenTypeSqlSubscribe, "subscribe"},
+		{tokenTypeSqlStar, "*"},
+		{tokenTypeSqlFrom, "from"},
+		{tokenTypeSqlTable, "stocks"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
 
 // STATUS
 func TestStatusCommand(t *testing.T) {
