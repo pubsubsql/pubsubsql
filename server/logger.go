@@ -33,19 +33,19 @@ func debug(v ...interface{}) {
 	}
 }
 
-func loginfo(v ...interface{}) {
+func logInfo(v ...interface{}) {
 	if config.LOG_INFO {
 		info(v...)
 	}
 }
 
-func logwarn(v ...interface{}) {
+func logWarn(v ...interface{}) {
 	if config.LOG_WARN {
 		warnLogger.Output(2, fmt.Sprintln(v...))
 	}
 }
 
-func logerror(v ...interface{}) {
+func logError(v ...interface{}) {
 	if config.LOG_ERROR {
 		errorx(v...)
 	}

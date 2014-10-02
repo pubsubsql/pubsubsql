@@ -86,12 +86,12 @@ func (this *cli) runOnce(command string) {
 	bytes := []byte(command)
 	err := rw.writeHeaderAndMessage(this.requestId, bytes)
 	if err != nil {
-		logerror(err)
+		logError(err)
 		return
 	}
 	_, bytes, err = rw.readMessage()
 	if err != nil && command != "stop" {
-		logerror(err)
+		logError(err)
 	}
 }
 

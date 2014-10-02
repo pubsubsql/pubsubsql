@@ -66,7 +66,7 @@ func (this *network) addConnection(netconn *networkConnection) {
 		this.connections = make(map[uint64]*networkConnection)
 	}
 	this.connections[netconn.getConnectionId()] = netconn
-	loginfo("new client connection id:", strconv.FormatUint(netconn.getConnectionId(), 10))
+	logInfo("new client connection id:", strconv.FormatUint(netconn.getConnectionId(), 10))
 }
 
 func (this *network) removeConnection(netconn *networkConnection) {
@@ -103,11 +103,11 @@ func newNetwork(context *networkContext) *network {
 func (this *network) start(address string) bool {
 	listener, err := net.Listen("tcp", address)
 	if err != nil {
-		logerror("Failed to listen for incoming connections ", err.Error())
+		logError("Failed to listen for incoming connections ", err.Error())
 		return false
 	}
-	//host, port := net.SplitHostPort(address)
-	loginfo("listening for incoming connections on ", address)
+	// host, port := net.SplitHostPort(address)
+	logInfo("listening for incoming connections on ", address)
 	this.listener = listener
 	var connectionId uint64 = 0
 	// accept connections
@@ -123,11 +123,11 @@ func (this *network) start(address string) bool {
 			}
 			if err == nil {
 				connectionId++
-				netconn := newNetworkConnection(conn, this.context, connectionId, this)
-				this.addConnection(netconn)
-				go netconn.run()
+				netConn := newNetworkConnection(conn, this.context, connectionId, this)
+				this.addConnection(netConn)
+				go netConn.run()
 			} else {
-				logerror("failed to accept client connection", err.Error())
+				logError("failed to accept client connection", err.Error())
 			}
 		}
 	}
@@ -230,7 +230,7 @@ func (this *networkConnection) read() {
 		this.route(header, req)
 	}
 	if err != nil && !this.Done() {
-		logwarn("failed to read from client connection:", this.sender.connectionId, err.Error())
+		logWarn("failed to read from client connection:", this.sender.connectionId, err.Error())
 		// notify writer and sender that we are done
 		this.sender.quit.Quit(0)
 	}
@@ -269,7 +269,7 @@ func (this *networkConnection) write() {
 				}
 			}
 			if err != nil && !this.Done() {
-				logwarn("failed to write to client connection:", this.sender.connectionId, err.Error())
+				logWarn("failed to write to client connection:", this.sender.connectionId, err.Error())
 				// notify reader and sender that we are done
 				this.sender.quit.Quit(0)
 				return

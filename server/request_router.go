@@ -50,7 +50,7 @@ func (this *requestRouter) route(item *requestItem) {
 func (this *requestRouter) onCmd(item *requestItem) {
 	switch item.req.(type) {
 	case *cmdCloseRequest:
-		loginfo("client connection:", item.sender.connectionId, "requested to disconnect ")
+		logInfo("client connection:", item.sender.connectionId, "requested to disconnect ")
 		item.sender.disconnecting = true
 		item.sender.quit.Quit(0)
 	default:

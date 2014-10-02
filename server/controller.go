@@ -125,7 +125,7 @@ func (this *Controller) readInput() {
 func (this *Controller) onCommandRequest(item *requestItem) {
 	switch item.req.(type) {
 	case *cmdStatusRequest:
-		loginfo("client connection:", item.sender.connectionId, "requested server status")
+		logInfo("client connection:", item.sender.connectionId, "requested server status")
 		if item.req.isStreaming() {
 			return
 		}
@@ -133,7 +133,7 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		res.requestId = item.getRequestId()
 		item.sender.send(res)
 	case *cmdStopRequest:
-		loginfo("client connection:", item.sender.connectionId, "requested to stop the server")
+		logInfo("client connection:", item.sender.connectionId, "requested to stop the server")
 		this.quit.Quit(0)
 	}
 }
