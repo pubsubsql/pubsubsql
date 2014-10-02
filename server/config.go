@@ -36,7 +36,7 @@ type configuration struct {
 	// resources
 	CHAN_RESPONSE_SENDER_BUFFER_SIZE          int
 	CHAN_TABLE_REQUESTS_BUFFER_SIZE           int
-	CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE     int
+	CHAN_DATA_SERVICE_REQUESTS_BUFFER_SIZE    int
 	PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY int
 	PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY int
 	PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY int
@@ -75,7 +75,7 @@ func defaultConfig() configuration {
 		// resources
 		CHAN_RESPONSE_SENDER_BUFFER_SIZE:          10000,
 		CHAN_TABLE_REQUESTS_BUFFER_SIZE:           1000,
-		CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE:     1000,
+		CHAN_DATA_SERVICE_REQUESTS_BUFFER_SIZE:    1000,
 		PARSER_SQL_INSERT_REQUEST_COLUMN_CAPACITY: 10,
 		PARSER_SQL_UPDATE_REQUEST_COLUMN_CAPACITY: 10,
 		PARSER_SQL_SELECT_REQUEST_COLUMN_CAPACITY: 10,
@@ -119,12 +119,12 @@ func (this *configuration) netAddress() string {
 	return net.JoinHostPort(this.IP, strconv.Itoa(int(this.PORT)))
 }
 
-func (this *configuration) setLogLevel(loglevel string) bool {
+func (this *configuration) setLogLevel(logLevel string) bool {
 	this.LOG_DEBUG = false
 	this.LOG_INFO = false
 	this.LOG_WARN = false
 	this.LOG_ERROR = false
-	logLevels := strings.Split(loglevel, ",")
+	logLevels := strings.Split(logLevel, ",")
 	for _, s := range logLevels {
 		switch s {
 		case "debug":
@@ -146,8 +146,8 @@ func (this *configuration) processCommandLine(args []string) bool {
 
 	// set up flags
 	this.flags = flag.NewFlagSet("pubsubsql", flag.ContinueOnError)
-	var loglevel string
-	this.flags.StringVar(&loglevel, "loglevel", "info,warn,error", `logging level "debug,info,warn,error"`)
+	var logLevel string
+	this.flags.StringVar(&logLevel, "loglevel", "info,warn,error", `logging level "debug,info,warn,error"`)
 	this.flags.StringVar(&this.IP, "ip", config.IP, "ip address")
 	this.flags.UintVar(&this.PORT, "port", config.PORT, "port number")
 
@@ -174,9 +174,9 @@ func (this *configuration) processCommandLine(args []string) bool {
 		return false
 	}
 
-	// set loglevel
-	if !this.setLogLevel(loglevel) {
-		fmt.Println("invalid --loglevel \"" + loglevel + "\"\n" + this.flags.Lookup("loglevel").Usage)
+	// set logLevel
+	if !this.setLogLevel(logLevel) {
+		fmt.Println("invalid --loglevel \"" + logLevel + "\"\n" + this.flags.Lookup("loglevel").Usage)
 		return false
 	}
 

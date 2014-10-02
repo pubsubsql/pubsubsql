@@ -41,7 +41,7 @@ type dataService struct {
 // newDataService returns new dataService.
 func newDataService(quit *Quitter) *dataService {
 	return &dataService{
-		requests: make(chan *requestItem, config.CHAN_DATASERVICE_REQUESTS_BUFFER_SIZE),
+		requests: make(chan *requestItem, config.CHAN_DATA_SERVICE_REQUESTS_BUFFER_SIZE),
 		quit:     quit,
 		tables:   make(map[string]*table),
 	}
