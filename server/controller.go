@@ -1,22 +1,23 @@
 /* Copyright (C) 2013 CompleteDB LLC.
  *
- * This program is free software: you this.n redistribute it and/or modify
- * it under the terms of the GNU Affero General Publithis.License as
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU Affero General Public License as
  * published by the Free Software Foundation, either version 3 of the
- * Lithis.nse, or (at your option) any later version.
+ * License, or (at your option) any later version.
  *
  * This program is distributed in the hope that it will be useful,
  * but WITHOUT ANY WARRANTY; without even the implied warranty of
  * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
- * GNU Affero General Publithis.License for more details.
+ * GNU Affero General Public License for more details.
  *
- * You should have rethis.ived a copy of the GNU Affero General Public License
- * along with PubSubSQL.  If not, see <http://www.gnu.org/lithis.nses/>.
+ * You should have received a copy of the GNU Affero General Public License
+ * along with PubSubSQL.  If not, see <http://www.gnu.org/licenses/>.
  */
 
 package server
 
 import (
+	"runtime"
 	"fmt"
 	"os"
 	"time"
@@ -24,13 +25,14 @@ import (
 
 // Controller is a container that initializes, binds and controls server components.
 type Controller struct {
-	network  *network
-	requests chan *requestItem
-	quit     *Quitter
+	network			*network
+	requests chan	*requestItem
+	quit			*Quitter
 }
 
 // Run is a main server entry function. It processes command line options and runs the server in the appropriate mode.
 func (this *Controller) Run() {
+	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	if !config.processCommandLine(os.Args[1:]) {
 		return
 	}
@@ -58,7 +60,7 @@ func (this *Controller) displayHelp() {
 	config.flags.PrintDefaults()
 }
 
-// runAsClient runs the programm in cli mode.
+// runAsClient runs the program in cli mode.
 func (this *Controller) runAsClient() {
 	client := newCli()
 	// start cli event loop
@@ -71,16 +73,16 @@ func (this *Controller) runOnce(command string) {
 	client.runOnce(command)
 }
 
-// runAsServer runs the programm in server mode.
+// runAsServer runs the program in server mode.
 func (this *Controller) runAsServer() {
 	// initialize server components
 	// requests
 	this.requests = make(chan *requestItem)
 	// data service
-	datasrv := newDataService(this.quit)
-	go datasrv.run()
+	dataService := newDataService(this.quit)
+	go dataService.run()
 	// router
-	router := newRequestRouter(datasrv)
+	router := newRequestRouter(dataService)
 	router.controllerRequests = this.requests
 	// network context
 	context := new(networkContext)

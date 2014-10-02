@@ -23,7 +23,7 @@ type netHelper struct {
 	bytes []byte
 }
 
-func newnetHelper(conn net.Conn, bufferSize int) *netHelper {
+func newNetHelper(conn net.Conn, bufferSize int) *netHelper {
 	var ret netHelper
 	ret.set(conn, bufferSize)
 	return &ret

@@ -17,10 +17,8 @@
 package main
 
 import "github.com/pubsubsql/pubsubsql/server"
-import "runtime"
 
 func main() {
-	runtime.GOMAXPROCS(runtime.NumCPU() - 1)
 	var controller server.Controller
 	controller.Run()
 }

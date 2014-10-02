@@ -208,7 +208,7 @@ func (c *networkConnection) route(header *netHeader, req request) {
 func (this *networkConnection) read() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	reader := newnetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	reader := newNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	//
 	var err error
 	var message []byte
@@ -239,7 +239,7 @@ func (this *networkConnection) read() {
 func (this *networkConnection) write() {
 	this.quit.Join()
 	defer this.quit.Leave()
-	writer := newnetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
+	writer := newNetHelper(this.conn, config.NET_READWRITE_BUFFER_SIZE)
 	var err error
 	for {
 		select {

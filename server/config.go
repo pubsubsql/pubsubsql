@@ -64,7 +64,7 @@ type configuration struct {
 }
 
 func defaultConfig() configuration {
-	return configuration{
+	return configuration {
 
 		// logger
 		LOG_DEBUG: false,
@@ -99,7 +99,7 @@ func defaultConfig() configuration {
 
 var config = defaultConfig()
 
-var validCommands = map[string]string{
+var validCommands = map[string] string {
 	"start": "",
 	"cli":   "",
 	"help":  "",
