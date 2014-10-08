@@ -64,7 +64,7 @@ func TestNetworkConnections(t *testing.T) {
 }
 
 func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId uint32) {
-	rw := newnetHelper(conn, config.NET_READWRITE_BUFFER_SIZE)
+	rw := newNetHelper(conn, config.NET_READWRITE_BUFFER_SIZE)
 	bytes := []byte(message)
 	var header *netHeader
 	err := rw.writeHeaderAndMessage(requestId, bytes)
@@ -82,7 +82,7 @@ func validateWriteRead(t *testing.T, conn net.Conn, message string, requestId ui
 }
 
 func validateRead(t *testing.T, conn net.Conn, requestId uint32) {
-	rw := newnetHelper(conn, config.NET_READWRITE_BUFFER_SIZE)
+	rw := newNetHelper(conn, config.NET_READWRITE_BUFFER_SIZE)
 	header, bytes, err := rw.readMessage()
 	if err != nil {
 		t.Error(err)
