@@ -828,7 +828,7 @@ func lexCommand(this *lexer) stateFn {
 	case 'p': // pop, push, peek
 		return lexCommandP(this)
 	case 'm': // mysql
-		return this.lexMatch(tokenTypeSqlMysql, "mysql", 1, lexCommandMysql)
+		return this.lexMatch(tokenTypeSqlMysql, "mysql", 1, lexSqlMysql)
 	}
 	return this.errorToken("Invalid command:" + this.current())
 }

@@ -17,7 +17,7 @@
 package server
 
 // Helper function to process mysql subscribe unsubscribe connect disconnect commands.
-func lexCommandMysql(this *lexer) stateFn {
+func lexSqlMysql(this *lexer) stateFn {
 	this.skipWhiteSpaces()
 	switch this.next() {
 	case 's':
