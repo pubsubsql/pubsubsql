@@ -765,22 +765,6 @@ func lexSqlConnectValue(this *lexer) stateFn {
 
 // END SQL
 
-// Helper function to process subscribe unsubscribe connect disconnect commands.
-func lexCommandMysql(this *lexer) stateFn {
-	this.skipWhiteSpaces()
-	switch this.next() {
-	case 's':
-		return this.lexMatch(tokenTypeSqlSubscribe, "subscribe", 1, lexSqlSubscribe)
-	case 'u':
-		return this.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 1, lexSqlUnsubscribeFrom)
-	case 'c':
-		return this.lexMatch(tokenTypeSqlConnect, "connect", 1, lexSqlConnectValue)
-	case 'd':
-		return this.lexMatch(tokenTypeSqlDisconnect, "disconnect", 1, nil)
-	}
-	return this.errorToken("Invalid command:" + this.current())
-}
-
 // Helper function to process status stop start commands.
 func lexCommandST(this *lexer) stateFn {
 	switch this.next() {

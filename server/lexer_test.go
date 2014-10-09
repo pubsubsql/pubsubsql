@@ -34,36 +34,6 @@ func (c *printlnTokenConsumer) Consume(t *token) {
 	fmt.Println(t)
 }
 
-// sends consumed tokens to the channel
-type chanTokenConsumer struct {
-	channel chan *token
-}
-
-func (consumer *chanTokenConsumer) Consume(t *token) {
-	consumer.channel <- t
-	if t.typ == tokenTypeEOF {
-		close(consumer.channel)
-	}
-}
-
-func validateTokens(t *testing.T, expected []token, tokens chan *token) {
-	breakLoop := false
-	for _, e := range expected {
-		g := <-tokens
-		if e.typ != g.typ {
-			t.Errorf("expected type " + e.typ.String() + " but got " + g.typ.String() + " value: " + g.val)
-			breakLoop = true
-		}
-		if e.val != g.val {
-			t.Errorf("expected value " + e.val + " but got " + g.val)
-			breakLoop = true
-		}
-		if breakLoop {
-			break
-		}
-	}
-}
-
 // BENCHMARKS
 
 // UPDATE "go test -test.bench Update"
@@ -92,60 +62,6 @@ func BenchmarkUpdate4(b *testing.B) {
 }
 
 // END BENCHMARKS
-
-// MYSQL CONNECT xyz123
-func TestMysqlConnect(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan *token)}
-	go lex("mysql connect xyz123", &consumer)
-	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
-		{tokenTypeSqlConnect, "connect"},
-		{tokenTypeSqlValue, "xyz123"},
-		{tokenTypeEOF, ""}}
-
-	validateTokens(t, expected, consumer.channel)
-}
-
-// MYSQL DISCONNECT
-func TestMysqlDisconnect(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan *token)}
-	go lex("mysql disconnect", &consumer)
-	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
-		{tokenTypeSqlDisconnect, "disconnect"},
-		{tokenTypeEOF, ""}}
-
-	validateTokens(t, expected, consumer.channel)
-}
-
-// MYSQL UNSUBSCRIBE
-func TestMysqlUnsubscribe(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan *token)}
-	go lex("mysql unsubscribe from stocks", &consumer)
-	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
-		{tokenTypeSqlUnsubscribe, "unsubscribe"},
-		{tokenTypeSqlFrom, "from"},
-		{tokenTypeSqlTable, "stocks"},
-		{tokenTypeEOF, ""}}
-
-	validateTokens(t, expected, consumer.channel)
-}
-
-// MYSQL SUBSCRIBE
-func TestMysqlSubscribe(t *testing.T) {
-	consumer := chanTokenConsumer{channel: make(chan *token)}
-	go lex("mysql subscribe * from stocks", &consumer)
-	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
-		{tokenTypeSqlSubscribe, "subscribe"},
-		{tokenTypeSqlStar, "*"},
-		{tokenTypeSqlFrom, "from"},
-		{tokenTypeSqlTable, "stocks"},
-		{tokenTypeEOF, ""}}
-
-	validateTokens(t, expected, consumer.channel)
-}
 
 // STATUS
 func TestStatusCommand(t *testing.T) {
