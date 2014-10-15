@@ -137,5 +137,9 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 	case *cmdStopRequest:
 		logInfo("client connection:", item.sender.connectionId, "requested to stop the server")
 		this.quit.Quit(0)
+	case *mysqlConnectRequest:
+		logInfo("client connection:", item.sender.connectionId, "requested to connect to mysql")
+	case *mysqlDisconnectRequest:
+		logInfo("client connection:", item.sender.connectionId, "requested to diconnect from mysql")
 	}
 }

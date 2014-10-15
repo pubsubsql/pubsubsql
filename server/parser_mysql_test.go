@@ -106,7 +106,7 @@ func TestParseMysqlDisconnect(t *testing.T) {
 
 func TestParseMysqlSubscribe(t *testing.T) {
 	pc := newTokens()
-	lex(" mysql subscribe ", pc)
+	lex(" mysql subscribe * from stocks ", pc)
 	req := parse(pc)
 	validateMysqlSubscribe(t, req)
 }
