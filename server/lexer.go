@@ -756,13 +756,6 @@ func lexSqlUnsubscribeFrom(this *lexer) stateFn {
 	return lexSqlFrom(this)
 }
 
-// CONNECT
-
-func lexSqlConnectValue(this *lexer) stateFn {
-	this.skipWhiteSpaces()
-	return this.lexSqlValue(nil)
-}
-
 // END SQL
 
 // Helper function to process status stop start commands.

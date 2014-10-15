@@ -19,13 +19,18 @@ package server
 import "testing"
 
 // MYSQL CONNECT
-func validateMysqlConnect(t *testing.T, req request) {
-	switch req.(type) {
+func validateMysqlConnect(t *testing.T, a request, y *mysqlConnectRequest) {
+	switch a.(type) {
 	case *errorRequest:
-		e := req.(*errorRequest)
+		e := a.(*errorRequest)
 		t.Errorf("parse error: " + e.err)
 
 	case *mysqlConnectRequest:
+		x := a.(*mysqlConnectRequest)
+		// connectionAddress
+		if x.connectionAddress != y.connectionAddress {
+			t.Errorf("parse error: connectionAddress do not match")
+		}
 
 	default:
 		t.Errorf("parse error: invalid request type expected mysqlConnectRequest")
@@ -77,8 +82,19 @@ func validateMysqlUnsubscribe(t *testing.T, req request) {
 func TestParseMysqlConnect(t *testing.T) {
 	pc := newTokens()
 	lex(" mysql connect xyz123 ", pc)
-	req := parse(pc)
-	validateMysqlConnect(t, req)
+	x := parse(pc)
+	var y mysqlConnectRequest
+	y.connectionAddress = "xyz123"
+	validateMysqlConnect(t, x, &y)
+}
+
+func TestParseMysqlConnectQuoted(t *testing.T) {
+	pc := newTokens()
+	lex(" mysql connect xyz123 ", pc)
+	x := parse(pc)
+	var y mysqlConnectRequest
+	y.connectionAddress = "xyz123"
+	validateMysqlConnect(t, x, &y)
 }
 
 func TestParseMysqlDisconnect(t *testing.T) {

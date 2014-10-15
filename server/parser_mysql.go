@@ -18,6 +18,7 @@ package server
 
 type mysqlConnectRequest struct {
 	cmdRequest
+	connectionAddress string
 }
 
 type mysqlDisconnectRequest struct {
@@ -32,40 +33,41 @@ type mysqlUnsubscribeRequest struct {
 	cmdRequest
 }
 
-// mysql connect
-func (this *parser) parseMysqlConnect() request {
+func (this *parser) parseConnectionAddress(connectionAddress *string) request {
 	tok := this.tokens.Produce()
-	if tok.typ != tokenTypeEOF {
-		return this.parseError("mysql connect: unexpected extra token")
+	if tok.typ != tokenTypeSqlValue {
+		return this.parseError("expected connection address, but got: " + tok.typ.String())
 	}
-	return new(mysqlConnectRequest)
+	*connectionAddress = tok.val
+	return nil
+}
+
+// mysql connect connectionAddress
+func (this *parser) parseMysqlConnect() request {
+	req := new(mysqlConnectRequest)
+	// connectionAddress
+	if errReq := this.parseConnectionAddress(&(req.connectionAddress)); errReq != nil {
+		return errReq
+	}
+	return this.parseEOF(req)
 }
 
 // mysql disconnect
 func (this *parser) parseMysqlDisconnect() request {
-	tok := this.tokens.Produce()
-	if tok.typ != tokenTypeEOF {
-		return this.parseError("mysql disconnect: unexpected extra token")
-	}
-	return new(mysqlDisconnectRequest)
+	req := new(mysqlDisconnectRequest)
+	return this.parseEOF(req)
 }
 
 // mysql subscribe
 func (this *parser) parseMysqlSubscribe() request {
-	tok := this.tokens.Produce()
-	if tok.typ != tokenTypeEOF {
-		return this.parseError("mysql subscribe: unexpected extra token")
-	}
-	return new(mysqlSubscribeRequest)
+	req := new(mysqlSubscribeRequest)
+	return this.parseEOF(req)
 }
 
 // mysql unsubscribe
 func (this *parser) parseMysqlUnsubscribe() request {
-	tok := this.tokens.Produce()
-	if tok.typ != tokenTypeEOF {
-		return this.parseError("mysql unsubscribe: unexpected extra token")
-	}
-	return new(mysqlUnsubscribeRequest)
+	req := new(mysqlUnsubscribeRequest)
+	return this.parseEOF(req)
 }
 
 // mysql

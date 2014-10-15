@@ -16,6 +16,11 @@
 
 package server
 
+func lexMysqlConnectAddress(this *lexer) stateFn {
+	this.skipWhiteSpaces()
+	return this.lexSqlValue(nil)
+}
+
 // Helper function to process mysql subscribe unsubscribe connect disconnect commands.
 func lexSqlMysql(this *lexer) stateFn {
 	this.skipWhiteSpaces()
@@ -25,7 +30,7 @@ func lexSqlMysql(this *lexer) stateFn {
 	case 'u':
 		return this.lexMatch(tokenTypeSqlUnsubscribe, "unsubscribe", 1, lexSqlUnsubscribeFrom)
 	case 'c':
-		return this.lexMatch(tokenTypeSqlConnect, "connect", 1, lexSqlConnectValue)
+		return this.lexMatch(tokenTypeSqlConnect, "connect", 1, lexMysqlConnectAddress)
 	case 'd':
 		return this.lexMatch(tokenTypeSqlDisconnect, "disconnect", 1, nil)
 	}
