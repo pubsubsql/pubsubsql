@@ -16,23 +16,6 @@
 
 package server
 
-type mysqlConnectRequest struct {
-	cmdRequest
-	connectionAddress string
-}
-
-type mysqlDisconnectRequest struct {
-	cmdRequest
-}
-
-type mysqlSubscribeRequest struct {
-	cmdRequest
-}
-
-type mysqlUnsubscribeRequest struct {
-	cmdRequest
-}
-
 func (this *parser) parseConnectionAddress(connectionAddress *string) request {
 	tok := this.tokens.Produce()
 	if tok.typ != tokenTypeSqlValue {
