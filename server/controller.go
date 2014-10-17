@@ -138,7 +138,14 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		logInfo("client connection:", item.sender.connectionId, "requested to stop the server")
 		this.quit.Quit(0)
 	case *mysqlConnectRequest:
+		request := item.req.(*mysqlConnectRequest)
 		logInfo("client connection:", item.sender.connectionId, "requested to connect to mysql")
+		if item.req.isStreaming() {
+			return
+		}
+		res := newCmdMysqlConnectResponse(request)
+		res.requestId = item.getRequestId()
+		item.sender.send(res)
 	case *mysqlDisconnectRequest:
 		logInfo("client connection:", item.sender.connectionId, "requested to diconnect from mysql")
 	}
