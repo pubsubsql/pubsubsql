@@ -68,11 +68,12 @@ func (this *cmdMysqlDisconnectResponse) toNetworkReadyJSON() ([]byte, bool) {
 //---------------------------------------------------------------------------------------------------------------------
 type cmdMysqlStatusResponse struct {
 	requestIdResponse
+	connectionOnline int
 }
 
 func newCmdMysqlStatusResponse(req *mysqlStatusRequest) *cmdMysqlStatusResponse {
 	return &cmdMysqlStatusResponse {
-		// void
+		connectionOnline: 0,
 	}
 }
 
@@ -82,7 +83,26 @@ func (this *cmdMysqlStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "mysqlStatus")
+	builder.valueSeparator()
+	builder.nameIntValue("connectionOnline", this.connectionOnline)
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }
+
+func (this *cmdMysqlStatusResponse) setOnline() {
+	this.connectionOnline = 1
+}
+
+func (this *cmdMysqlStatusResponse) setOffline() {
+	this.connectionOnline = 0
+}
+
+func (this *cmdMysqlStatusResponse) isOnline() (bool) {
+	return (this.connectionOnline > 0)
+}
+
+func (this *cmdMysqlStatusResponse) isOffline() (bool) {
+	return ! this.isOnline()
+}
+
 //=====================================================================================================================
