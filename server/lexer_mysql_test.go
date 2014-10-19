@@ -43,6 +43,18 @@ func TestMysqlDisconnect(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
+// MYSQL STATUS
+func TestMysqlStatus(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("mysql status", &consumer)
+	expected := []token{
+		{tokenTypeSqlMysql, "mysql"},
+		{tokenTypeCmdStatus, "status"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
 // MYSQL UNSUBSCRIBE
 func TestMysqlUnsubscribe(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
