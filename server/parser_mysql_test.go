@@ -51,6 +51,20 @@ func validateMysqlDisconnect(t *testing.T, req request) {
 	}
 }
 
+// MYSQL STATUS
+func validateMysqlStatus(t *testing.T, req request) {
+	switch req.(type) {
+	case *errorRequest:
+		e := req.(*errorRequest)
+		t.Errorf("parse error: " + e.err)
+
+	case *mysqlStatusRequest:
+
+	default:
+		t.Errorf("parse error: invalid request type expected mysqlStatusRequest")
+	}
+}
+
 // MYSQL SUBSCRIBE
 func validateMysqlSubscribe(t *testing.T, req request) {
 	switch req.(type) {
@@ -102,6 +116,13 @@ func TestParseMysqlDisconnect(t *testing.T) {
 	lex(" mysql disconnect ", pc)
 	req := parse(pc)
 	validateMysqlDisconnect(t, req)
+}
+
+func TestParseMysqlStatus(t *testing.T) {
+	pc := newTokens()
+	lex(" mysql status ", pc)
+	req := parse(pc)
+	validateMysqlStatus(t, req)
 }
 
 func TestParseMysqlSubscribe(t *testing.T) {

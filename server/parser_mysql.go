@@ -41,6 +41,12 @@ func (this *parser) parseMysqlDisconnect() request {
 	return this.parseEOF(req)
 }
 
+// mysql status
+func (this *parser) parseMysqlStatus() request {
+	req := new(mysqlStatusRequest)
+	return this.parseEOF(req)
+}
+
 // mysql subscribe
 func (this *parser) parseMysqlSubscribe() request {
 	req := new(mysqlSubscribeRequest)
@@ -61,6 +67,8 @@ func (this *parser) parseSqlMysql() request {
 		return this.parseMysqlConnect()
 	case tokenTypeSqlDisconnect:
 		return this.parseMysqlDisconnect()
+	case tokenTypeCmdStatus:
+		return this.parseMysqlStatus()
 	case tokenTypeSqlSubscribe:
 		return this.parseMysqlSubscribe()
 	case tokenTypeSqlUnsubscribe:

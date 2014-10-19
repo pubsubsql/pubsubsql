@@ -64,3 +64,25 @@ func (this *cmdMysqlDisconnectResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return builder.getNetworkBytes(this.requestId), false
 }
 //=====================================================================================================================
+// cmdMysqlStatusResponse
+//---------------------------------------------------------------------------------------------------------------------
+type cmdMysqlStatusResponse struct {
+	requestIdResponse
+}
+
+func newCmdMysqlStatusResponse(req *mysqlStatusRequest) *cmdMysqlStatusResponse {
+	return &cmdMysqlStatusResponse {
+		// void
+	}
+}
+
+func (this *cmdMysqlStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "mysqlStatus")
+	builder.endObject()
+	return builder.getNetworkBytes(this.requestId), false
+}
+//=====================================================================================================================

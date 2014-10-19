@@ -155,5 +155,14 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		response := newCmdMysqlDisconnectResponse(request)
 		response.requestId = item.getRequestId()
 		item.sender.send(response)
+	case *mysqlStatusRequest:
+		logInfo("client connection:", item.sender.connectionId, "requested mysql status")
+		if item.req.isStreaming() {
+			return
+		}
+		request := item.req.(*mysqlStatusRequest)
+		response := newCmdMysqlStatusResponse(request)
+		response.requestId = item.getRequestId()
+		item.sender.send(response)
 	}
 }

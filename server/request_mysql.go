@@ -25,6 +25,10 @@ type mysqlDisconnectRequest struct {
 	cmdRequest
 }
 
+type mysqlStatusRequest struct {
+	cmdRequest
+}
+
 type mysqlSubscribeRequest struct {
 	cmdRequest
 }
