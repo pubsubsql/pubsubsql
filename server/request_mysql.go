@@ -31,8 +31,10 @@ type mysqlStatusRequest struct {
 
 type mysqlSubscribeRequest struct {
 	cmdRequest
+	sqlSubscribeReq *sqlSubscribeRequest
 }
 
 type mysqlUnsubscribeRequest struct {
 	cmdRequest
+	sqlUnsubscribeReq *sqlUnsubscribeRequest
 }

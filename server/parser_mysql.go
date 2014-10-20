@@ -50,13 +50,17 @@ func (this *parser) parseMysqlStatus() request {
 // mysql subscribe
 func (this *parser) parseMysqlSubscribe() request {
 	req := new(mysqlSubscribeRequest)
-	return this.parseEOF(req)
+	r := this.parseSqlSubscribe()
+	req.sqlSubscribeReq = r.(*sqlSubscribeRequest)
+	return req
 }
 
 // mysql unsubscribe
 func (this *parser) parseMysqlUnsubscribe() request {
 	req := new(mysqlUnsubscribeRequest)
-	return this.parseEOF(req)
+	r := this.parseSqlUnsubscribe()
+	req.sqlUnsubscribeReq = r.(*sqlUnsubscribeRequest)
+	return req
 }
 
 // mysql
