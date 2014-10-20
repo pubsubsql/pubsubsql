@@ -106,3 +106,47 @@ func (this *cmdMysqlStatusResponse) isOffline() (bool) {
 }
 
 //=====================================================================================================================
+// cmdMysqlSubscribeResponse
+//---------------------------------------------------------------------------------------------------------------------
+type cmdMysqlSubscribeResponse struct {
+	requestIdResponse
+}
+
+func newCmdMysqlSubscribeResponse(req *mysqlSubscribeRequest) *cmdMysqlSubscribeResponse {
+	return &cmdMysqlSubscribeResponse {
+		// void
+	}
+}
+
+func (this *cmdMysqlSubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "mysqlSubscribe")
+	builder.endObject()
+	return builder.getNetworkBytes(this.requestId), false
+}
+//=====================================================================================================================
+// cmdMysqlUnsubscribeResponse
+//---------------------------------------------------------------------------------------------------------------------
+type cmdMysqlUnsubscribeResponse struct {
+	requestIdResponse
+}
+
+func newCmdMysqlUnsubscribeResponse(req *mysqlUnsubscribeRequest) *cmdMysqlUnsubscribeResponse {
+	return &cmdMysqlUnsubscribeResponse {
+		// void
+	}
+}
+
+func (this *cmdMysqlUnsubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "mysqlUnsubscribe")
+	builder.endObject()
+	return builder.getNetworkBytes(this.requestId), false
+}
+//=====================================================================================================================

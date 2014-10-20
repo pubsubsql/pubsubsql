@@ -138,7 +138,7 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		logInfo("client connection:", item.sender.connectionId, "requested to stop the server")
 		this.quit.Quit(0)
 	case *mysqlConnectRequest:
-		logInfo("client connection:", item.sender.connectionId, "requested to connect to mysql")
+		logInfo("client connection:", item.sender.connectionId, "requested mysql connect")
 		if item.req.isStreaming() {
 			return
 		}
@@ -147,7 +147,7 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		response.requestId = item.getRequestId()
 		item.sender.send(response)
 	case *mysqlDisconnectRequest:
-		logInfo("client connection:", item.sender.connectionId, "requested to diconnect from mysql")
+		logInfo("client connection:", item.sender.connectionId, "requested mysql diconnect")
 		if item.req.isStreaming() {
 			return
 		}
@@ -162,6 +162,24 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		}
 		request := item.req.(*mysqlStatusRequest)
 		response := newCmdMysqlStatusResponse(request)
+		response.requestId = item.getRequestId()
+		item.sender.send(response)
+	case *mysqlSubscribeRequest:
+		logInfo("client connection:", item.sender.connectionId, "requested mysql subscribe")
+		if item.req.isStreaming() {
+			return
+		}
+		request := item.req.(*mysqlSubscribeRequest)
+		response := newCmdMysqlSubscribeResponse(request)
+		response.requestId = item.getRequestId()
+		item.sender.send(response)
+	case *mysqlUnsubscribeRequest:
+		logInfo("client connection:", item.sender.connectionId, "requested mysql unsubscribe")
+		if item.req.isStreaming() {
+			return
+		}
+		request := item.req.(*mysqlUnsubscribeRequest)
+		response := newCmdMysqlUnsubscribeResponse(request)
 		response.requestId = item.getRequestId()
 		item.sender.send(response)
 	}
