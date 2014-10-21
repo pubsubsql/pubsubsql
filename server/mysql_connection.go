@@ -17,8 +17,6 @@
 package server
 
 import (
-	"testing"
-	"fmt"
 	"database/sql"
 	_ "github.com/go-sql-driver/mysql"
 )
@@ -31,12 +29,39 @@ create database pubsubsql;
 create user pubsubsql identified by 'pubsubsql';
 GRANT ALL PRIVILEGES ON *.* TO 'pubsubsql'@'%' WITH GRANT OPTION;
  */
-func TestMysqlConnection(t *testing.T) {
-	conn, err := sql.Open("mysql", "pubsubsql:pubsubsql@/pubsubsql")
-	if nil != err {
-		fmt.Println(err)
-		t.Error("failed to open mysql connection:", err)
-		return
+type mysqlConnection struct {
+	dbConn *sql.DB
+	lastError error
+}
+
+func newMysqlConnection() *mysqlConnection {
+	return &mysqlConnection {
+		dbConn: nil,
 	}
-	defer conn.Close()
+}
+
+func (this *mysqlConnection) getLastError() error {
+	return this.lastError
+}
+
+func (this *mysqlConnection) isConnected() bool {
+	return (nil != this.dbConn)
+}
+
+func (this *mysqlConnection) isDisconnected() bool {
+	return (! this.isConnected())
+}
+
+func (this *mysqlConnection) connect() {
+	this.dbConn, this.lastError = sql.Open("mysql", "pubsubsql:pubsubsql@/pubsubsql")
+	if nil != this.lastError {
+		this.dbConn = nil
+	}
+}
+
+func (this *mysqlConnection) disconnect() {
+	if this.isConnected() {
+		this.dbConn.Close()
+		this.dbConn = nil
+	}
 }

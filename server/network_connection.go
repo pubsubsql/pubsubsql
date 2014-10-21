@@ -27,7 +27,7 @@ type networkConnection struct {
 }
 
 func newNetworkConnection(conn net.Conn, context *networkContext, connectionId uint64, parent networkConnectionContainer) *networkConnection {
-	return &networkConnection{
+	return &networkConnection {
 		parent: parent,
 		conn:   conn,
 		quit:   context.quit,
