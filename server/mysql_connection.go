@@ -37,6 +37,7 @@ type mysqlConnection struct {
 func newMysqlConnection() *mysqlConnection {
 	return &mysqlConnection {
 		dbConn: nil,
+		lastError: nil,
 	}
 }
 
@@ -45,11 +46,18 @@ func (this *mysqlConnection) getLastError() error {
 }
 
 func (this *mysqlConnection) isConnected() bool {
-	return (nil != this.dbConn)
+	return nil != this.dbConn
 }
 
 func (this *mysqlConnection) isDisconnected() bool {
-	return (! this.isConnected())
+	return ! this.isConnected()
+}
+
+func (this *mysqlConnection) disconnect() {
+	if this.isConnected() {
+		this.dbConn.Close()
+		this.dbConn = nil
+	}
 }
 
 func (this *mysqlConnection) connect() {
@@ -57,11 +65,10 @@ func (this *mysqlConnection) connect() {
 	if nil != this.lastError {
 		this.dbConn = nil
 	}
-}
-
-func (this *mysqlConnection) disconnect() {
 	if this.isConnected() {
-		this.dbConn.Close()
-		this.dbConn = nil
+		this.lastError = this.dbConn.Ping()
+		if nil != this.lastError {
+			this.dbConn = nil
+		}
 	}
 }

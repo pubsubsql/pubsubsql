@@ -24,6 +24,7 @@ type networkConnection struct {
 	quit   *Quitter
 	router *requestRouter
 	sender *responseSender
+	dbConn *mysqlConnection
 }
 
 func newNetworkConnection(conn net.Conn, context *networkContext, connectionId uint64, parent networkConnectionContainer) *networkConnection {
@@ -33,6 +34,7 @@ func newNetworkConnection(conn net.Conn, context *networkContext, connectionId u
 		quit:   context.quit,
 		router: context.router,
 		sender: newResponseSenderStub(connectionId),
+		dbConn: newMysqlConnection(),
 	}
 }
 
@@ -60,6 +62,7 @@ func (this *networkConnection) close() {
 func (this *networkConnection) run() {
 	go this.watchForQuit()
 	go this.read()
+	defer this.dbConn.disconnect()
 	this.write()
 }
 
