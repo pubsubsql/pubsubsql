@@ -55,7 +55,7 @@ func (this *mysqlConnection) isDisconnected() bool {
 
 func (this *mysqlConnection) disconnect() {
 	if this.isConnected() {
-		this.dbConn.Close()
+		this.lastError = this.dbConn.Close()
 		this.dbConn = nil
 	}
 }

@@ -22,6 +22,8 @@ import (
 
 func TestMysqlConnection(t *testing.T) {
 	conn := newMysqlConnection()
+	defer conn.disconnect()
+	//
 	conn.connect()
 	if conn.isDisconnected() {
 		t.Error("failed to open mysql connection (1):", conn.getLastError())
@@ -29,5 +31,12 @@ func TestMysqlConnection(t *testing.T) {
 	if ! conn.isConnected() {
 		t.Error("failed to open mysql connection (2):", conn.getLastError())
 	}
-	defer conn.disconnect()
+	//
+	conn.disconnect()
+	if ! conn.isDisconnected() {
+		t.Error("failed to close mysql connection (1):", conn.getLastError())
+	}
+	if conn.isConnected() {
+		t.Error("failed to close mysql connection (2):", conn.getLastError())
+	}
 }
