@@ -32,7 +32,7 @@ func lexMysqlCommandS(this *lexer) stateFn {
 	return this.errorToken("Invalid command:" + this.current())
 }
 
-// Helper function to process mysql subscribe unsubscribe connect disconnect status commands.
+// Helper function to process mysql subscribe unsubscribe connect disconnect status tables commands.
 func lexSqlMysql(this *lexer) stateFn {
 	this.skipWhiteSpaces()
 	switch this.next() {
@@ -44,6 +44,8 @@ func lexSqlMysql(this *lexer) stateFn {
 		return this.lexMatch(tokenTypeSqlConnect, "connect", 1, lexMysqlConnectAddress)
 	case 'd': // disconnect
 		return this.lexMatch(tokenTypeSqlDisconnect, "disconnect", 1, nil)
+	case 't': // tables
+		return this.lexMatch(tokenTypeSqlTables, "tables", 1, nil)
 	}
 	return this.errorToken("Invalid command:" + this.current())
 }

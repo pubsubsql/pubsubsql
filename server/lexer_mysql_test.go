@@ -55,6 +55,18 @@ func TestMysqlStatus(t *testing.T) {
 	validateTokens(t, expected, consumer.channel)
 }
 
+// MYSQL TABLES
+func TestMysqlTables(t *testing.T) {
+	consumer := chanTokenConsumer{channel: make(chan *token)}
+	go lex("mysql tables", &consumer)
+	expected := []token{
+		{tokenTypeSqlMysql, "mysql"},
+		{tokenTypeSqlTables, "tables"},
+		{tokenTypeEOF, ""}}
+
+	validateTokens(t, expected, consumer.channel)
+}
+
 // MYSQL UNSUBSCRIBE
 func TestMysqlUnsubscribe(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}

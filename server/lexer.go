@@ -65,6 +65,7 @@ const (
 	tokenTypeSqlMysql                                 // mysql
 	tokenTypeSqlConnect                               // connect
 	tokenTypeSqlDisconnect                            // disconnect
+	tokenTypeSqlTables                                // tables
 )
 
 // String converts tokenType value to a string.
@@ -146,6 +147,8 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlConnect"
 	case tokenTypeSqlDisconnect:
 		return "tokenTypeSqlDisconnect"
+	case tokenTypeSqlTables:
+		return "tokenTypeSqlTables"
 	}
 	return "not implemented"
 }
