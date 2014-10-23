@@ -63,6 +63,12 @@ func (this *parser) parseMysqlUnsubscribe() request {
 	return req
 }
 
+// mysql tables
+func (this *parser) parseMysqlTables() request {
+	req := new(mysqlTablesRequest)
+	return this.parseEOF(req)
+}
+
 // mysql
 func (this *parser) parseSqlMysql() request {
 	tok := this.tokens.Produce()
@@ -77,6 +83,8 @@ func (this *parser) parseSqlMysql() request {
 		return this.parseMysqlSubscribe()
 	case tokenTypeSqlUnsubscribe:
 		return this.parseMysqlUnsubscribe()
+	case tokenTypeSqlTables:
+		return this.parseMysqlTables()
 	}
 	return this.parseError("invalid mysql request")
 }

@@ -93,6 +93,20 @@ func validateMysqlUnsubscribe(t *testing.T, req request) {
 	}
 }
 
+// MYSQL TABLES
+func validateMysqlTables(t *testing.T, req request) {
+	switch req.(type) {
+	case *errorRequest:
+		e := req.(*errorRequest)
+		t.Errorf("parse error: " + e.err)
+
+	case *mysqlTablesRequest:
+
+	default:
+		t.Errorf("parse error: invalid request type expected mysqlTablesRequest")
+	}
+}
+
 func TestParseMysqlConnect(t *testing.T) {
 	pc := newTokens()
 	lex(" mysql connect xyz123 ", pc)
@@ -137,4 +151,11 @@ func TestParseMysqlUnsubscribe(t *testing.T) {
 	lex(" mysql unsubscribe from stocks ", pc)
 	req := parse(pc)
 	validateMysqlUnsubscribe(t, req)
+}
+
+func TestParseMysqlTables(t *testing.T) {
+	pc := newTokens()
+	lex(" mysql tables ", pc)
+	req := parse(pc)
+	validateMysqlTables(t, req)
 }

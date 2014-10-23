@@ -38,3 +38,7 @@ type mysqlUnsubscribeRequest struct {
 	cmdRequest
 	sqlUnsubscribeReq *sqlUnsubscribeRequest
 }
+
+type mysqlTablesRequest struct {
+	cmdRequest
+}
