@@ -182,5 +182,14 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		response := newCmdMysqlUnsubscribeResponse(request)
 		response.requestId = item.getRequestId()
 		item.sender.send(response)
+	case *mysqlTablesRequest:
+		logInfo("client connection:", item.sender.connectionId, "requested mysql tables")
+		if item.req.isStreaming() {
+			return
+		}
+		request := item.req.(*mysqlTablesRequest)
+		response := newCmdMysqlTablesResponse(request)
+		response.requestId = item.getRequestId()
+		item.sender.send(response)
 	}
 }

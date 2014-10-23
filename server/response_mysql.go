@@ -150,3 +150,25 @@ func (this *cmdMysqlUnsubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return builder.getNetworkBytes(this.requestId), false
 }
 //=====================================================================================================================
+// cmdMysqlTablesResponse
+//---------------------------------------------------------------------------------------------------------------------
+type cmdMysqlTablesResponse struct {
+	requestIdResponse
+}
+
+func newCmdMysqlTablesResponse(req *mysqlTablesRequest) *cmdMysqlTablesResponse {
+	return &cmdMysqlTablesResponse {
+		// void
+	}
+}
+
+func (this *cmdMysqlTablesResponse) toNetworkReadyJSON() ([]byte, bool) {
+	builder := networkReadyJSONBuilder()
+	builder.beginObject()
+	ok(builder)
+	builder.valueSeparator()
+	action(builder, "mysqlTables")
+	builder.endObject()
+	return builder.getNetworkBytes(this.requestId), false
+}
+//=====================================================================================================================
