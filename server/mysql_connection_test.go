@@ -40,3 +40,14 @@ func TestMysqlConnection(t *testing.T) {
 		t.Error("failed to close mysql connection (2):", conn.getLastError())
 	}
 }
+
+func TestMysqlConnectionFindTables(t *testing.T) {
+	conn := newMysqlConnection()
+	defer conn.disconnect()
+	//
+	conn.connect()
+	if conn.isDisconnected() {
+		t.Error("failed to open mysql connection:", conn.getLastError())
+	}
+	t.Log(conn.findTables())
+}
