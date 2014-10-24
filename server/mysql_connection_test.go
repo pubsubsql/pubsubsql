@@ -50,4 +50,7 @@ func TestMysqlConnectionFindTables(t *testing.T) {
 		t.Error("failed to open mysql connection:", conn.getLastError())
 	}
 	t.Log(conn.findTables())
+	if nil != conn.getLastError() {
+		t.Error("failed to find tables:", conn.getLastError())
+	}
 }
