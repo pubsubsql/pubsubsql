@@ -28,6 +28,9 @@ https://github.com/go-sql-driver/mysql
 create database pubsubsql;
 create user pubsubsql identified by 'pubsubsql';
 GRANT ALL PRIVILEGES ON *.* TO 'pubsubsql'@'%' WITH GRANT OPTION;
+create table table_a(id int);
+create table table_b(id int);
+create table table_c(id int);
  */
 type mysqlConnection struct {
 	dbConn *sql.DB
