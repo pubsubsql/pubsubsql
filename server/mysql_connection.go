@@ -66,9 +66,11 @@ func (this *mysqlConnection) disconnect() {
 }
 
 func (this *mysqlConnection) connect() {
-	this.dbConn, this.lastError = sql.Open("mysql", "pubsubsql:pubsubsql@/pubsubsql")
-	if nil != this.lastError {
-		this.dbConn = nil
+	if this.isDisconnected() {
+		this.dbConn, this.lastError = sql.Open("mysql", "pubsubsql:pubsubsql@/pubsubsql")
+		if nil != this.lastError {
+			this.dbConn = nil
+		}
 	}
 	if this.isConnected() {
 		this.lastError = this.dbConn.Ping()

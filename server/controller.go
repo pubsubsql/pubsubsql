@@ -190,6 +190,11 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		request := item.req.(*mysqlTablesRequest)
 		response := newCmdMysqlTablesResponse(request)
 		response.requestId = item.getRequestId()
+		//
+		item.dbConn.connect()
+		tables := item.dbConn.findTables()
+		response.tables = tables
+		//
 		item.sender.send(response)
 	}
 }

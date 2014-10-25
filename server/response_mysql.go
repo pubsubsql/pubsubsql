@@ -154,11 +154,12 @@ func (this *cmdMysqlUnsubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
 //---------------------------------------------------------------------------------------------------------------------
 type cmdMysqlTablesResponse struct {
 	requestIdResponse
+	tables []string
 }
 
 func newCmdMysqlTablesResponse(req *mysqlTablesRequest) *cmdMysqlTablesResponse {
 	return &cmdMysqlTablesResponse {
-		// void
+		tables : make([]string, 0),
 	}
 }
 
@@ -168,6 +169,18 @@ func (this *cmdMysqlTablesResponse) toNetworkReadyJSON() ([]byte, bool) {
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "mysqlTables")
+	builder.valueSeparator()
+	builder.string("tables")
+	builder.nameSeparator()
+	builder.beginArray()
+	for i, tableName := range this.tables {
+		// another tableName
+		if i != 0 {
+			builder.valueSeparator()
+		}
+		builder.string(tableName)
+	}
+	builder.endArray()
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }
