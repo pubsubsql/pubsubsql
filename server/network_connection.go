@@ -73,13 +73,14 @@ func (this *networkConnection) Done() bool {
 	return this.sender.quit.Done() || this.quit.Done()
 }
 
-func (c *networkConnection) route(header *netHeader, req request) {
-	item := &requestItem{
+func (this *networkConnection) route(header *netHeader, req request) {
+	item := &requestItem {
 		header: header,
 		req:    req,
-		sender: c.sender,
+		sender: this.sender,
+		dbConn: this.dbConn,
 	}
-	c.router.route(item)
+	this.router.route(item)
 }
 
 func (this *networkConnection) read() {

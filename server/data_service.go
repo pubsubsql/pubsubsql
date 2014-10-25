@@ -21,6 +21,7 @@ type requestItem struct {
 	header *netHeader
 	req    request
 	sender *responseSender
+	dbConn *mysqlConnection
 }
 
 func (this *requestItem) getRequestId() uint32 {
