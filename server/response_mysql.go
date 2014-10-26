@@ -21,12 +21,14 @@ package server
 //---------------------------------------------------------------------------------------------------------------------
 type cmdMysqlConnectResponse struct {
 	requestIdResponse
-	connectionAddress string
+	address string
+	error string
 }
 
 func newCmdMysqlConnectResponse(req *mysqlConnectRequest) *cmdMysqlConnectResponse {
 	return &cmdMysqlConnectResponse {
-		connectionAddress: req.connectionAddress,
+		address: req.address,
+		error: "",
 	}
 }
 
@@ -37,7 +39,11 @@ func (this *cmdMysqlConnectResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	action(builder, "mysqlConnect")
 	builder.valueSeparator()
-	builder.nameValue("connectionAddress", this.connectionAddress)
+	builder.nameValue("address", this.address)
+	if "" != this.error {
+		builder.valueSeparator()
+		builder.nameValue("error", this.error)
+	}
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }
@@ -46,11 +52,12 @@ func (this *cmdMysqlConnectResponse) toNetworkReadyJSON() ([]byte, bool) {
 //---------------------------------------------------------------------------------------------------------------------
 type cmdMysqlDisconnectResponse struct {
 	requestIdResponse
+	error string
 }
 
 func newCmdMysqlDisconnectResponse(req *mysqlDisconnectRequest) *cmdMysqlDisconnectResponse {
 	return &cmdMysqlDisconnectResponse {
-		// void
+		error: "",
 	}
 }
 
@@ -60,6 +67,10 @@ func (this *cmdMysqlDisconnectResponse) toNetworkReadyJSON() ([]byte, bool) {
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "mysqlDisconnect")
+	if "" != this.error {
+		builder.valueSeparator()
+		builder.nameValue("error", this.error)
+	}
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }
@@ -68,12 +79,14 @@ func (this *cmdMysqlDisconnectResponse) toNetworkReadyJSON() ([]byte, bool) {
 //---------------------------------------------------------------------------------------------------------------------
 type cmdMysqlStatusResponse struct {
 	requestIdResponse
-	connectionOnline int
+	online int
+	error string
 }
 
 func newCmdMysqlStatusResponse(req *mysqlStatusRequest) *cmdMysqlStatusResponse {
 	return &cmdMysqlStatusResponse {
-		connectionOnline: 0,
+		online: 0,
+		error: "",
 	}
 }
 
@@ -84,17 +97,25 @@ func (this *cmdMysqlStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
 	builder.valueSeparator()
 	action(builder, "mysqlStatus")
 	builder.valueSeparator()
-	builder.nameIntValue("connectionOnline", this.connectionOnline)
+	builder.nameIntValue("online", this.online)
+	if "" != this.error {
+		builder.valueSeparator()
+		builder.nameValue("error", this.error)
+	}
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }
 
 func (this *cmdMysqlStatusResponse) setOnline(online bool) {
-	this.connectionOnline = online
+	if online {
+		this.online = 1
+	} else {
+		this.online = 0
+	}
 }
 
 func (this *cmdMysqlStatusResponse) isOnline() (bool) {
-	return (this.connectionOnline != 0)
+	return (this.online != 0)
 }
 
 func (this *cmdMysqlStatusResponse) isOffline() (bool) {
@@ -106,11 +127,12 @@ func (this *cmdMysqlStatusResponse) isOffline() (bool) {
 //---------------------------------------------------------------------------------------------------------------------
 type cmdMysqlSubscribeResponse struct {
 	requestIdResponse
+	error string
 }
 
 func newCmdMysqlSubscribeResponse(req *mysqlSubscribeRequest) *cmdMysqlSubscribeResponse {
 	return &cmdMysqlSubscribeResponse {
-		// void
+		error: "",
 	}
 }
 
@@ -120,6 +142,10 @@ func (this *cmdMysqlSubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "mysqlSubscribe")
+	if "" != this.error {
+		builder.valueSeparator()
+		builder.nameValue("error", this.error)
+	}
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }
@@ -128,11 +154,12 @@ func (this *cmdMysqlSubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
 //---------------------------------------------------------------------------------------------------------------------
 type cmdMysqlUnsubscribeResponse struct {
 	requestIdResponse
+	error string
 }
 
 func newCmdMysqlUnsubscribeResponse(req *mysqlUnsubscribeRequest) *cmdMysqlUnsubscribeResponse {
 	return &cmdMysqlUnsubscribeResponse {
-		// void
+		error: "",
 	}
 }
 
@@ -142,6 +169,10 @@ func (this *cmdMysqlUnsubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
 	ok(builder)
 	builder.valueSeparator()
 	action(builder, "mysqlUnsubscribe")
+	if "" != this.error {
+		builder.valueSeparator()
+		builder.nameValue("error", this.error)
+	}
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }
@@ -151,11 +182,13 @@ func (this *cmdMysqlUnsubscribeResponse) toNetworkReadyJSON() ([]byte, bool) {
 type cmdMysqlTablesResponse struct {
 	requestIdResponse
 	tables []string
+	error string
 }
 
 func newCmdMysqlTablesResponse(req *mysqlTablesRequest) *cmdMysqlTablesResponse {
 	return &cmdMysqlTablesResponse {
 		tables : make([]string, 0),
+		error: "",
 	}
 }
 
@@ -177,6 +210,10 @@ func (this *cmdMysqlTablesResponse) toNetworkReadyJSON() ([]byte, bool) {
 		builder.string(tableName)
 	}
 	builder.endArray()
+	if "" != this.error {
+		builder.valueSeparator()
+		builder.nameValue("error", this.error)
+	}
 	builder.endObject()
 	return builder.getNetworkBytes(this.requestId), false
 }

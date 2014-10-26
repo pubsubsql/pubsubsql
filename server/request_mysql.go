@@ -18,7 +18,7 @@ package server
 
 type mysqlConnectRequest struct {
 	cmdRequest
-	connectionAddress string
+	address string
 }
 
 type mysqlDisconnectRequest struct {

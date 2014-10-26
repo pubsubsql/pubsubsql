@@ -36,18 +36,32 @@ show tables
  */
 type mysqlConnection struct {
 	dbConn *sql.DB
+	address string
 	lastError error
 }
 
 func newMysqlConnection() *mysqlConnection {
 	return &mysqlConnection {
 		dbConn: nil,
+		address: "",
 		lastError: nil,
 	}
 }
 
-func (this *mysqlConnection) getLastError() error {
-	return this.lastError
+func (this *mysqlConnection) hasError() bool {
+	return nil != this.lastError
+}
+
+func (this *mysqlConnection) hasNoError() bool {
+	return ! this.hasError()
+}
+
+func (this *mysqlConnection) getLastError() string {
+	if (this.hasError()) {
+		return this.lastError.Error()
+	} else {
+		return ""
+	}
 }
 
 func (this *mysqlConnection) isConnected() bool {
@@ -69,15 +83,19 @@ func (this *mysqlConnection) isDisconnected() bool {
 }
 
 func (this *mysqlConnection) disconnect() {
+	this.lastError = nil
 	if this.isConnected() {
 		this.lastError = this.dbConn.Close()
 		this.dbConn = nil
 	}
 }
 
-func (this *mysqlConnection) connect() bool {
+func (this *mysqlConnection) connect(address string) bool {
+	this.lastError = nil
 	if this.isDisconnected() {
-		this.dbConn, this.lastError = sql.Open("mysql", "pubsubsql:pubsubsql@/pubsubsql")
+		this.address = address
+		// "pubsubsql:pubsubsql@/pubsubsql"
+		this.dbConn, this.lastError = sql.Open("mysql", this.address)
 		if nil != this.lastError {
 			this.dbConn = nil
 			return false
@@ -87,6 +105,7 @@ func (this *mysqlConnection) connect() bool {
 }
 
 func (this *mysqlConnection) findTables() []string {
+	this.lastError = nil
 	tables := make([]string, 0)
 	if (this.isDisconnected()) {
 		return tables

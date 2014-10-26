@@ -29,7 +29,7 @@ func (this *parser) parseConnectionAddress(connectionAddress *string) request {
 func (this *parser) parseMysqlConnect() request {
 	req := new(mysqlConnectRequest)
 	// connectionAddress
-	if errReq := this.parseConnectionAddress(&(req.connectionAddress)); errReq != nil {
+	if errReq := this.parseConnectionAddress(&(req.address)); errReq != nil {
 		return errReq
 	}
 	return this.parseEOF(req)

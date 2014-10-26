@@ -146,7 +146,10 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		response := newCmdMysqlConnectResponse(request)
 		response.requestId = item.getRequestId()
 		//
-		item.dbConn.connect()
+		item.dbConn.connect(request.address)
+		if item.dbConn.hasError() {
+			response.error = item.dbConn.getLastError()
+		}
 		//
 		item.sender.send(response)
 	case *mysqlDisconnectRequest:
@@ -159,6 +162,9 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		response.requestId = item.getRequestId()
 		//
 		item.dbConn.disconnect()
+		if item.dbConn.hasError() {
+			response.error = item.dbConn.getLastError()
+		}
 		//
 		item.sender.send(response)
 	case *mysqlStatusRequest:
@@ -172,6 +178,9 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		//
 		connected := item.dbConn.isConnected()
 		response.setOnline(connected)
+		if item.dbConn.hasError() {
+			response.error = item.dbConn.getLastError()
+		}
 		//
 		item.sender.send(response)
 	case *mysqlSubscribeRequest:
@@ -201,9 +210,12 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		response := newCmdMysqlTablesResponse(request)
 		response.requestId = item.getRequestId()
 		//
-		item.dbConn.connect()
 		tables := item.dbConn.findTables()
-		response.tables = tables
+		if item.dbConn.hasError() {
+			response.error = item.dbConn.getLastError()
+		} else {
+			response.tables = tables
+		}
 		//
 		item.sender.send(response)
 	}
