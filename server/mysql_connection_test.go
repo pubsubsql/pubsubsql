@@ -24,7 +24,11 @@ func TestMysqlConnection(t *testing.T) {
 	conn := newMysqlConnection()
 	defer conn.disconnect()
 	//
-	conn.connect()
+	conn.connect("pubsubsql:pubsubsql@/pubsubsql")
+	if conn.hasError() {
+		t.Error("failed to connect:", conn.getLastError())
+	}
+	//
 	if conn.isDisconnected() {
 		t.Error("failed to open mysql connection (1):", conn.getLastError())
 	}
@@ -45,12 +49,12 @@ func TestMysqlConnectionFindTables(t *testing.T) {
 	conn := newMysqlConnection()
 	defer conn.disconnect()
 	//
-	conn.connect()
+	conn.connect("pubsubsql:pubsubsql@/pubsubsql")
 	if conn.isDisconnected() {
 		t.Error("failed to open mysql connection:", conn.getLastError())
 	}
 	t.Log(conn.findTables())
-	if nil != conn.getLastError() {
+	if conn.hasError() {
 		t.Error("failed to find tables:", conn.getLastError())
 	}
 }

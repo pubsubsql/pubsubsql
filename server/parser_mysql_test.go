@@ -28,7 +28,7 @@ func validateMysqlConnect(t *testing.T, a request, y *mysqlConnectRequest) {
 	case *mysqlConnectRequest:
 		x := a.(*mysqlConnectRequest)
 		// connectionAddress
-		if x.connectionAddress != y.connectionAddress {
+		if x.address != y.address {
 			t.Errorf("parse error: connectionAddress do not match")
 		}
 
@@ -112,7 +112,7 @@ func TestParseMysqlConnect(t *testing.T) {
 	lex(" mysql connect xyz123 ", pc)
 	x := parse(pc)
 	var y mysqlConnectRequest
-	y.connectionAddress = "xyz123"
+	y.address = "xyz123"
 	validateMysqlConnect(t, x, &y)
 }
 
@@ -121,7 +121,7 @@ func TestParseMysqlConnectQuoted(t *testing.T) {
 	lex(" mysql connect xyz123 ", pc)
 	x := parse(pc)
 	var y mysqlConnectRequest
-	y.connectionAddress = "xyz123"
+	y.address = "xyz123"
 	validateMysqlConnect(t, x, &y)
 }
 
