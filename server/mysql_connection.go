@@ -51,7 +51,17 @@ func (this *mysqlConnection) getLastError() error {
 }
 
 func (this *mysqlConnection) isConnected() bool {
-	return nil != this.dbConn
+	if nil == this.dbConn {
+		return false
+	} else {
+		this.lastError = this.dbConn.Ping()
+		if nil != this.lastError {
+			this.dbConn.Close()
+			this.dbConn = nil
+			return false
+		}
+		return true
+	}
 }
 
 func (this *mysqlConnection) isDisconnected() bool {
@@ -65,19 +75,15 @@ func (this *mysqlConnection) disconnect() {
 	}
 }
 
-func (this *mysqlConnection) connect() {
+func (this *mysqlConnection) connect() bool {
 	if this.isDisconnected() {
 		this.dbConn, this.lastError = sql.Open("mysql", "pubsubsql:pubsubsql@/pubsubsql")
 		if nil != this.lastError {
 			this.dbConn = nil
+			return false
 		}
 	}
-	if this.isConnected() {
-		this.lastError = this.dbConn.Ping()
-		if nil != this.lastError {
-			this.dbConn = nil
-		}
-	}
+	return this.isConnected();
 }
 
 func (this *mysqlConnection) findTables() []string {

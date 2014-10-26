@@ -89,16 +89,12 @@ func (this *cmdMysqlStatusResponse) toNetworkReadyJSON() ([]byte, bool) {
 	return builder.getNetworkBytes(this.requestId), false
 }
 
-func (this *cmdMysqlStatusResponse) setOnline() {
-	this.connectionOnline = 1
-}
-
-func (this *cmdMysqlStatusResponse) setOffline() {
-	this.connectionOnline = 0
+func (this *cmdMysqlStatusResponse) setOnline(online bool) {
+	this.connectionOnline = online
 }
 
 func (this *cmdMysqlStatusResponse) isOnline() (bool) {
-	return (this.connectionOnline > 0)
+	return (this.connectionOnline != 0)
 }
 
 func (this *cmdMysqlStatusResponse) isOffline() (bool) {

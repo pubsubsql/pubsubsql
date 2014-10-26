@@ -145,6 +145,9 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		request := item.req.(*mysqlConnectRequest)
 		response := newCmdMysqlConnectResponse(request)
 		response.requestId = item.getRequestId()
+		//
+		item.dbConn.connect()
+		//
 		item.sender.send(response)
 	case *mysqlDisconnectRequest:
 		logInfo("client connection:", item.sender.connectionId, "requested mysql diconnect")
@@ -154,6 +157,9 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		request := item.req.(*mysqlDisconnectRequest)
 		response := newCmdMysqlDisconnectResponse(request)
 		response.requestId = item.getRequestId()
+		//
+		item.dbConn.disconnect()
+		//
 		item.sender.send(response)
 	case *mysqlStatusRequest:
 		logInfo("client connection:", item.sender.connectionId, "requested mysql status")
@@ -163,6 +169,10 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		request := item.req.(*mysqlStatusRequest)
 		response := newCmdMysqlStatusResponse(request)
 		response.requestId = item.getRequestId()
+		//
+		connected := item.dbConn.isConnected()
+		response.setOnline(connected)
+		//
 		item.sender.send(response)
 	case *mysqlSubscribeRequest:
 		logInfo("client connection:", item.sender.connectionId, "requested mysql subscribe")
