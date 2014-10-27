@@ -37,19 +37,19 @@ show tables
 type mysqlConnection struct {
 	dbConn *sql.DB
 	address string
-	lastError error
+	lastError string
 }
 
 func newMysqlConnection() *mysqlConnection {
 	return &mysqlConnection {
 		dbConn: nil,
 		address: "",
-		lastError: nil,
+		lastError: "",
 	}
 }
 
 func (this *mysqlConnection) hasError() bool {
-	return nil != this.lastError
+	return "" != this.lastError
 }
 
 func (this *mysqlConnection) hasNoError() bool {
@@ -57,21 +57,19 @@ func (this *mysqlConnection) hasNoError() bool {
 }
 
 func (this *mysqlConnection) getLastError() string {
-	if (this.hasError()) {
-		return this.lastError.Error()
-	} else {
-		return ""
-	}
+	return this.lastError
 }
 
 func (this *mysqlConnection) isConnected() bool {
 	if nil == this.dbConn {
 		return false
 	} else {
-		this.lastError = this.dbConn.Ping()
-		if nil != this.lastError {
+		err := this.dbConn.Ping()
+		if nil != err {
+			this.lastError = err.Error()
 			this.dbConn.Close()
 			this.dbConn = nil
+			logError(this.lastError)
 			return false
 		}
 		return true
@@ -83,21 +81,28 @@ func (this *mysqlConnection) isDisconnected() bool {
 }
 
 func (this *mysqlConnection) disconnect() {
-	this.lastError = nil
+	this.lastError = ""
 	if this.isConnected() {
-		this.lastError = this.dbConn.Close()
+		err := this.dbConn.Close()
+		if nil != err {
+			this.lastError = err.Error()
+			logError(this.lastError)
+		}
 		this.dbConn = nil
 	}
 }
 
 func (this *mysqlConnection) connect(address string) bool {
-	this.lastError = nil
+	this.lastError = ""
 	if this.isDisconnected() {
 		this.address = address
 		// "pubsubsql:pubsubsql@/pubsubsql"
-		this.dbConn, this.lastError = sql.Open("mysql", this.address)
-		if nil != this.lastError {
+		var err error
+		this.dbConn, err = sql.Open("mysql", this.address)
+		if nil != err {
+			this.lastError = err.Error()
 			this.dbConn = nil
+			logError(this.lastError)
 			return false
 		}
 	}
@@ -105,28 +110,31 @@ func (this *mysqlConnection) connect(address string) bool {
 }
 
 func (this *mysqlConnection) findTables() []string {
-	this.lastError = nil
+	this.lastError = ""
 	tables := make([]string, 0)
 	if (this.isDisconnected()) {
+		this.lastError = "not connected to mysql"
 		return tables
 	}
 	rows, err := this.dbConn.Query("show tables")
-	this.lastError = err
-	if nil != this.lastError {
+	if nil != err {
+		this.lastError = err.Error()
 		logError(this.lastError)
 		return tables
 	}
 	tableName := ""
 	for rows.Next() {
-		this.lastError = rows.Scan(&tableName)
-		if  nil != this.lastError {
+		err := rows.Scan(&tableName)
+		if  nil != err {
+			this.lastError = err.Error()
 			logError(this.lastError)
 			return tables
 		}
 		tables = append(tables, tableName)
 	}
-	this.lastError = rows.Err()
-	if nil != this.lastError {
+	err = rows.Err()
+	if nil != err {
+		this.lastError = err.Error()
 		logError(this.lastError)
 		return tables
 	}
