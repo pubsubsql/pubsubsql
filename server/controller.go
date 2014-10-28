@@ -184,6 +184,10 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		//
 		item.sender.send(response)
 	case *mysqlSubscribeRequest:
+		request := item.req.(*mysqlSubscribeRequest)
+		item.req = request.sqlSubscribeReq
+		this.network.context.router.dataSrv.onSqlRequest(item)
+		/*
 		logInfo("client connection:", item.sender.connectionId, "requested mysql subscribe")
 		if item.req.isStreaming() {
 			return
@@ -192,7 +196,12 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		response := newCmdMysqlSubscribeResponse(request)
 		response.requestId = item.getRequestId()
 		item.sender.send(response)
+		*/
 	case *mysqlUnsubscribeRequest:
+		request := item.req.(*mysqlUnsubscribeRequest)
+		item.req = request.sqlUnsubscribeReq
+		this.network.context.router.dataSrv.onSqlRequest(item)
+		/*
 		logInfo("client connection:", item.sender.connectionId, "requested mysql unsubscribe")
 		if item.req.isStreaming() {
 			return
@@ -201,6 +210,7 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		response := newCmdMysqlUnsubscribeResponse(request)
 		response.requestId = item.getRequestId()
 		item.sender.send(response)
+		*/
 	case *mysqlTablesRequest:
 		logInfo("client connection:", item.sender.connectionId, "requested mysql tables")
 		if item.req.isStreaming() {
