@@ -187,6 +187,7 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		logInfo("client connection:", item.sender.connectionId, "requested mysql subscribe")
 		request := item.req.(*mysqlSubscribeRequest)
 		item.req = request.sqlSubscribeReq
+		item.dbConnOperation = true
 		this.network.context.router.dataSrv.onSqlRequest(item)
 		/*
 		if item.req.isStreaming() {
@@ -201,6 +202,7 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		logInfo("client connection:", item.sender.connectionId, "requested mysql unsubscribe")
 		request := item.req.(*mysqlUnsubscribeRequest)
 		item.req = request.sqlUnsubscribeReq
+		item.dbConnOperation = true
 		this.network.context.router.dataSrv.onSqlRequest(item)
 		/*
 		if item.req.isStreaming() {

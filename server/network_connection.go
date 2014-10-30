@@ -79,6 +79,7 @@ func (this *networkConnection) route(header *netHeader, req request) {
 		req:    req,
 		sender: this.sender,
 		dbConn: this.dbConn,
+		dbConnOperation: false,
 	}
 	this.router.route(item)
 }
