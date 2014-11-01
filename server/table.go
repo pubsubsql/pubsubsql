@@ -972,8 +972,12 @@ func (this *table) onSqlRequest(req request, sender *responseSender) {
 		this.onSqlDelete(req.(*sqlDeleteRequest), sender)
 	case *sqlSubscribeRequest:
 		this.onSqlSubscribe(req.(*sqlSubscribeRequest), sender)
+	case *mysqlSubscribeRequest:
+		this.onMysqlSubscribe(req.(*mysqlSubscribeRequest), sender)
 	case *sqlUnsubscribeRequest:
 		this.onSqlUnsubscribe(req.(*sqlUnsubscribeRequest), sender)
+	case *mysqlUnsubscribeRequest:
+		this.onMysqlUnsubscribe(req.(*mysqlUnsubscribeRequest), sender)
 	case *sqlKeyRequest:
 		this.onSqlKey(req.(*sqlKeyRequest), sender)
 	case *sqlTagRequest:
@@ -1016,9 +1020,23 @@ func (this *table) onSqlSubscribe(req *sqlSubscribeRequest, sender *responseSend
 	this.sqlSubscribe(req)
 }
 
+func (this *table) onMysqlSubscribe(req *mysqlSubscribeRequest, sender *responseSender) {
+	info("onMysqlSubscribe:", req.getTableName())
+	sqlReq := new(sqlSubscribeRequest)
+	(*sqlReq) = req.sqlSubscribeRequest
+	this.onSqlSubscribe(sqlReq, sender)
+}
+
 func (this *table) onSqlUnsubscribe(req *sqlUnsubscribeRequest, sender *responseSender) {
 	req.connectionId = sender.connectionId
 	this.send(sender, this.sqlUnsubscribe(req))
+}
+
+func (this *table) onMysqlUnsubscribe(req *mysqlUnsubscribeRequest, sender *responseSender) {
+	info("onMysqlUnsubscribe:", req.getTableName())
+	sqlReq := new(sqlUnsubscribeRequest)
+	(*sqlReq) = req.sqlUnsubscribeRequest
+	this.onSqlUnsubscribe(sqlReq, sender)
 }
 
 func (this *table) onSqlKey(req *sqlKeyRequest, sender *responseSender) {

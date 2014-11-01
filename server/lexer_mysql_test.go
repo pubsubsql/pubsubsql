@@ -23,8 +23,8 @@ func TestMysqlConnect(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("mysql connect xyz123", &consumer)
 	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
-		{tokenTypeSqlConnect, "connect"},
+		{tokenTypeCmdMysql, "mysql"},
+		{tokenTypeCmdConnect, "connect"},
 		{tokenTypeSqlValue, "xyz123"},
 		{tokenTypeEOF, ""}}
 
@@ -36,8 +36,8 @@ func TestMysqlDisconnect(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("mysql disconnect", &consumer)
 	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
-		{tokenTypeSqlDisconnect, "disconnect"},
+		{tokenTypeCmdMysql, "mysql"},
+		{tokenTypeCmdDisconnect, "disconnect"},
 		{tokenTypeEOF, ""}}
 
 	validateTokens(t, expected, consumer.channel)
@@ -48,7 +48,7 @@ func TestMysqlStatus(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("mysql status", &consumer)
 	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
+		{tokenTypeCmdMysql, "mysql"},
 		{tokenTypeCmdStatus, "status"},
 		{tokenTypeEOF, ""}}
 
@@ -60,8 +60,8 @@ func TestMysqlTables(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("mysql tables", &consumer)
 	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
-		{tokenTypeSqlTables, "tables"},
+		{tokenTypeCmdMysql, "mysql"},
+		{tokenTypeCmdTables, "tables"},
 		{tokenTypeEOF, ""}}
 
 	validateTokens(t, expected, consumer.channel)
@@ -72,7 +72,7 @@ func TestMysqlUnsubscribe(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("mysql unsubscribe from stocks", &consumer)
 	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
+		{tokenTypeCmdMysql, "mysql"},
 		{tokenTypeSqlUnsubscribe, "unsubscribe"},
 		{tokenTypeSqlFrom, "from"},
 		{tokenTypeSqlTable, "stocks"},
@@ -86,7 +86,7 @@ func TestMysqlSubscribe(t *testing.T) {
 	consumer := chanTokenConsumer{channel: make(chan *token)}
 	go lex("mysql subscribe * from stocks", &consumer)
 	expected := []token{
-		{tokenTypeSqlMysql, "mysql"},
+		{tokenTypeCmdMysql, "mysql"},
 		{tokenTypeSqlSubscribe, "subscribe"},
 		{tokenTypeSqlStar, "*"},
 		{tokenTypeSqlFrom, "from"},

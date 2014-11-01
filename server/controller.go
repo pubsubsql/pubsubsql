@@ -183,36 +183,6 @@ func (this *Controller) onCommandRequest(item *requestItem) {
 		}
 		//
 		item.sender.send(response)
-	case *mysqlSubscribeRequest:
-		logInfo("client connection:", item.sender.connectionId, "requested mysql subscribe")
-		request := item.req.(*mysqlSubscribeRequest)
-		item.req = request.sqlSubscribeReq
-		item.dbConnOperation = true
-		this.network.context.router.dataSrv.onSqlRequest(item)
-		/*
-		if item.req.isStreaming() {
-			return
-		}
-		request := item.req.(*mysqlSubscribeRequest)
-		response := newCmdMysqlSubscribeResponse(request)
-		response.requestId = item.getRequestId()
-		item.sender.send(response)
-		*/
-	case *mysqlUnsubscribeRequest:
-		logInfo("client connection:", item.sender.connectionId, "requested mysql unsubscribe")
-		request := item.req.(*mysqlUnsubscribeRequest)
-		item.req = request.sqlUnsubscribeReq
-		item.dbConnOperation = true
-		this.network.context.router.dataSrv.onSqlRequest(item)
-		/*
-		if item.req.isStreaming() {
-			return
-		}
-		request := item.req.(*mysqlUnsubscribeRequest)
-		response := newCmdMysqlUnsubscribeResponse(request)
-		response.requestId = item.getRequestId()
-		item.sender.send(response)
-		*/
 	case *mysqlTablesRequest:
 		logInfo("client connection:", item.sender.connectionId, "requested mysql tables")
 		if item.req.isStreaming() {

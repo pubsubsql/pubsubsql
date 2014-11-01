@@ -22,7 +22,6 @@ type requestItem struct {
 	req    request
 	sender *responseSender
 	dbConn *mysqlConnection
-	dbConnOperation bool
 }
 
 func (this *requestItem) getRequestId() uint32 {
@@ -86,12 +85,8 @@ func (this *dataService) onSqlRequest(item *requestItem) {
 		this.tables[tableName] = tbl
 		tbl.quit = this.quit
 		tbl.requests = make(chan *requestItem, config.CHAN_TABLE_REQUESTS_BUFFER_SIZE)
-		logInfo("table", tableName, " was created; connection:", item.sender.connectionId)
+		logInfo("table", tableName, "was created; connection:", item.sender.connectionId)
 		go tbl.run()
-	}
-	if item.dbConnOperation {
-		logInfo("execute database operation; connection:", item.sender.connectionId)
-		item.dbConn.subscribe(tableName)
 	}
 	// forward sql request to the table
 	tbl.requests <- item

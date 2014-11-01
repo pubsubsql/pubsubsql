@@ -62,10 +62,10 @@ const (
 	tokenTypeSqlFront                                 // front
 	tokenTypeSqlReturning                             // returning
 	tokenTypeSqlTopic                                 // topic
-	tokenTypeSqlMysql                                 // mysql
-	tokenTypeSqlConnect                               // connect
-	tokenTypeSqlDisconnect                            // disconnect
-	tokenTypeSqlTables                                // tables
+	tokenTypeCmdMysql                                 // mysql
+	tokenTypeCmdConnect                               // connect
+	tokenTypeCmdDisconnect                            // disconnect
+	tokenTypeCmdTables                                // tables
 )
 
 // String converts tokenType value to a string.
@@ -141,14 +141,14 @@ func (typ tokenType) String() string {
 		return "tokenTypeSqlFront"
 	case tokenTypeSqlTopic:
 		return "tokenTypeSqlTopic"
-	case tokenTypeSqlMysql:
-		return "tokenTypeSqlMysql"
-	case tokenTypeSqlConnect:
-		return "tokenTypeSqlConnect"
-	case tokenTypeSqlDisconnect:
-		return "tokenTypeSqlDisconnect"
-	case tokenTypeSqlTables:
-		return "tokenTypeSqlTables"
+	case tokenTypeCmdMysql:
+		return "tokenTypeCmdMysql"
+	case tokenTypeCmdConnect:
+		return "tokenTypeCmdConnect"
+	case tokenTypeCmdDisconnect:
+		return "tokenTypeCmdDisconnect"
+	case tokenTypeCmdTables:
+		return "tokenTypeCmdTables"
 	}
 	return "not implemented"
 }
@@ -824,7 +824,7 @@ func lexCommand(this *lexer) stateFn {
 	case 'p': // pop, push, peek
 		return lexCommandP(this)
 	case 'm': // mysql
-		return this.lexMatch(tokenTypeSqlMysql, "mysql", 1, lexSqlMysql)
+		return this.lexMatch(tokenTypeCmdMysql, "mysql", 1, lexCmdMysql)
 	}
 	return this.errorToken("Invalid command:" + this.current())
 }

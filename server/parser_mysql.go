@@ -47,44 +47,56 @@ func (this *parser) parseMysqlStatus() request {
 	return this.parseEOF(req)
 }
 
-// mysql subscribe
-func (this *parser) parseMysqlSubscribe() request {
-	req := new(mysqlSubscribeRequest)
-	r := this.parseSqlSubscribe()
-	req.sqlSubscribeReq = r.(*sqlSubscribeRequest)
-	return req
-}
-
-// mysql unsubscribe
-func (this *parser) parseMysqlUnsubscribe() request {
-	req := new(mysqlUnsubscribeRequest)
-	r := this.parseSqlUnsubscribe()
-	req.sqlUnsubscribeReq = r.(*sqlUnsubscribeRequest)
-	return req
-}
-
 // mysql tables
 func (this *parser) parseMysqlTables() request {
 	req := new(mysqlTablesRequest)
 	return this.parseEOF(req)
 }
 
+// mysql subscribe
+func (this *parser) parseMysqlSubscribe() request {
+	req := this.parseSqlSubscribe()
+	switch req.(type) {
+	case *sqlSubscribeRequest:
+		sqlReq := req.(*sqlSubscribeRequest)
+		mysqlReq := new(mysqlSubscribeRequest)
+		mysqlReq.sqlSubscribeRequest = *sqlReq
+		return mysqlReq
+	default:
+		return req
+	}
+}
+
+// mysql unsubscribe
+func (this *parser) parseMysqlUnsubscribe() request {
+	req := this.parseSqlUnsubscribe()
+	switch req.(type) {
+	case *sqlUnsubscribeRequest:
+		sqlReq := req.(*sqlUnsubscribeRequest)
+		mysqlReq := new(mysqlUnsubscribeRequest)
+		mysqlReq.sqlUnsubscribeRequest = *sqlReq
+		return mysqlReq
+	default:
+		return req
+	}
+}
+
 // mysql
-func (this *parser) parseSqlMysql() request {
+func (this *parser) parseCmdMysql() request {
 	tok := this.tokens.Produce()
 	switch tok.typ {
-	case tokenTypeSqlConnect:
+	case tokenTypeCmdConnect:
 		return this.parseMysqlConnect()
-	case tokenTypeSqlDisconnect:
+	case tokenTypeCmdDisconnect:
 		return this.parseMysqlDisconnect()
 	case tokenTypeCmdStatus:
 		return this.parseMysqlStatus()
+	case tokenTypeCmdTables:
+		return this.parseMysqlTables()
 	case tokenTypeSqlSubscribe:
 		return this.parseMysqlSubscribe()
 	case tokenTypeSqlUnsubscribe:
 		return this.parseMysqlUnsubscribe()
-	case tokenTypeSqlTables:
-		return this.parseMysqlTables()
 	}
 	return this.parseError("invalid mysql request")
 }

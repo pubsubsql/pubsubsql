@@ -114,6 +114,7 @@ func (this *mysqlConnection) findTables() []string {
 	tables := make([]string, 0)
 	if (this.isDisconnected()) {
 		this.lastError = "not connected to mysql"
+		logError(this.lastError)
 		return tables
 	}
 	rows, err := this.dbConn.Query("show tables")
@@ -147,18 +148,22 @@ create table t (c int)
 create trigger t_t after insert on t for each row insert into log values (1);
  */
 func (this *mysqlConnection) subscribe(tableName string) {
+	this.lastError = ""
 	if (this.isDisconnected()) {
 		this.lastError = "not connected to mysql"
+		logError(this.lastError)
 		return
 	}
 	_, err := this.dbConn.Exec("create table t (c int)")
 	if nil != err {
 		this.lastError = err.Error()
 		logError(this.lastError)
+		return
 	}
 	_, err = this.dbConn.Exec("create trigger t_t after insert on t for each row insert into log values (1)")
 	if nil != err {
 		this.lastError = err.Error()
 		logError(this.lastError)
+		return
 	}
 }

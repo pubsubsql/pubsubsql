@@ -660,8 +660,8 @@ func (this *parser) run() request {
 		return this.parseCmdStop()
 	case tokenTypeCmdClose:
 		return this.parseCmdClose()
-	case tokenTypeSqlMysql:
-		return this.parseSqlMysql()
+	case tokenTypeCmdMysql:
+		return this.parseCmdMysql()
 	}
 	return this.parseError("invalid request")
 }
