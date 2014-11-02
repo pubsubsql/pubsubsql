@@ -88,6 +88,14 @@ func (this *dataService) onSqlRequest(item *requestItem) {
 		logInfo("table", tableName, "was created; connection:", item.sender.connectionId)
 		go tbl.run()
 	}
+	switch item.req.(type) {
+	case *mysqlSubscribeRequest:
+		info("database operation onMysqlSubscribe:", item.req.getTableName())
+		//request := item.req.(*mysqlSubscribeRequest)
+	case *mysqlUnsubscribeRequest:
+		info("database operation onMysqlUnsubscribe:", item.req.getTableName())
+		//request := item.req.(*mysqlUnsubscribeRequest)
+	}
 	// forward sql request to the table
 	tbl.requests <- item
 }
