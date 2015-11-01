@@ -90,9 +90,10 @@ func (this *record) setValue(ordinal int, val string) {
 
 // addSubscription adds subscription to the record.
 func (this *record) addSubscription(sub *subscription) {
-	pubsb := &this.links[0].pubsub
-	if *pubsb == nil {
-		*pubsb = new(pubsub)
+	pubsb := this.links[0].pubsub
+	if pubsb == nil {
+		this.links[0].pubsub = new(pubsub)
+		pubsb = this.links[0].pubsub
 	}
 	pubsb.add(sub)
 }
