@@ -352,8 +352,8 @@ func (this *table) updateRecordKeyTag(col *column, val string, rec *record, id i
 	if *ra == nil {
 		*ra = newPubsubRA()
 	}
-	ra.toBeRemoved(removed)
-	ra.toBeAdded(added)
+	(*ra).toBeRemoved(removed)
+	(*ra).toBeAdded(added)
 }
 
 // Updates record with new values, keys and tags.
