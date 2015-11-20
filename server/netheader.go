@@ -13,7 +13,6 @@ package server
 
 import (
 	"encoding/binary"
-	"encoding/json"
 )
 
 /*
@@ -53,9 +52,4 @@ func (this *netHeader) getBytes() []byte {
 	bytes := make([]byte, _HEADER_SIZE, _HEADER_SIZE)
 	this.writeTo(bytes)
 	return bytes
-}
-
-func (this *netHeader) String() string {
-	bytes, _ := json.Marshal(this)
-	return string(bytes)
 }
