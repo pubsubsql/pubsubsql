@@ -17,6 +17,7 @@
 package server
 
 import "strconv"
+import "fmt"
 
 type responseStatusType int8
 
@@ -330,6 +331,8 @@ type sqlPubSubResponse struct {
 }
 
 func (this *sqlPubSubResponse) toNetworkReadyJSONHelper(act string) ([]byte, bool) {
+	fmt.Printf("to network JSON")
+
 	builder := networkReadyJSONBuilder()
 	builder.beginObject()
 	ok(builder)

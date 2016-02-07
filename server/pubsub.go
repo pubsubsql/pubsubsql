@@ -16,6 +16,8 @@
 
 package server
 
+import "fmt"
+
 // pubsub
 type pubsub struct {
 	head *subscription
@@ -26,6 +28,7 @@ func (this *pubsub) hasSubscriptions() bool {
 }
 
 func (this *pubsub) add(sub *subscription) {
+	fmt.Println("Adding subscription!")
 	sub.next = this.head
 	this.head = sub
 }
