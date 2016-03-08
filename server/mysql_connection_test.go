@@ -17,29 +17,36 @@
 package server
 
 import (
+	"os"
 	"testing"
 )
 
 func TestMysqlConnection(t *testing.T) {
 	conn := newMysqlConnection()
 	defer conn.disconnect()
-	//
-	conn.connect("pubsubsql:pubsubsql@/pubsubsql")
+
+	connString := "pubsubsql:pubsubsql@/pubsubsql"
+	if os.Getenv("TRAVIS") == "true" {
+		connString = "travis:@/pubsubsql"
+	}
+
+	conn.connect(connString)
 	if conn.hasError() {
 		t.Error("failed to connect:", conn.getLastError())
 	}
-	//
+
 	if conn.isDisconnected() {
 		t.Error("failed to open mysql connection (1):", conn.getLastError())
 	}
-	if ! conn.isConnected() {
+	if !conn.isConnected() {
 		t.Error("failed to open mysql connection (2):", conn.getLastError())
 	}
-	//
+
 	conn.disconnect()
-	if ! conn.isDisconnected() {
+	if !conn.isDisconnected() {
 		t.Error("failed to close mysql connection (1):", conn.getLastError())
 	}
+
 	if conn.isConnected() {
 		t.Error("failed to close mysql connection (2):", conn.getLastError())
 	}
@@ -48,8 +55,13 @@ func TestMysqlConnection(t *testing.T) {
 func TestMysqlConnectionFindTables(t *testing.T) {
 	conn := newMysqlConnection()
 	defer conn.disconnect()
-	//
-	conn.connect("pubsubsql:pubsubsql@/pubsubsql")
+
+	connString := "pubsubsql:pubsubsql@/pubsubsql"
+	if os.Getenv("TRAVIS") == "true" {
+		connString = "travis:@/pubsubsql"
+	}
+
+	conn.connect(connString)
 	if conn.isDisconnected() {
 		t.Error("failed to open mysql connection:", conn.getLastError())
 	}

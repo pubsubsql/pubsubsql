@@ -3,5 +3,11 @@ go:
     - 1.5.1
     - tip
 
+services:
+    - mysql
+
+before_script:
+    - mysql -e 'create database pubsubsql;'
+
 script:
     - go test -v ./server

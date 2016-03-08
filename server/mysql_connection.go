@@ -33,17 +33,17 @@ create table table_a(id int);
 create table table_b(id int);
 create table table_c(id int);
 show tables
- */
+*/
 type mysqlConnection struct {
-	dbConn *sql.DB
-	address string
+	dbConn    *sql.DB
+	address   string
 	lastError string
 }
 
 func newMysqlConnection() *mysqlConnection {
-	return &mysqlConnection {
-		dbConn: nil,
-		address: "",
+	return &mysqlConnection{
+		dbConn:    nil,
+		address:   "",
 		lastError: "",
 	}
 }
@@ -53,7 +53,7 @@ func (this *mysqlConnection) hasError() bool {
 }
 
 func (this *mysqlConnection) hasNoError() bool {
-	return ! this.hasError()
+	return !this.hasError()
 }
 
 func (this *mysqlConnection) getLastError() string {
@@ -77,7 +77,7 @@ func (this *mysqlConnection) isConnected() bool {
 }
 
 func (this *mysqlConnection) isDisconnected() bool {
-	return ! this.isConnected()
+	return !this.isConnected()
 }
 
 func (this *mysqlConnection) disconnect() {
@@ -96,7 +96,7 @@ func (this *mysqlConnection) connect(address string) bool {
 	this.lastError = ""
 	if this.isDisconnected() {
 		this.address = address
-		// "pubsubsql:pubsubsql@/pubsubsql"
+
 		var err error
 		this.dbConn, err = sql.Open("mysql", this.address)
 		if nil != err {
@@ -106,13 +106,13 @@ func (this *mysqlConnection) connect(address string) bool {
 			return false
 		}
 	}
-	return this.isConnected();
+	return this.isConnected()
 }
 
 func (this *mysqlConnection) findTables() []string {
 	this.lastError = ""
 	tables := make([]string, 0)
-	if (this.isDisconnected()) {
+	if this.isDisconnected() {
 		this.lastError = "not connected to mysql"
 		logError(this.lastError)
 		return tables
@@ -126,7 +126,7 @@ func (this *mysqlConnection) findTables() []string {
 	tableName := ""
 	for rows.Next() {
 		err := rows.Scan(&tableName)
-		if  nil != err {
+		if nil != err {
 			this.lastError = err.Error()
 			logError(this.lastError)
 			return tables
@@ -146,10 +146,10 @@ func (this *mysqlConnection) findTables() []string {
 /*
 create table t (c int)
 create trigger t_t after insert on t for each row insert into log values (1);
- */
+*/
 func (this *mysqlConnection) subscribe(tableName string) {
 	this.lastError = ""
-	if (this.isDisconnected()) {
+	if this.isDisconnected() {
 		this.lastError = "not connected to mysql"
 		logError(this.lastError)
 		return
