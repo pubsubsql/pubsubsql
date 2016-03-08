@@ -1,7 +1,10 @@
- [![Build Status](https://api.travis-ci.org/pubsubsql/pubsubsql.svg?branch=master)](https://api.travis-ci.org/pubsubsql/pubsubsql.svg?branch=master)
+[![Build Status](https://travis-ci.org/pubsubsql/pubsubsql.svg?branch=master)](https://travis-ci.org/pubsubsql/pubsubsql) [![GitHub release](https://img.shields.io/github/release/qubyte/rubidium.svg)](https://github.com/pubsubsql/pubsubsql)  [![node](https://img.shields.io/node/v/gh-badges.svg)](https://www.npmjs.com/package/pubsubsql)
 
 pubsubsql
 =========
+
+Homepage: [http://pubsubsql.com/](http://pubsubsql.com/)
+
 
 An open-source in-memory database offering:
   - SQL-like syntax
