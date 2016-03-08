@@ -1,4 +1,4 @@
-[![Build Status](https://travis-ci.org/pubsubsql/pubsubsql.svg?branch=master)](https://travis-ci.org/pubsubsql/pubsubsql) [![GitHub release](https://img.shields.io/github/release/qubyte/rubidium.svg)](https://github.com/pubsubsql/pubsubsql)  [![node](https://img.shields.io/node/v/gh-badges.svg)](https://www.npmjs.com/package/pubsubsql)
+[![Build Status](https://travis-ci.org/pubsubsql/pubsubsql.svg?branch=master)](https://travis-ci.org/pubsubsql/pubsubsql) [![GitHub release](https://img.shields.io/github/pubsubsql/pubsubsql/rubidium.svg)](https://github.com/pubsubsql/pubsubsql/releases) 
 
 pubsubsql
 =========
